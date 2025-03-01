@@ -12,6 +12,14 @@
 int text_cursor_x, text_cursor_y;
 
 
+#define SIZE 4
+
+int board[SIZE][SIZE][SIZE] = {0}; // 3D board initialized to 0
+int tiles_index = 0;
+const s16 boardXStart = 12;
+const s16 boardYStart = 3;
+
+
 // Sprite data structures
 typedef struct
 {
@@ -25,8 +33,6 @@ typedef struct
    
   
 } CURSOR;
-
-
 
 const s8 cursorStep = 24;
 const s8 cursorColStart = 64;
@@ -52,6 +58,50 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
     bool didMove = FALSE;                                                   
 }
 
+
+void draw_row( s16 startX, s16 startY, bool bottom ){
+    
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+1 ), startX, startY );
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+2 ), startX+1, startY );
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+3 ), startX+2, startY );
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+2 ), startX+3, startY );
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+3 ), startX+4, startY );
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+2 ), startX+5, startY );
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+3 ), startX+6, startY );
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+2 ), startX+7, startY );
+    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+4 ), startX+8, startY );
+
+    if( bottom ) {
+        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX, startY +1 );
+        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+1, startY+1 );
+        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+2, startY+1 );
+        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+3, startY+1 );
+        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+4, startY+1 );
+        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+5, startY+1 );
+        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+6, startY+1 );
+        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+7, startY+1 );
+    }
+}
+
+void draw_boards() { 
+    // 4 in all
+    s16 x = boardXStart;
+    s16 y = boardYStart; 
+    for( s16 board = 0; board < 4; ++board ) {
+        draw_row( x + 5, y + 1, false );
+        draw_row( x + 4, y + 2, false );
+        draw_row( x + 3, y + 3, false );
+        draw_row( x + 2, y + 4, true );
+        y += 5;
+    }
+}
+
+
+void add_move() {
+}
+
+
+
 int main()
 {
 
@@ -71,10 +121,10 @@ int main()
     //////////////////////////////////////////////////////////////
     // Background setup
     PAL_setPalette( PAL0, tictactoe_pal.data, CPU );
-    int tiles_index = TILE_USER_INDEX;
+    tiles_index = TILE_USER_INDEX;
     VDP_loadTileSet( &tictactoe_tiles, tiles_index, CPU);
 
-
+    draw_boards();
     //////////////////////////////////////////////////////////////
     // Sprite setup
     SPR_init();
