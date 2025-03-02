@@ -22,6 +22,7 @@ s16 board_pos_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
 int tiles_index = 0;
 const s16 boardXStart = 12;
 const s16 boardYStart = 3;
+const s16 layerStep = 5;
 
 
 // Sprite data structures
@@ -29,9 +30,9 @@ typedef struct
 {
     Sprite *p1_sprite;
     Sprite *p2_sprite;
-    s8 col;     // col
-    s8 row;     // row
-    s8 layer;   // Z
+    s16 col;     // col
+    s16 row;     // row
+    s16 layer;   // Z
 
     s16 pos_x;  // actual X position
     s16 pos_y;  // actual Y position
@@ -98,16 +99,28 @@ void draw_boards() {
         draw_row( x + 3, y + 3, false );
         draw_row( x + 2, y + 4, true );
 
-        // compute actual position.
-         
 
         // go to next 
-        y += 5;
+        y += layerStep;
     }
 
  
 }
 
+void init_board_pos () {
+    for( s16 z=0; z < BOARD_SIZE; z++ ) {
+        s16 currY = boardYStart +1+ z*layerStep;
+        for( s16 y=0; y < BOARD_SIZE; y++ ) {
+            s16 currX = boardXStart + 5 - y;
+            for( s16 x=0; x < BOARD_SIZE; x++ ) {
+                board_pos_x[x][y][z] = currX * 8;
+                board_pos_y[x][y][z] = currY * 8;
+                currX += 2;
+            }
+            currY++;
+        }
+    }
+}
 
 void add_move() {
 }
@@ -134,6 +147,16 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
         cursor->row++;
         didMove = TRUE;
     }
+
+    if( joypad & BUTTON_B ) {
+        cursor->layer--;
+        didMove = TRUE;
+    }
+    if( joypad & BUTTON_C ) {
+        cursor->layer++;
+        didMove = TRUE;
+    }
+
     if( didMove ) {
         if( cursor->col < 0 ) {
             cursor->col = BOARD_SIZE - 1;
@@ -145,9 +168,14 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
         } else if ( cursor->row > BOARD_SIZE - 1 ) {
             cursor->row = 0;
         }
+        if( cursor->layer < 0 ) {
+            cursor->layer= BOARD_SIZE - 1;
+        } else if ( cursor->layer > BOARD_SIZE - 1 ) {
+            cursor->layer = 0;
+        }
         // 
-        cursor->pos_x = cursor->col * cursorStep + cursorColStart;
-        cursor->pos_y = cursor->row * cursorStep + cursorRowStart;
+        cursor->pos_x = board_pos_x[ cursor->col ][ cursor->row][ cursor->layer ];
+        cursor->pos_y = board_pos_y[ cursor->col ][ cursor->row][ cursor->layer ];
     }
     return didMove;
 }
@@ -184,6 +212,8 @@ int main()
     VDP_loadTileSet( &tictactoe_tiles, tiles_index, CPU);
 
     draw_boards();
+    init_board_pos();
+
     //////////////////////////////////////////////////////////////
     // Sprite setup
     SPR_init();
