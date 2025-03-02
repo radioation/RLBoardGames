@@ -10,7 +10,7 @@
 
 #define INPUT_WAIT_COUNT 10
 
-int text_cursor_x, text_cursor_y;
+int cursor_x, cursor_y;
 
 
 
@@ -188,6 +188,38 @@ bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE],
 }
 
 
+void setWhoAmI() {
+    buttons = 0;
+    buttons_prev = 0;
+    VDP_clearTextArea( 0, 0,  40, 13  );
+    VDP_drawText("          (A) - Host Game", 0, 5);
+    VDP_drawText("          (C) - Join Game", 0, 7);
+    NET_resetAdapter();
+    while(1) // loop forever
+    {
+        buttons = JOY_readJoypad(JOY_1);
+        // MODE NOT SET, button press will determine server or client.
+        if(buttons & BUTTON_A && buttons_prev == 0x00) {
+            VDP_clearTextArea( 0, 5,  40, 3 );
+            cursor_y = 5;
+            whoAmI = IM_HOST;
+            // start listening
+            host_game();
+            break;
+        }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
+            VDP_clearTextArea( 0, 5,  40, 3 );
+            // try to connect to server.
+            whoAmI = IM_CLIENT;
+            join_game();
+            break;
+
+        }
+        buttons_prev = buttons;
+        SYS_doVBlankProcess();
+    }
+}
+
+
 
 
 
@@ -200,11 +232,76 @@ int main()
     VDP_setScreenWidth320();
     VDP_setScreenHeight224();
     VDP_setBackgroundColor(16);
+    VDP_setTextPlane(BG_A);
     SYS_enableInts();                      // enable interrupts for networking print routines.
 
 
     //////////////////////////////////////////////////////////////
     // Networking setup
+    cursor_x = 0;
+    cursor_y = 0;
+
+    // Establish Comms (find/talk to other console)
+    VDP_drawText("Detecting adapter...[  ]", cursor_x, cursor_y); cursor_x+=21;
+    NET_initialize(); // Detect cartridge and set boolean variable
+
+    if(cart_present)
+    {
+        VDP_setTextPalette(12);
+        VDP_drawText("Ok", cursor_x, cursor_y); cursor_x=0; cursor_y+=2;
+        VDP_setTextPalette(15); 
+    }
+    else
+    {
+        VDP_setTextPalette(11); 
+        VDP_drawText("XX", cursor_x, cursor_y); cursor_x=0; cursor_y+=2;
+        VDP_setTextPalette(15); 
+        VDP_drawText("Adapter not present", cursor_x, cursor_y);
+        while(1) { SYS_doVBlankProcess(); }
+    }
+
+
+    VDP_drawText("IP Address:", cursor_x, cursor_y);
+    NET_printIP(cursor_x+12, cursor_y); cursor_y++;
+
+    VDP_drawText("MAC:", cursor_x, cursor_y);
+    NET_printMAC(cursor_x+5, cursor_y); cursor_y+=2;
+
+
+    waitMs(2000);
+
+
+    // get server address from SRAM or user.
+    SRAM_enable();
+    u8 part = SRAM_readByte(0);
+    sprintf( server, "%03d.", part );
+    part = SRAM_readByte(1);
+    sprintf( server+4, "%03d.", part );
+    part = SRAM_readByte(2);
+    sprintf( server+8, "%03d.", part );
+    part = SRAM_readByte(3);
+    sprintf( server+12, "%03d", part );
+
+    SPR_init();
+
+    VDP_drawText( server, 13 , 3 );
+
+    getIPFromUser(server);
+    SYS_doVBlankProcess();
+    // clear out last input and wait a sec.
+    waitMs(1000);
+    JOY_update();
+
+    VDP_drawText( "Got Address", 13 ,12 );
+    VDP_drawText( server, 13 , 13 );
+    // TODO: add ping here and save if successful.
+    //  for now, saving always.
+    SRAM_writeByte(0, atoi( server ));
+    SRAM_writeByte(1, atoi( server + 4 ));
+    SRAM_writeByte(2, atoi( server + 8 ));
+    SRAM_writeByte(3, atoi( server + 12));
+
+    setWhoAmI();
 
 
     //////////////////////////////////////////////////////////////
