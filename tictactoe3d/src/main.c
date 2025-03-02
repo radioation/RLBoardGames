@@ -12,17 +12,12 @@
 int text_cursor_x, text_cursor_y;
 
 
-#define BOARD_SIZE 4
 
-typedef enum { 
-    NO_PLAYER = 0,
-    PLAYER_ONE = 1,
-    PLAYER_TWO = 1,
-} PLAYER;
+s16 board[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; // 3D board initialized to 0
+s16 board_pos_x[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
+s16 board_pos_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
 
-u16 board[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; // 3D board initialized to 0
-u16 board_pos_x[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; 
-u16 board_pos_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; 
+
 
 int tiles_index = 0;
 const s16 boardXStart = 12;
@@ -158,7 +153,7 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
 }
 
 
-bool cursor_action( CURSOR* cursor, int brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
+bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
     return false;
 }
 
