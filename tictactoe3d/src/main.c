@@ -12,9 +12,18 @@
 int text_cursor_x, text_cursor_y;
 
 
-#define SIZE 4
+#define BOARD_SIZE 4
 
-int board[SIZE][SIZE][SIZE] = {0}; // 3D board initialized to 0
+typedef enum { 
+    NO_PLAYER = 0,
+    PLAYER_ONE = 1,
+    PLAYER_TWO = 1,
+} PLAYER;
+
+u16 board[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; // 3D board initialized to 0
+u16 board_pos_x[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; 
+u16 board_pos_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; 
+
 int tiles_index = 0;
 const s16 boardXStart = 12;
 const s16 boardYStart = 3;
@@ -27,7 +36,8 @@ typedef struct
     Sprite *p2_sprite;
     s8 col;     // col
     s8 row;     // row
-    s8 board;   // board
+    s8 layer;   // Z
+
     s16 pos_x;  // actual X position
     s16 pos_y;  // actual Y position
    
@@ -39,24 +49,23 @@ const s8 cursorColStart = 64;
 const s8 cursorRowStart = 16;
 
 
+
+
 void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
     cursor->p1_sprite = p1;
     cursor->p2_sprite = p2;
     cursor->col = 1;  // board position
     cursor->row = 1;   
-    cursor->board = 1;   
+    cursor->layer = 1;   
 
     cursor->pos_x = cursor->col * cursorStep + cursorColStart; 
     cursor->pos_y = cursor->row * cursorStep + cursorRowStart;  
 
-    SPR_setAnim( cursor->p1_sprite, 1 );
+    SPR_setVisibility( cursor->p1_sprite, VISIBLE );
     SPR_setVisibility( cursor->p2_sprite, HIDDEN );
 }
 
 
-bool cursor_move( CURSOR *cursor, u16 joypad ) {
-    bool didMove = FALSE;                                                   
-}
 
 
 void draw_row( s16 startX, s16 startY, bool bottom ){
@@ -87,18 +96,73 @@ void draw_boards() {
     // 4 in all
     s16 x = boardXStart;
     s16 y = boardYStart; 
-    for( s16 board = 0; board < 4; ++board ) {
+    for( s16 layer = 0; layer < 4; ++layer ) {
+        // draw rows
         draw_row( x + 5, y + 1, false );
         draw_row( x + 4, y + 2, false );
         draw_row( x + 3, y + 3, false );
         draw_row( x + 2, y + 4, true );
+
+        // compute actual position.
+         
+
+        // go to next 
         y += 5;
     }
+
+ 
 }
 
 
 void add_move() {
 }
+
+
+
+bool cursor_move( CURSOR *cursor, u16 joypad ) {
+    bool didMove = FALSE;
+    if( joypad & BUTTON_LEFT ) {
+        cursor->col--;
+        didMove = TRUE;
+    }
+    if( joypad & BUTTON_RIGHT ) {
+        cursor->col++;
+        didMove = TRUE;
+    }
+
+
+    if( joypad & BUTTON_UP ) {
+        cursor->row--;
+        didMove = TRUE;
+    }
+    if( joypad & BUTTON_DOWN ) {
+        cursor->row++;
+        didMove = TRUE;
+    }
+    if( didMove ) {
+        if( cursor->col < 0 ) {
+            cursor->col = BOARD_SIZE - 1;
+        } else if ( cursor->col > BOARD_SIZE - 1 ) {
+            cursor->col = 0;
+        }
+        if( cursor->row < 0 ) {
+            cursor->row= BOARD_SIZE - 1;
+        } else if ( cursor->row > BOARD_SIZE - 1 ) {
+            cursor->row = 0;
+        }
+        // 
+        cursor->pos_x = cursor->col * cursorStep + cursorColStart;
+        cursor->pos_y = cursor->row * cursorStep + cursorRowStart;
+    }
+    return didMove;
+}
+
+
+bool cursor_action( CURSOR* cursor, int brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
+    return false;
+}
+
+
 
 
 
@@ -130,13 +194,43 @@ int main()
     SPR_init();
     CURSOR cursor;
     cursor_init(&cursor,
-            SPR_addSprite( &blue_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, FALSE, FALSE, FALSE )),
-            SPR_addSprite( &yellow_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, FALSE, FALSE, FALSE )) );
+            SPR_addSprite( &blue_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, TRUE, FALSE, FALSE )),
+            SPR_addSprite( &yellow_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, TRUE, FALSE, FALSE )) );
 
     //////////////////////////////////////////////////////////////
     // MAIN LOOP
+    u8 inputWait = 0;
+    u8 me = PLAYER_ONE; 
     while(1) // Loop forever
     {
+        // read joypad to mover cursor
+        u16 joypad  = JOY_readJoypad( JOY_1 );
+        if( inputWait == 0 ) {
+            if( cursor_move( &cursor, joypad ) == TRUE ) {
+                inputWait = INPUT_WAIT_COUNT;
+                // send cursor data
+                //cursor_send_data( &cursor, 0 );
+            }
+            if( joypad & BUTTON_A ) {
+                bool didMove =  cursor_action( &cursor, board, me );
+                inputWait = INPUT_WAIT_COUNT;
+            } 
+        } else {
+            if( inputWait > 0 ) {
+                --inputWait;
+            }
+        }
+
+
+        //////////////////////////////////////////////////////////////
+        // update sprites
+        SPR_setPosition( cursor.p1_sprite, cursor.pos_x, cursor.pos_y );
+        //SPR_setPosition( cursor.selected_spr, cursor.sel_pos_x, cursor.sel_pos_y );
+        SPR_update();
+
+        //////////////////////////////////////////////////////////////
+        // SGDK Do your thing.
+
         SYS_doVBlankProcess();
     }
 
