@@ -1,8 +1,9 @@
 #include <genesis.h>
 #include "resources.h"
 
-//#include "network.h"
-//#include "ip_input.h"
+#include "network.h"
+
+#include "ip_input.h"
 
 #include "logic.h"
 
@@ -54,8 +55,9 @@ void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
     cursor->row = 1;   
     cursor->layer = 1;   
 
-    cursor->pos_x = cursor->col * cursorStep + cursorColStart; 
-    cursor->pos_y = cursor->row * cursorStep + cursorRowStart;  
+
+    cursor->pos_x = board_pos_x[ cursor->col ][ cursor->row][ cursor->layer ];
+    cursor->pos_y = board_pos_y[ cursor->col ][ cursor->row][ cursor->layer ];
 
     SPR_setVisibility( cursor->p1_sprite, VISIBLE );
     SPR_setVisibility( cursor->p2_sprite, HIDDEN );
