@@ -11,9 +11,24 @@
 #define INPUT_WAIT_COUNT 10
 
 int cursor_x, cursor_y;
+u8 buttons, buttons_prev;
 
 
+////////////////////////////////////////////////////////////////////////////
+// **Identification**
+// need to have an ID for each console that is unique
+#define IM_NOBODY 0
+#define IM_HOST 1
+#define IM_CLIENT 2
+u8 whoAmI = IM_NOBODY;
 
+
+////////////////////////////////////////////////////////////////////////////
+// network stuff
+char server[16] = "000.000.000.000";
+
+////////////////////////////////////////////////////////////////////////////
+// Board 
 s16 board[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; // 3D board initialized to 0
 s16 board_pos_x[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
 s16 board_pos_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
@@ -185,6 +200,46 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
 
 bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
     return false;
+}
+
+
+void host_game() {
+    // Allow client to join
+    NET_allowConnections();
+    VDP_drawText("   Wait for client:      ", 0, 5);
+
+    // loop while waiting for a peer.
+    u8 offset = 0;
+    while( 1 ) {
+        // Data available?
+        while( !NET_RXReady() ){
+            // writing some sort of text here?
+            VDP_drawText(" .     ", 21+offset, 5);
+            offset +=1;
+            if( offset > 3 ) offset = 0;
+            waitMs(16);
+
+        }
+        // look for 'C'
+        u8 ret = NET_readByte();
+        if( ret == 'C' ) {
+            // clear text before losing out
+            VDP_drawText("   Client Connected!     ", 0, 5);
+            return;
+        }
+    }
+
+}
+
+
+bool join_game() {
+    VDP_drawText("   Connect to server    ", 0, 5);
+    cursor_y = 5;
+    // blocks whilewaiting for network to be ready.
+    char fullserver[21];
+    memset(fullserver,0, sizeof(fullserver));
+    sprintf( fullserver, "%s:5364", server);
+    return NET_connect(cursor_x, cursor_y, fullserver); cursor_x=0; cursor_y++;
 }
 
 
