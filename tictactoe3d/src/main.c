@@ -83,10 +83,12 @@ void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
     SPR_setVisibility( cursor->p2_sprite, HIDDEN );
 }
 
+void clear_board() {
+    memset(board,0, sizeof(board));
+}
 
 
-
-void init_board_pos () {
+void init_board_pos_lookup () {
     for( s16 z=0; z < BOARD_SIZE; z++ ) {
         s16 currY = boardYStart +1+ z*layerStep;
         for( s16 y=0; y < BOARD_SIZE; y++ ) {
@@ -218,6 +220,8 @@ bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE],
 
     return false;
 }
+
+
 
 
 void host_game() {
@@ -393,9 +397,9 @@ int main()
     VDP_loadTileSet(tictactoe_board.tileset, board_index, CPU);
 
     
-  VDP_drawImageEx(BG_B, &tictactoe_board, TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, board_index), 0, 0, FALSE, TRUE);
+    VDP_drawImageEx(BG_B, &tictactoe_board, TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, board_index), 0, 0, FALSE, TRUE);
 
-    init_board_pos();
+    init_board_pos_lookup();
 
     //////////////////////////////////////////////////////////////
     // Sprite setup
@@ -409,6 +413,8 @@ int main()
     // MAIN LOOP
     u8 inputWait = 0;
     u8 current_player = PLAYER_ONE; 
+    char message[40];
+    clear_board();
     while(1) // Loop forever
     {
         // read joypad to move cursor
@@ -424,6 +430,11 @@ int main()
             if( joypad & BUTTON_A ) {
                 bool didMove = cursor_action( &cursor, board, current_player );
                 if ( didMove ) {
+                    if( check_win( board, current_player ) ) {
+                        memset(message,0, sizeof(message));
+                        sprintf( message, "Player %d wins", current_player);
+                        VDP_drawText(message, 13, 1 );
+                    }
                     current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
                 }
                 inputWait = INPUT_WAIT_COUNT;
