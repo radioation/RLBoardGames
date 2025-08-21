@@ -195,8 +195,23 @@ bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE],
             }
             VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
             VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+rightOffset ), startX+2, startY );
+        }else if ( player == PLAYER_TWO ) {
+            // always place center piece.
+            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+6 ), startX+1, startY );
+            // check col 
+            // * if col is 0, only need to draw tiles for 0 and 1, 
+            u16 leftOffset = 5;
+            // * if col 1 or 2 draw neighbor tiles as well
+            // * if col 3, just draw tiles  for 2 and 3
+            if ( col > 0 ) {
+                if ( board[col-1][row][layer] == PLAYER_ONE )  {
+                    leftOffset = 3;
+                }
+            }
+            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
+            //VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index ), startX+2, startY );
         }
-        
+         
         return true;
     }
 
@@ -393,7 +408,7 @@ int main()
     //////////////////////////////////////////////////////////////
     // MAIN LOOP
     u8 inputWait = 0;
-    u8 current_player = PLAYER_ONE; 
+    u8 current_player = PLAYER_TWO; 
     while(1) // Loop forever
     {
         // read joypad to mover cursor
