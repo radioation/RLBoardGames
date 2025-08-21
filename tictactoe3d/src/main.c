@@ -12,7 +12,8 @@
 
 int cursor_x, cursor_y;
 u8 buttons, buttons_prev;
-
+bool game_won = false;
+u8 current_player;
 
 ////////////////////////////////////////////////////////////////////////////
 // **Identification**
@@ -85,6 +86,7 @@ void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
 
 void clear_board() {
     memset(board,0, sizeof(board));
+    VDP_clearPlane(BG_A, false ); 
 }
 
 void clear_top_text() {
@@ -298,7 +300,23 @@ void setWhoAmI() {
     }
 }
 
-
+void reset_game() {
+    current_player = PLAYER_ONE; 
+    char message[40];
+    game_won = false;
+    clear_board();
+    clear_top_text();
+    VDP_setTextPalette(0); 
+    if( online ) { 
+        // check whoAmI
+        //VDP_drawText("Connected to %s", 15, 1);
+    } else {
+        VDP_drawText("Local Play", 15, 1);
+    }
+    sprintf( message, "Player %d turn    ", current_player);
+    VDP_setTextPalette(current_player); 
+    VDP_drawText(message, 13, 1 );
+}
 
 
 
@@ -417,53 +435,57 @@ int main()
     //////////////////////////////////////////////////////////////
     // MAIN LOOP
     u8 inputWait = 0;
-    u8 current_player = PLAYER_ONE; 
+    current_player = PLAYER_ONE; 
     char message[40];
-    clear_board();
-    clear_top_text();
-    sprintf( message, "Player %d turn    ", current_player);
-    VDP_setTextPalette(current_player); 
-    VDP_drawText(message, 13, 1 );
+    reset_game();
     while(1) // Loop forever
     {
         // read joypad to move cursor
-        u16 joypad  = JOY_readJoypad( JOY_1 );
-        if( inputWait == 0 ) {
-            if( cursor_move( &cursor, joypad ) == TRUE ) {
-                inputWait = INPUT_WAIT_COUNT;
-                if( online ) {
-                    // send cursor data
-                    //cursor_send_data( &cursor, 0 );
-                }
-            }
-            if( joypad & BUTTON_A ) {
-                bool didMove = cursor_action( &cursor, board, current_player );
-                if ( didMove ) {
-                    if( check_win( board, current_player ) ) {
-                        sprintf( message, "PLAYER %d WINS    ", current_player);
-                        VDP_drawText(message, 13, 1 );
-                    } else {
-                        current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
-                        VDP_setTextPalette(current_player); 
-                        sprintf( message, "Player %d turn    ", current_player);
-                        VDP_drawText(message, 13, 1 );
+        if( ! game_won ) {
+            u16 joypad  = JOY_readJoypad( JOY_1 );
+            if( inputWait == 0 ) {
+                if( cursor_move( &cursor, joypad ) == TRUE ) {
+                    inputWait = INPUT_WAIT_COUNT;
+                    if( online ) {
+                        // send cursor data
+                        //cursor_send_data( &cursor, 0 );
                     }
                 }
-                inputWait = INPUT_WAIT_COUNT;
-            } 
+                if( joypad & BUTTON_A ) {
+                    bool didMove = cursor_action( &cursor, board, current_player );
+                    if ( didMove ) {
+                        if( check_win( board, current_player ) ) {
+                            sprintf( message, "PLAYER %d WINS    ", current_player);
+                            VDP_drawText(message, 13, 1 );
+                            game_won = true;
+                        } else {
+                            current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
+                            VDP_setTextPalette(current_player); 
+                            sprintf( message, "Player %d turn    ", current_player);
+                            VDP_drawText(message, 13, 1 );
+                        }
+                    }
+                    inputWait = INPUT_WAIT_COUNT;
+                } 
+            } else {
+                if( inputWait > 0 ) {
+                    --inputWait;
+                }
+            }
+
+
+            //////////////////////////////////////////////////////////////
+            // update sprites
+            SPR_setPosition( cursor.p1_sprite, cursor.pos_x, cursor.pos_y );
+            //SPR_setPosition( cursor.selected_spr, cursor.sel_pos_x, cursor.sel_pos_y );
+            SPR_update();
         } else {
-            if( inputWait > 0 ) {
-                --inputWait;
+            u16 joypad  = JOY_readJoypad( JOY_1 );
+            SYS_doVBlankProcess();
+            if( joypad & BUTTON_START ) {
+                reset_game();
             }
         }
-
-
-        //////////////////////////////////////////////////////////////
-        // update sprites
-        SPR_setPosition( cursor.p1_sprite, cursor.pos_x, cursor.pos_y );
-        //SPR_setPosition( cursor.selected_spr, cursor.sel_pos_x, cursor.sel_pos_y );
-        SPR_update();
-
         //////////////////////////////////////////////////////////////
         // SGDK Do your thing.
 
