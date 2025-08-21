@@ -87,6 +87,9 @@ void clear_board() {
     memset(board,0, sizeof(board));
 }
 
+void clear_top_text() {
+    VDP_clearTextArea( 0, 0, 40, 4 );
+}
 
 void init_board_pos_lookup () {
     for( s16 z=0; z < BOARD_SIZE; z++ ) {
@@ -325,9 +328,9 @@ int main()
 
     if(cart_present)
     {
-        VDP_setTextPalette(12);
+        VDP_setTextPalette(0);
         VDP_drawText("Ok", cursor_x, cursor_y); cursor_x=0; cursor_y+=2;
-        VDP_setTextPalette(15); 
+        VDP_setTextPalette(3); 
 
 
 
@@ -374,14 +377,16 @@ int main()
     }
     else
     {
-        VDP_setTextPalette(11); 
+        VDP_setTextPalette(0); 
         VDP_drawText("XX", cursor_x, cursor_y); cursor_x=0; cursor_y+=2;
-        VDP_setTextPalette(15); 
-        VDP_drawText("Adapter not present", cursor_x, cursor_y);
+        VDP_setTextPalette(1); 
+        VDP_drawText("Adapter not present", cursor_x, cursor_y); cursor_y++;
+        VDP_setTextPalette(0);
+        VDP_drawText("Press START to continue", cursor_x, cursor_y);
         while(1) { 
             u16 joypad  = JOY_readJoypad( JOY_1 );
             SYS_doVBlankProcess();
-            if( joypad & BUTTON_A ) {
+            if( joypad & BUTTON_START ) {
                 break;
             }
         }
@@ -415,6 +420,10 @@ int main()
     u8 current_player = PLAYER_ONE; 
     char message[40];
     clear_board();
+    clear_top_text();
+    sprintf( message, "Player %d turn    ", current_player);
+    VDP_setTextPalette(current_player); 
+    VDP_drawText(message, 13, 1 );
     while(1) // Loop forever
     {
         // read joypad to move cursor
@@ -431,11 +440,14 @@ int main()
                 bool didMove = cursor_action( &cursor, board, current_player );
                 if ( didMove ) {
                     if( check_win( board, current_player ) ) {
-                        memset(message,0, sizeof(message));
-                        sprintf( message, "Player %d wins", current_player);
+                        sprintf( message, "PLAYER %d WINS    ", current_player);
+                        VDP_drawText(message, 13, 1 );
+                    } else {
+                        current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
+                        VDP_setTextPalette(current_player); 
+                        sprintf( message, "Player %d turn    ", current_player);
                         VDP_drawText(message, 13, 1 );
                     }
-                    current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
                 }
                 inputWait = INPUT_WAIT_COUNT;
             } 

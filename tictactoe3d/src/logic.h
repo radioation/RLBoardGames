@@ -1,7 +1,7 @@
 #ifndef _LOGIC_H_
 #define _LOGIC_H_
 
-#include <genesis.h>
+#include "genesis.h"
 
 #define BOARD_SIZE 4
 

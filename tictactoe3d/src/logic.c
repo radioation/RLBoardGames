@@ -1,7 +1,6 @@
 #include "logic.h"
 
 
-
 // Function to check for a win condition
 bool check_win(s16 board[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player) {
     ////////////////////////////////////////////////////////////
