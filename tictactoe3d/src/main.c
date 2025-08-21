@@ -26,16 +26,21 @@ u8 whoAmI = IM_NOBODY;
 ////////////////////////////////////////////////////////////////////////////
 // network stuff
 char server[16] = "000.000.000.000";
+bool online = false;
 
 ////////////////////////////////////////////////////////////////////////////
 // Board 
 s16 board[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0}; // 3D board initialized to 0
-s16 board_pos_x[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
-s16 board_pos_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
+s16 board_pos_x_to_pixel_x[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
+s16 board_pos_y_to_pixel_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
 
+s16 board_pos_x_to_tile_x[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
+s16 board_pos_y_to_tile_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
 
 
 int tiles_index = 0;
+int x_o_tiles_index = 0;
+int board_index = 0;
 const s16 boardXStart = 12;
 const s16 boardYStart = 3;
 const s16 layerStep = 5;
@@ -66,13 +71,14 @@ const s8 cursorRowStart = 16;
 void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
     cursor->p1_sprite = p1;
     cursor->p2_sprite = p2;
-    cursor->col = 1;  // board position
+    // board position ( 2nd col, 2nd row, of 2nd layer from top
+    cursor->col = 1;  
     cursor->row = 1;   
     cursor->layer = 1;   
 
 
-    cursor->pos_x = board_pos_x[ cursor->col ][ cursor->row][ cursor->layer ];
-    cursor->pos_y = board_pos_y[ cursor->col ][ cursor->row][ cursor->layer ];
+    cursor->pos_x = board_pos_x_to_pixel_x[ cursor->col ][ cursor->row][ cursor->layer ];
+    cursor->pos_y = board_pos_y_to_pixel_y[ cursor->col ][ cursor->row][ cursor->layer ];
 
     SPR_setVisibility( cursor->p1_sprite, VISIBLE );
     SPR_setVisibility( cursor->p2_sprite, HIDDEN );
@@ -112,9 +118,9 @@ void draw_boards() {
     for( s16 layer = 0; layer < 4; ++layer ) {
         // draw rows
         draw_row( x + 5, y + 1, false );
-        draw_row( x + 4, y + 2, false );
-        draw_row( x + 3, y + 3, false );
-        draw_row( x + 2, y + 4, true );
+        //draw_row( x + 4, y + 2, false );
+        //draw_row( x + 3, y + 3, false );
+        //draw_row( x + 2, y + 4, true );
 
 
         // go to next 
@@ -130,8 +136,8 @@ void init_board_pos () {
         for( s16 y=0; y < BOARD_SIZE; y++ ) {
             s16 currX = boardXStart + 5 - y;
             for( s16 x=0; x < BOARD_SIZE; x++ ) {
-                board_pos_x[x][y][z] = currX * 8;
-                board_pos_y[x][y][z] = currY * 8;
+                board_pos_x_to_pixel_x[x][y][z] = currX * 8;
+                board_pos_y_to_pixel_y[x][y][z] = currY * 8;
                 currX += 2;
             }
             currY++;
@@ -191,14 +197,23 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
             cursor->layer = 0;
         }
         // 
-        cursor->pos_x = board_pos_x[ cursor->col ][ cursor->row][ cursor->layer ];
-        cursor->pos_y = board_pos_y[ cursor->col ][ cursor->row][ cursor->layer ];
+        cursor->pos_x = board_pos_x_to_pixel_x[ cursor->col ][ cursor->row][ cursor->layer ];
+        cursor->pos_y = board_pos_y_to_pixel_y[ cursor->col ][ cursor->row][ cursor->layer ];
     }
     return didMove;
 }
 
 
 bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
+    // get row and Layer offset.
+
+    // check col 
+    // * if col is 0, only need to draw tiles for 0 and 1, 
+    // * if col 1 or 2 draw neighbor tiles as well
+    // * if col 3, just draw tiles  for 2 and 3
+
+
+
     return false;
 }
 
@@ -291,10 +306,12 @@ int main()
     SYS_enableInts();                      // enable interrupts for networking print routines.
 
 
+
     //////////////////////////////////////////////////////////////
     // Networking setup
     cursor_x = 0;
     cursor_y = 0;
+    SPR_init();
 
     // Establish Comms (find/talk to other console)
     VDP_drawText("Detecting adapter...[  ]", cursor_x, cursor_y); cursor_x+=21;
@@ -305,6 +322,49 @@ int main()
         VDP_setTextPalette(12);
         VDP_drawText("Ok", cursor_x, cursor_y); cursor_x=0; cursor_y+=2;
         VDP_setTextPalette(15); 
+
+
+
+        VDP_drawText("IP Address:", cursor_x, cursor_y);
+        NET_printIP(cursor_x+12, cursor_y); cursor_y++;
+
+        VDP_drawText("MAC:", cursor_x, cursor_y);
+        NET_printMAC(cursor_x+5, cursor_y); cursor_y+=2;
+
+
+        waitMs(2000);
+
+
+        // get server address from SRAM or user.
+        SRAM_enable();
+        u8 part = SRAM_readByte(0);
+        sprintf( server, "%03d.", part );
+        part = SRAM_readByte(1);
+        sprintf( server+4, "%03d.", part );
+        part = SRAM_readByte(2);
+        sprintf( server+8, "%03d.", part );
+        part = SRAM_readByte(3);
+        sprintf( server+12, "%03d", part );
+
+
+        VDP_drawText( server, 13 , 3 );
+
+        getIPFromUser(server);
+        SYS_doVBlankProcess();
+        // clear out last input and wait a sec.
+        waitMs(1000);
+        JOY_update();
+
+        VDP_drawText( "Got Address", 13 ,12 );
+        VDP_drawText( server, 13 , 13 );
+        // TODO: add ping here and save if successful.
+        //  for now, saving always.
+        SRAM_writeByte(0, atoi( server ));
+        SRAM_writeByte(1, atoi( server + 4 ));
+        SRAM_writeByte(2, atoi( server + 8 ));
+        SRAM_writeByte(3, atoi( server + 12));
+
+        setWhoAmI();
     }
     else
     {
@@ -312,51 +372,14 @@ int main()
         VDP_drawText("XX", cursor_x, cursor_y); cursor_x=0; cursor_y+=2;
         VDP_setTextPalette(15); 
         VDP_drawText("Adapter not present", cursor_x, cursor_y);
-        while(1) { SYS_doVBlankProcess(); }
+        while(1) { 
+            u16 joypad  = JOY_readJoypad( JOY_1 );
+            SYS_doVBlankProcess();
+            if( joypad & BUTTON_A ) {
+                break;
+            }
+        }
     }
-
-
-    VDP_drawText("IP Address:", cursor_x, cursor_y);
-    NET_printIP(cursor_x+12, cursor_y); cursor_y++;
-
-    VDP_drawText("MAC:", cursor_x, cursor_y);
-    NET_printMAC(cursor_x+5, cursor_y); cursor_y+=2;
-
-
-    waitMs(2000);
-
-
-    // get server address from SRAM or user.
-    SRAM_enable();
-    u8 part = SRAM_readByte(0);
-    sprintf( server, "%03d.", part );
-    part = SRAM_readByte(1);
-    sprintf( server+4, "%03d.", part );
-    part = SRAM_readByte(2);
-    sprintf( server+8, "%03d.", part );
-    part = SRAM_readByte(3);
-    sprintf( server+12, "%03d", part );
-
-    SPR_init();
-
-    VDP_drawText( server, 13 , 3 );
-
-    getIPFromUser(server);
-    SYS_doVBlankProcess();
-    // clear out last input and wait a sec.
-    waitMs(1000);
-    JOY_update();
-
-    VDP_drawText( "Got Address", 13 ,12 );
-    VDP_drawText( server, 13 , 13 );
-    // TODO: add ping here and save if successful.
-    //  for now, saving always.
-    SRAM_writeByte(0, atoi( server ));
-    SRAM_writeByte(1, atoi( server + 4 ));
-    SRAM_writeByte(2, atoi( server + 8 ));
-    SRAM_writeByte(3, atoi( server + 12));
-
-    setWhoAmI();
 
 
     //////////////////////////////////////////////////////////////
@@ -364,6 +387,13 @@ int main()
     PAL_setPalette( PAL0, tictactoe_pal.data, CPU );
     tiles_index = TILE_USER_INDEX;
     VDP_loadTileSet( &tictactoe_tiles, tiles_index, CPU);
+    x_o_tiles_index = tiles_index + tictactoe_tiles.numTile;
+    VDP_loadTileSet( &tictactoe_x_o_tiles, x_o_tiles_index, CPU);
+    board_index = x_o_tiles_index + tictactoe_x_o_tiles.numTile;
+    VDP_loadTileSet(tictactoe_board.tileset, board_index, CPU);
+
+    
+  VDP_drawImageEx(BG_B, &tictactoe_board, TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, board_index), 0, 0, FALSE, TRUE);
 
     draw_boards();
     init_board_pos();
@@ -379,7 +409,7 @@ int main()
     //////////////////////////////////////////////////////////////
     // MAIN LOOP
     u8 inputWait = 0;
-    u8 me = PLAYER_ONE; 
+    u8 current_player = PLAYER_ONE; 
     while(1) // Loop forever
     {
         // read joypad to mover cursor
@@ -387,11 +417,13 @@ int main()
         if( inputWait == 0 ) {
             if( cursor_move( &cursor, joypad ) == TRUE ) {
                 inputWait = INPUT_WAIT_COUNT;
-                // send cursor data
-                //cursor_send_data( &cursor, 0 );
+                if( online ) {
+                    // send cursor data
+                    //cursor_send_data( &cursor, 0 );
+                }
             }
             if( joypad & BUTTON_A ) {
-                bool didMove =  cursor_action( &cursor, board, me );
+                bool didMove = cursor_action( &cursor, board, current_player );
                 inputWait = INPUT_WAIT_COUNT;
             } 
         } else {
