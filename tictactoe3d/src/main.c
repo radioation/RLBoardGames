@@ -38,7 +38,6 @@ s16 board_pos_x_to_tile_x[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
 s16 board_pos_y_to_tile_y[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE] = {0};
 
 
-int tiles_index = 0;
 int x_o_tiles_index = 0;
 int board_index = 0;
 const s16 boardXStart = 12;
@@ -86,7 +85,7 @@ void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
 
 
 
-
+/*
 void draw_row( s16 startX, s16 startY, bool bottom ){
     
     VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+1 ), startX, startY );
@@ -110,25 +109,8 @@ void draw_row( s16 startX, s16 startY, bool bottom ){
         VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+7, startY+1 );
     }
 }
+*/
 
-void draw_boards() { 
-    // 4 in all
-    s16 x = boardXStart;
-    s16 y = boardYStart; 
-    for( s16 layer = 0; layer < 4; ++layer ) {
-        // draw rows
-        draw_row( x + 5, y + 1, false );
-        //draw_row( x + 4, y + 2, false );
-        //draw_row( x + 3, y + 3, false );
-        //draw_row( x + 2, y + 4, true );
-
-
-        // go to next 
-        y += layerStep;
-    }
-
- 
-}
 
 void init_board_pos () {
     for( s16 z=0; z < BOARD_SIZE; z++ ) {
@@ -138,6 +120,8 @@ void init_board_pos () {
             for( s16 x=0; x < BOARD_SIZE; x++ ) {
                 board_pos_x_to_pixel_x[x][y][z] = currX * 8;
                 board_pos_y_to_pixel_y[x][y][z] = currY * 8;
+                board_pos_x_to_tile_x[x][y][z] = currX;
+                board_pos_y_to_tile_y[x][y][z] = currY;
                 currX += 2;
             }
             currY++;
@@ -206,12 +190,15 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
 
 bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
     // get row and Layer offset.
-
     // check col 
     // * if col is 0, only need to draw tiles for 0 and 1, 
     // * if col 1 or 2 draw neighbor tiles as well
     // * if col 3, just draw tiles  for 2 and 3
-
+    s16 startX = board_pos_x_to_tile_x[cursor->col][cursor->row][cursor->layer];
+    s16 startY = board_pos_y_to_tile_y[cursor->col][cursor->row][cursor->layer];
+    VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+1 ), startX, startY );
+    VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+2 ), startX+1, startY );
+    VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+3 ), startX+2, startY );
 
 
     return false;
@@ -385,9 +372,7 @@ int main()
     //////////////////////////////////////////////////////////////
     // Background setup
     PAL_setPalette( PAL0, tictactoe_pal.data, CPU );
-    tiles_index = TILE_USER_INDEX;
-    VDP_loadTileSet( &tictactoe_tiles, tiles_index, CPU);
-    x_o_tiles_index = tiles_index + tictactoe_tiles.numTile;
+    x_o_tiles_index = TILE_USER_INDEX;
     VDP_loadTileSet( &tictactoe_x_o_tiles, x_o_tiles_index, CPU);
     board_index = x_o_tiles_index + tictactoe_x_o_tiles.numTile;
     VDP_loadTileSet(tictactoe_board.tileset, board_index, CPU);
@@ -395,7 +380,6 @@ int main()
     
   VDP_drawImageEx(BG_B, &tictactoe_board, TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, board_index), 0, 0, FALSE, TRUE);
 
-    draw_boards();
     init_board_pos();
 
     //////////////////////////////////////////////////////////////

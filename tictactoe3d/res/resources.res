@@ -1,4 +1,3 @@
-TILESET tictactoe_tiles "bg/tictactoe_bg_tiles.png" 0 0 
 IMAGE tictactoe_board "bg/tictactoe_board.png" NONE
 TILESET tictactoe_x_o_tiles "bg/tictactoe_x_o.png" 0 0 
 
