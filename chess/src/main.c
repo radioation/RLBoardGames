@@ -280,7 +280,7 @@ int main(bool hard) {
     text_cursor_y = 0; // networking text cursor location
 
     VDP_drawText("Detecting adapter...[  ]", text_cursor_x, text_cursor_y); text_cursor_x+=21;   
-    NET_initialize(); // Detect cartridge and set boolean variable
+    NET_initialize(); // Detect cartridge and set 'cart_present'
 
     if(cart_present)
     {

@@ -77,13 +77,13 @@ typedef struct
 {
     Sprite *p1_sprite;
     Sprite *p2_sprite;
-    s16 col;     // col
-    s16 row;     // row
-    s16 layer;   // Z
+    s8 col;     // col
+    s8 row;     // row
+    s8 layer;   // Z
 
     s16 pos_x;  // actual X position
     s16 pos_y;  // actual Y position
-
+    // no corresponding Z, it's fictional
 
 } CURSOR;
 
@@ -103,8 +103,8 @@ void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
     cursor->layer = 1;   
 
 
-    cursor->pos_x = board_pos_x_to_pixel_x[ cursor->col ][ cursor->row][ cursor->layer ];
-    cursor->pos_y = board_pos_y_to_pixel_y[ cursor->col ][ cursor->row][ cursor->layer ];
+    cursor->pos_x = board_pos_x_to_pixel_x[ (u8)cursor->col ][ (u8)cursor->row][(u8) cursor->layer ];
+    cursor->pos_y = board_pos_y_to_pixel_y[ (u8)cursor->col ][ (u8)cursor->row][(u8) cursor->layer ];
 
     SPR_setVisibility( cursor->p1_sprite, VISIBLE );
     SPR_setVisibility( cursor->p2_sprite, HIDDEN );
@@ -160,14 +160,14 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
             cursor->layer = 0;
         }
         // update pos
-        cursor->pos_x = board_pos_x_to_pixel_x[ cursor->col ][ cursor->row][ cursor->layer ];
-        cursor->pos_y = board_pos_y_to_pixel_y[ cursor->col ][ cursor->row][ cursor->layer ];
+        cursor->pos_x = board_pos_x_to_pixel_x[ (u8)cursor->col ][ (u8)cursor->row][ (u8)cursor->layer ];
+        cursor->pos_y = board_pos_y_to_pixel_y[ (u8)cursor->col ][ (u8)cursor->row][ (u8)cursor->layer ];
     }
     return didMove;
 }
 
 
-void cursor_update_from_pos( CURSOR *cursor, s8 col, s8 row, s8 sel_col, s8 sel_row ) {
+void cursor_update_from_pos( CURSOR *cursor, s8 col, s8 row ) {
     cursor->col = col;
     cursor->pos_x = cursor->col * cursorStep + cursorColStart;
     cursor->row = row;
@@ -175,73 +175,72 @@ void cursor_update_from_pos( CURSOR *cursor, s8 col, s8 row, s8 sel_col, s8 sel_
 
 }
 
+void update_board( u8 col, u8 row, u8 layer, u8 player ) {
+    // get row and Layer offset.
+    board[col][row][layer] = player;
+    // empty space, fill it
+    u16 startX = board_pos_x_to_tile_x[col][row][layer];
+    u16 startY = board_pos_y_to_tile_y[col][row][layer];
+    if ( player == PLAYER_ONE ) {
+        // always place center piece.
+        VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+2 ), startX+1, startY );
+        // check col 
+        // * if col is 0, only need to draw tiles for 0 and 1, 
+        u16 leftOffset = 1;
+        u16 rightOffset = 3;
+        // * if col 1 or 2 draw neighbor tiles as well
+        // * if col 3, just draw tiles  for 2 and 3
+        if ( col < 3  ) {
+            if ( board[col+1][row][layer] == PLAYER_ONE )  {
+                rightOffset = 0;
+            } else if ( board[col+1][row][layer] == PLAYER_TWO )  {
+                rightOffset = 4;
+            }
+        } 
+        if ( col > 0 ) {
+            if ( board[col-1][row][layer] == PLAYER_ONE )  {
+                leftOffset = 0;
+            }
+        }
+        VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
+        VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+rightOffset ), startX+2, startY );
+    }else if ( player == PLAYER_TWO ) {
+        // always place center piece.
+        VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+6 ), startX+1, startY );
+        // check col 
+        // * if col is 0, only need to draw tiles for 0 and 1, 
+        u16 leftOffset = 5;
+        // * if col 1 or 2 draw neighbor tiles as well
+        // * if col 3, just draw tiles  for 2 and 3
+        if ( col > 0 ) {
+            if ( board[col-1][row][layer] == PLAYER_ONE )  {
+                leftOffset = 4;
+            }
+        }
+        VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
+        //VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index ), startX+2, startY );
+    }
 
-
+}
 
 bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
     u16 col = cursor->col;
     u16 row = cursor->row;
     u16 layer = cursor->layer;
-    // get row and Layer offset.
     if( board[col][row][layer] == NO_PLAYER ) {
-        board[col][row][layer] = player;
-        // empty space, fill it
-        u16 startX = board_pos_x_to_tile_x[col][row][layer];
-        u16 startY = board_pos_y_to_tile_y[col][row][layer];
-        if ( player == PLAYER_ONE ) {
-            // always place center piece.
-            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+2 ), startX+1, startY );
-            // check col 
-            // * if col is 0, only need to draw tiles for 0 and 1, 
-            u16 leftOffset = 1;
-            u16 rightOffset = 3;
-            // * if col 1 or 2 draw neighbor tiles as well
-            // * if col 3, just draw tiles  for 2 and 3
-            if ( col < 3  ) {
-                if ( board[col+1][row][layer] == PLAYER_ONE )  {
-                    rightOffset = 0;
-                } else if ( board[col+1][row][layer] == PLAYER_TWO )  {
-                    rightOffset = 4;
-                }
-            } 
-            if ( col > 0 ) {
-                if ( board[col-1][row][layer] == PLAYER_ONE )  {
-                    leftOffset = 0;
-                }
-            }
-            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
-            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+rightOffset ), startX+2, startY );
-        }else if ( player == PLAYER_TWO ) {
-            // always place center piece.
-            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+6 ), startX+1, startY );
-            // check col 
-            // * if col is 0, only need to draw tiles for 0 and 1, 
-            u16 leftOffset = 5;
-            // * if col 1 or 2 draw neighbor tiles as well
-            // * if col 3, just draw tiles  for 2 and 3
-            if ( col > 0 ) {
-                if ( board[col-1][row][layer] == PLAYER_ONE )  {
-                    leftOffset = 4;
-                }
-            }
-            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
-            //VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index ), startX+2, startY );
-        }
-
+        update_board( col, row, layer, player );
         return true;
     }
-
-
     return false;
 }
 
 
-
 void cursor_send_data( CURSOR* cursor, u8 type  ) {
     NET_sendByte( 128 + type ); // first bit is always on, and 4 bytesl
-    NET_sendByte( 2 ); // sending two more bytes.
+    NET_sendByte( 3 ); // sending two more bytes.
     NET_sendByte( cursor->col );
     NET_sendByte( cursor->row );
+    NET_sendByte( cursor->layer );
 }
 
 
@@ -470,8 +469,8 @@ int main()
     SPR_init();
     CURSOR cursor;
     cursor_init(&cursor,
-            SPR_addSprite( &blue_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, FALSE, FALSE, FALSE )),
-            SPR_addSprite( &yellow_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, FALSE, FALSE, FALSE )) );
+            SPR_addSprite( &blue_cursor, -32, -32, TILE_ATTR(PAL0, FALSE, FALSE, FALSE )),
+            SPR_addSprite( &yellow_cursor, -32, 32, TILE_ATTR(PAL0, FALSE, FALSE, FALSE )) );
 
     //////////////////////////////////////////////////////////////
     // MAIN LOOP
@@ -538,14 +537,18 @@ int main()
                     u8 buffer[16];
                     read_bytes_n( buffer, data_length );
                     if( data_type == 128 ) {
+                        // just moving the cursor around
                         VDP_drawText("L 6 ", 0, 6 );
                         // cursor update
-                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
+                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1] );
                     }else if( data_type == 129 ) {
+                        // 129 means button was pressed.
                         VDP_drawText("L 7 ", 0, 7 );
+                        //
+                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1] );
+
                         // board update
-                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
-                        //move_piece( (s8)buffer[2], (s8)buffer[3], (s8)buffer[0], (s8)buffer[1] );
+                        update_board( (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], current_player );
                         if( current_player == PLAYER_ONE ) {
                             current_player = PLAYER_TWO;
                             VDP_drawText("TWO", 20, 0);
