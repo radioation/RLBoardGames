@@ -85,32 +85,6 @@ void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
 
 
 
-/*
-void draw_row( s16 startX, s16 startY, bool bottom ){
-    
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+1 ), startX, startY );
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+2 ), startX+1, startY );
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+3 ), startX+2, startY );
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+2 ), startX+3, startY );
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+3 ), startX+4, startY );
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+2 ), startX+5, startY );
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+3 ), startX+6, startY );
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+2 ), startX+7, startY );
-    VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index+4 ), startX+8, startY );
-
-    if( bottom ) {
-        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX, startY +1 );
-        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+1, startY+1 );
-        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+2, startY+1 );
-        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+3, startY+1 );
-        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+4, startY+1 );
-        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+5, startY+1 );
-        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+6, startY+1 );
-        VDP_setTileMapXY( BG_B, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, tiles_index ), startX+7, startY+1 );
-    }
-}
-*/
-
 
 void init_board_pos () {
     for( s16 z=0; z < BOARD_SIZE; z++ ) {
@@ -189,16 +163,42 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
 
 
 bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
+    u16 col = cursor->col;
+    u16 row = cursor->row;
+    u16 layer = cursor->layer;
     // get row and Layer offset.
-    // check col 
-    // * if col is 0, only need to draw tiles for 0 and 1, 
-    // * if col 1 or 2 draw neighbor tiles as well
-    // * if col 3, just draw tiles  for 2 and 3
-    s16 startX = board_pos_x_to_tile_x[cursor->col][cursor->row][cursor->layer];
-    s16 startY = board_pos_y_to_tile_y[cursor->col][cursor->row][cursor->layer];
-    VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+1 ), startX, startY );
-    VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+2 ), startX+1, startY );
-    VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+3 ), startX+2, startY );
+    if( board[col][row][layer] == NO_PLAYER ) {
+        board[col][row][layer] = player;
+        // empty space, fill it
+        u16 startX = board_pos_x_to_tile_x[col][row][layer];
+        u16 startY = board_pos_y_to_tile_y[col][row][layer];
+        if ( player == PLAYER_ONE ) {
+            // always place center piece.
+            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+2 ), startX+1, startY );
+            // check col 
+            // * if col is 0, only need to draw tiles for 0 and 1, 
+            u16 leftOffset = 1;
+            u16 rightOffset = 3;
+            // * if col 1 or 2 draw neighbor tiles as well
+            // * if col 3, just draw tiles  for 2 and 3
+            if ( col < 3  ) {
+                if ( board[col+1][row][layer] == PLAYER_ONE )  {
+                    rightOffset = 0;
+                } else if ( board[col+1][row][layer] == PLAYER_TWO )  {
+                }
+            } 
+            if ( col > 0 ) {
+                if ( board[col-1][row][layer] == PLAYER_ONE )  {
+                    leftOffset = 0;
+                } else if ( board[col-1][row][layer] == PLAYER_TWO )  {
+                }
+            }
+            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
+            VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+rightOffset ), startX+2, startY );
+        }
+        
+        return true;
+    }
 
 
     return false;
