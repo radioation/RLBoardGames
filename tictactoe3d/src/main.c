@@ -159,12 +159,23 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
         } else if ( cursor->layer > BOARD_SIZE - 1 ) {
             cursor->layer = 0;
         }
-        // 
+        // update pos
         cursor->pos_x = board_pos_x_to_pixel_x[ cursor->col ][ cursor->row][ cursor->layer ];
         cursor->pos_y = board_pos_y_to_pixel_y[ cursor->col ][ cursor->row][ cursor->layer ];
     }
     return didMove;
 }
+
+
+void cursor_update_from_pos( CURSOR *cursor, s8 col, s8 row, s8 sel_col, s8 sel_row ) {
+    cursor->col = col;
+    cursor->pos_x = cursor->col * cursorStep + cursorColStart;
+    cursor->row = row;
+    cursor->pos_y = cursor->row * cursorStep + cursorRowStart;
+
+}
+
+
 
 
 bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE], u8 player ) {
@@ -224,6 +235,14 @@ bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE],
     return false;
 }
 
+
+
+void cursor_send_data( CURSOR* cursor, u8 type  ) {
+    NET_sendByte( 128 + type ); // first bit is always on, and 4 bytesl
+    NET_sendByte( 2 ); // sending two more bytes.
+    NET_sendByte( cursor->col );
+    NET_sendByte( cursor->row );
+}
 
 
 
@@ -296,6 +315,8 @@ void setWhoAmI() {
         buttons_prev = buttons;
         SYS_doVBlankProcess();
     }
+    NET_flushBuffers();
+
 }
 
 void reset_game() {
@@ -314,6 +335,21 @@ void reset_game() {
     sprintf( message, "Player %d turn    ", current_player);
     VDP_setTextPalette(current_player); 
     VDP_drawText(message, 13, 1 );
+}
+
+
+
+void read_bytes_n(u8* data, u8 length ) {
+    s16 bytePos = 0;
+    while( bytePos < length ) {
+        // read data
+        if( NET_RXReady() ) {
+            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
+            bytePos++;
+        } else {
+            waitMs(5);
+        }
+    }
 }
 
 
@@ -340,7 +376,7 @@ int main()
 
     // Establish Comms (find/talk to other console)
     VDP_drawText("Detecting adapter...[  ]", text_cursor_x, text_cursor_y); text_cursor_x+=21;
-    NET_initialize(); // Detect cartridge and set boolean variable
+    NET_initialize(); // Detect cartridge and set 'cart_present' variable
 
     if(cart_present)
     {
@@ -371,7 +407,6 @@ int main()
         part = SRAM_readByte(3);
         sprintf( server+12, "%03d", part );
 
-        SPR_init();
 
         VDP_drawText( server, 13 , 3 );
 
@@ -392,43 +427,11 @@ int main()
         SRAM_writeByte(2, atoi( server + 8 ));
         SRAM_writeByte(3, atoi( server + 12));
 
+        whoAmI = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
 
-        u8 me = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
-
-        //////////////////////////////////////////////////////////////
-        // Networking Loop
-        u8 buttons_prev;
-        while(1)
-        {
-            u8 buttons = JOY_readJoypad(JOY_1);
-            // MODE NOT SET, button press will determine server or client.
-            if(buttons & BUTTON_A && buttons_prev == 0x00) {
-                VDP_drawText("                         ", 0, 5);
-                VDP_drawText("                         ", 0, 7);
-                text_cursor_y = 5;
-                me = PLAYER_ONE;
-                // start listening
-                host_game();
-                break;
-
-            }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
-                VDP_drawText("                         ", 0, 5);
-                VDP_drawText("                         ", 0, 7);
-                // try to connect to server.
-                me = PLAYER_TWO;
-                text_cursor_y = 5;                                                                NET_connect(text_cursor_x, text_cursor_y, "010.086.022.026:5364"); text_cursor_x=0; text_cursor_y++;
-                break;
-            }
-            buttons_prev = buttons;
-            SYS_doVBlankProcess();
-        }
-        NET_flushBuffers();
-        VDP_clearPlane( BG_A, TRUE);
-        VDP_clearPlane( BG_B, TRUE);
-
-
-        online = false;
-        setWhoAmI();
+        setWhoAmI(); // loops until true. TODO: let you break out and stay local
+                    // or loop back to pick a different host.
+        online = true;
     }
     else
     {
@@ -474,63 +477,143 @@ int main()
     // MAIN LOOP
     u8 inputWait = 0;
     current_player = PLAYER_ONE; 
+
     char message[40];
     reset_game();
+
     while(1) // Loop forever
     {
         // read joypad to move cursor
-        if( ! game_won ) {
-            u16 joypad  = JOY_readJoypad( JOY_1 );
-            if( inputWait == 0 ) {
-                if( cursor_move( &cursor, joypad ) == TRUE ) {
-                    inputWait = INPUT_WAIT_COUNT;
-                    if( online ) {
-                        // send cursor data
-                        //cursor_send_data( &cursor, 0 );
-                    }
-                }
-                if( joypad & BUTTON_A ) {
-                    bool didMove = cursor_action( &cursor, board, current_player );
-                    if ( didMove ) {
-                        if( check_win( board, current_player ) ) {
-                            sprintf( message, "PLAYER %d WINS    ", current_player);
-                            VDP_drawText(message, 13, 1 );
-                            game_won = true;
-                        } else {
-                            current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
-                            VDP_setTextPalette(current_player); 
-                            sprintf( message, "Player %d turn    ", current_player);
-                            VDP_drawText(message, 13, 1 );
+        if( online ) {
+            if( current_player == whoAmI ) {
+                if( ! game_won ) {
+                    u16 joypad  = JOY_readJoypad( JOY_1 );
+                    if( inputWait == 0 ) {
+                        if( cursor_move( &cursor, joypad ) == TRUE ) {
+                            inputWait = INPUT_WAIT_COUNT;
+                            cursor_send_data( &cursor, 0 );
+                        }
+                        if( joypad & BUTTON_A ) {
+                            bool didMove = cursor_action( &cursor, board, current_player );
+                            if ( didMove ) {
+                                cursor_send_data( &cursor, 1 );
+
+                                if( check_win( board, current_player ) ) {
+                                    sprintf( message, "PLAYER %d WINS    ", current_player);
+                                    VDP_drawText(message, 13, 1 );
+                                    game_won = true;
+                                } else {
+                                    current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
+                                    VDP_setTextPalette(current_player); 
+                                    sprintf( message, "Player %d turn    ", current_player);
+                                    VDP_drawText(message, 13, 1 );
+                                }
+                            } else {
+                                cursor_send_data( &cursor, 0 );
+                            }
+                            inputWait = INPUT_WAIT_COUNT;
+                        } 
+                    } else {
+                        if( inputWait > 0 ) {
+                            --inputWait;
                         }
                     }
-                    inputWait = INPUT_WAIT_COUNT;
-                } 
+
+
+                    //////////////////////////////////////////////////////////////
+                    // update sprites
+                    SPR_setPosition( cursor.p1_sprite, cursor.pos_x, cursor.pos_y );
+                    SPR_update();
+
+                }
             } else {
-                if( inputWait > 0 ) {
-                    --inputWait;
+                // current player is NOT me, listen for data
+                if( NET_RXReady() ) {
+                    // read the hea    der
+                    u8 header[2];
+                    read_bytes_n( header, 2 );
+                    u8 data_type = header[0];
+                    u8 data_length = header[1];
+                    // read the data
+                    u8 buffer[16];
+                    read_bytes_n( buffer, data_length );
+                    if( data_type == 128 ) {
+                        VDP_drawText("L 6 ", 0, 6 );
+                        // cursor update
+                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
+                    }else if( data_type == 129 ) {
+                        VDP_drawText("L 7 ", 0, 7 );
+                        // board update
+                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
+                        //move_piece( (s8)buffer[2], (s8)buffer[3], (s8)buffer[0], (s8)buffer[1] );
+                        if( current_player == PLAYER_ONE ) {
+                            current_player = PLAYER_TWO;
+                            VDP_drawText("TWO", 20, 0);
+                        } else {
+                            current_player = PLAYER_ONE;
+                            VDP_drawText("ONE", 20, 0);
+                        }
+                    }
+                }
+            }
+
+        } else { //if( online ) {
+            if( ! game_won ) {
+                u16 joypad  = JOY_readJoypad( JOY_1 );
+                if( inputWait == 0 ) {
+                    if( cursor_move( &cursor, joypad ) == TRUE ) {
+                        inputWait = INPUT_WAIT_COUNT;
+                        if( online ) {
+                            // send cursor data
+                            //cursor_send_data( &cursor, 0 );
+                        }
+                    }
+                    if( joypad & BUTTON_A ) {
+                        bool didMove = cursor_action( &cursor, board, current_player );
+                        if ( didMove ) {
+                            if( check_win( board, current_player ) ) {
+                                sprintf( message, "PLAYER %d WINS    ", current_player);
+                                VDP_drawText(message, 13, 1 );
+                                game_won = true;
+                            } else {
+                                current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
+                                VDP_setTextPalette(current_player); 
+                                sprintf( message, "Player %d turn    ", current_player);
+                                VDP_drawText(message, 13, 1 );
+                            }
+                        }
+                        inputWait = INPUT_WAIT_COUNT;
+                    } 
+                } else {
+                    if( inputWait > 0 ) {
+                        --inputWait;
+                    }
+                }
+
+
+                //////////////////////////////////////////////////////////////
+                // update sprites
+                SPR_setPosition( cursor.p1_sprite, cursor.pos_x, cursor.pos_y );
+                SPR_update();
+            } else {
+                u16 joypad  = JOY_readJoypad( JOY_1 );
+                SYS_doVBlankProcess();
+                if( joypad & BUTTON_START ) {
+                    reset_game();
                 }
             }
 
 
-            //////////////////////////////////////////////////////////////
-            // update sprites
-            SPR_setPosition( cursor.p1_sprite, cursor.pos_x, cursor.pos_y );
-            //SPR_setPosition( cursor.selected_spr, cursor.sel_pos_x, cursor.sel_pos_y );
-            SPR_update();
-        } else {
-            u16 joypad  = JOY_readJoypad( JOY_1 );
-            SYS_doVBlankProcess();
-            if( joypad & BUTTON_START ) {
-                reset_game();
-            }
-        }
+        } //if( online ) {
+
+
+
         //////////////////////////////////////////////////////////////
         // SGDK Do your thing.
-
         SYS_doVBlankProcess();
-    }
+        }
 
-    //------------------------------------------------------------------
-    return(0);
+        //------------------------------------------------------------------
+        return(0);
 
-}
+        }
