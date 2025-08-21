@@ -10,7 +10,7 @@
 
 #define INPUT_WAIT_COUNT 10
 
-int cursor_x, cursor_y;
+int text_cursor_x, text_cursor_y;
 u8 buttons, buttons_prev;
 bool game_won = false;
 u8 current_player;
@@ -45,45 +45,6 @@ const s16 boardXStart = 12;
 const s16 boardYStart = 3;
 const s16 layerStep = 5;
 
-
-// Sprite data structures
-typedef struct
-{
-    Sprite *p1_sprite;
-    Sprite *p2_sprite;
-    s16 col;     // col
-    s16 row;     // row
-    s16 layer;   // Z
-
-    s16 pos_x;  // actual X position
-    s16 pos_y;  // actual Y position
-   
-  
-} CURSOR;
-
-const s8 cursorStep = 24;
-const s8 cursorColStart = 64;
-const s8 cursorRowStart = 16;
-
-
-
-
-void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
-    cursor->p1_sprite = p1;
-    cursor->p2_sprite = p2;
-    // board position ( 2nd col, 2nd row, of 2nd layer from top
-    cursor->col = 1;  
-    cursor->row = 1;   
-    cursor->layer = 1;   
-
-
-    cursor->pos_x = board_pos_x_to_pixel_x[ cursor->col ][ cursor->row][ cursor->layer ];
-    cursor->pos_y = board_pos_y_to_pixel_y[ cursor->col ][ cursor->row][ cursor->layer ];
-
-    SPR_setVisibility( cursor->p1_sprite, VISIBLE );
-    SPR_setVisibility( cursor->p2_sprite, HIDDEN );
-}
-
 void clear_board() {
     memset(board,0, sizeof(board));
     VDP_clearPlane(BG_A, false ); 
@@ -110,8 +71,45 @@ void init_board_pos_lookup () {
     }
 }
 
-void add_move() {
+
+// Sprite data structures
+typedef struct
+{
+    Sprite *p1_sprite;
+    Sprite *p2_sprite;
+    s16 col;     // col
+    s16 row;     // row
+    s16 layer;   // Z
+
+    s16 pos_x;  // actual X position
+    s16 pos_y;  // actual Y position
+
+
+} CURSOR;
+
+const s8 cursorStep = 24;
+const s8 cursorColStart = 64;
+const s8 cursorRowStart = 16;
+
+
+
+
+void cursor_init( CURSOR *cursor, Sprite *p1, Sprite *p2 ) {
+    cursor->p1_sprite = p1;
+    cursor->p2_sprite = p2;
+    // board position ( 2nd col, 2nd row, of 2nd layer from top
+    cursor->col = 1;  
+    cursor->row = 1;   
+    cursor->layer = 1;   
+
+
+    cursor->pos_x = board_pos_x_to_pixel_x[ cursor->col ][ cursor->row][ cursor->layer ];
+    cursor->pos_y = board_pos_y_to_pixel_y[ cursor->col ][ cursor->row][ cursor->layer ];
+
+    SPR_setVisibility( cursor->p1_sprite, VISIBLE );
+    SPR_setVisibility( cursor->p2_sprite, HIDDEN );
 }
+
 
 
 
@@ -218,7 +216,7 @@ bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE],
             VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
             //VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index ), startX+2, startY );
         }
-         
+
         return true;
     }
 
@@ -260,12 +258,12 @@ void host_game() {
 
 bool join_game() {
     VDP_drawText("   Connect to server    ", 0, 5);
-    cursor_y = 5;
+    text_cursor_y = 5;
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
     sprintf( fullserver, "%s:5364", server);
-    return NET_connect(cursor_x, cursor_y, fullserver); cursor_x=0; cursor_y++;
+    return NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
 }
 
 
@@ -282,7 +280,7 @@ void setWhoAmI() {
         // MODE NOT SET, button press will determine server or client.
         if(buttons & BUTTON_A && buttons_prev == 0x00) {
             VDP_clearTextArea( 0, 5,  40, 3 );
-            cursor_y = 5;
+            text_cursor_y = 5;
             whoAmI = IM_HOST;
             // start listening
             host_game();
@@ -336,27 +334,27 @@ int main()
 
     //////////////////////////////////////////////////////////////
     // Networking setup
-    cursor_x = 0;
-    cursor_y = 0;
+    text_cursor_x = 0; // networking text cursor location
+    text_cursor_y = 0;
     SPR_init();
 
     // Establish Comms (find/talk to other console)
-    VDP_drawText("Detecting adapter...[  ]", cursor_x, cursor_y); cursor_x+=21;
+    VDP_drawText("Detecting adapter...[  ]", text_cursor_x, text_cursor_y); text_cursor_x+=21;
     NET_initialize(); // Detect cartridge and set boolean variable
 
     if(cart_present)
     {
         VDP_setTextPalette(0);
-        VDP_drawText("Ok", cursor_x, cursor_y); cursor_x=0; cursor_y+=2;
+        VDP_drawText("Ok", text_cursor_x, text_cursor_y); text_cursor_x=0; text_cursor_y+=2;
         VDP_setTextPalette(3); 
 
 
 
-        VDP_drawText("IP Address:", cursor_x, cursor_y);
-        NET_printIP(cursor_x+12, cursor_y); cursor_y++;
+        VDP_drawText("IP Address:", text_cursor_x, text_cursor_y);
+        NET_printIP(text_cursor_x+12, text_cursor_y); text_cursor_y++;
 
-        VDP_drawText("MAC:", cursor_x, cursor_y);
-        NET_printMAC(cursor_x+5, cursor_y); cursor_y+=2;
+        VDP_drawText("MAC:", text_cursor_x, text_cursor_y);
+        NET_printMAC(text_cursor_x+5, text_cursor_y); text_cursor_y+=2;
 
 
         waitMs(2000);
@@ -373,10 +371,12 @@ int main()
         part = SRAM_readByte(3);
         sprintf( server+12, "%03d", part );
 
+        SPR_init();
 
         VDP_drawText( server, 13 , 3 );
 
         getIPFromUser(server);
+
         SYS_doVBlankProcess();
         // clear out last input and wait a sec.
         waitMs(1000);
@@ -384,6 +384,7 @@ int main()
 
         VDP_drawText( "Got Address", 13 ,12 );
         VDP_drawText( server, 13 , 13 );
+
         // TODO: add ping here and save if successful.
         //  for now, saving always.
         SRAM_writeByte(0, atoi( server ));
@@ -391,16 +392,53 @@ int main()
         SRAM_writeByte(2, atoi( server + 8 ));
         SRAM_writeByte(3, atoi( server + 12));
 
+
+        u8 me = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
+
+        //////////////////////////////////////////////////////////////
+        // Networking Loop
+        u8 buttons_prev;
+        while(1)
+        {
+            u8 buttons = JOY_readJoypad(JOY_1);
+            // MODE NOT SET, button press will determine server or client.
+            if(buttons & BUTTON_A && buttons_prev == 0x00) {
+                VDP_drawText("                         ", 0, 5);
+                VDP_drawText("                         ", 0, 7);
+                text_cursor_y = 5;
+                me = PLAYER_ONE;
+                // start listening
+                host_game();
+                break;
+
+            }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
+                VDP_drawText("                         ", 0, 5);
+                VDP_drawText("                         ", 0, 7);
+                // try to connect to server.
+                me = PLAYER_TWO;
+                text_cursor_y = 5;                                                                NET_connect(text_cursor_x, text_cursor_y, "010.086.022.026:5364"); text_cursor_x=0; text_cursor_y++;
+                break;
+            }
+            buttons_prev = buttons;
+            SYS_doVBlankProcess();
+        }
+        NET_flushBuffers();
+        VDP_clearPlane( BG_A, TRUE);
+        VDP_clearPlane( BG_B, TRUE);
+
+
+        online = false;
         setWhoAmI();
     }
     else
     {
+        online = false;
         VDP_setTextPalette(0); 
-        VDP_drawText("XX", cursor_x, cursor_y); cursor_x=0; cursor_y+=2;
+        VDP_drawText("XX", text_cursor_x, text_cursor_y); text_cursor_x=0; text_cursor_y+=2;
         VDP_setTextPalette(1); 
-        VDP_drawText("Adapter not present", cursor_x, cursor_y); cursor_y++;
+        VDP_drawText("Adapter not present", text_cursor_x, text_cursor_y); text_cursor_y++;
         VDP_setTextPalette(0);
-        VDP_drawText("Press START to continue", cursor_x, cursor_y);
+        VDP_drawText("Press START to continue", text_cursor_x, text_cursor_y);
         while(1) { 
             u16 joypad  = JOY_readJoypad( JOY_1 );
             SYS_doVBlankProcess();
@@ -419,7 +457,7 @@ int main()
     board_index = x_o_tiles_index + tictactoe_x_o_tiles.numTile;
     VDP_loadTileSet(tictactoe_board.tileset, board_index, CPU);
 
-    
+
     VDP_drawImageEx(BG_B, &tictactoe_board, TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, board_index), 0, 0, FALSE, TRUE);
 
     init_board_pos_lookup();

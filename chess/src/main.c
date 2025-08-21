@@ -237,12 +237,12 @@ void host_game() {
 
 
 void cursor_send_data( CURSOR* cursor, u8 type  ) {
-  NET_sendByte( 128 + type ); // first bit is always on, and 4 bytesl
-  NET_sendByte( 4 ); // cursor always sends 4 bytes
-  NET_sendByte( cursor->col );
-  NET_sendByte( cursor->row );
-  NET_sendByte( cursor->sel_col );
-  NET_sendByte( cursor->sel_row );
+    NET_sendByte( 128 + type ); // first bit is always on, and 4 bytesl
+    NET_sendByte( 4 ); // cursor always sends 4 bytes
+    NET_sendByte( cursor->col );
+    NET_sendByte( cursor->row );
+    NET_sendByte( cursor->sel_col );
+    NET_sendByte( cursor->sel_row );
 }
 
 
@@ -417,32 +417,32 @@ int main(bool hard) {
             // current player is not me, listen for data
 
             // check if readable
-    VDP_drawText("L 0 ", 0, 0 );
+            VDP_drawText("L 0 ", 0, 0 );
             if( NET_RXReady() ) {
-    VDP_drawText("L 1 ", 0, 1 );
+                VDP_drawText("L 1 ", 0, 1 );
                 // read the header
                 u8 header[2];
 
                 read_bytes_n( header, 2 );
-    VDP_drawText("L 2 ", 0, 2 );
+                VDP_drawText("L 2 ", 0, 2 );
                 u8 data_type = header[0];
-    char message[40];
-    strclr(message);
-    sprintf( message, "T: %d   ", data_type);
-    VDP_drawText(message, 0, 3);
+                char message[40];
+                strclr(message);
+                sprintf( message, "T: %d   ", data_type);
+                VDP_drawText(message, 0, 3);
                 u8 data_length = header[1];
-    sprintf( message, "L: %d   ", data_length);
-    VDP_drawText(message, 0, 4);
+                sprintf( message, "L: %d   ", data_length);
+                VDP_drawText(message, 0, 4);
                 // read the data
                 u8 buffer[16]; 
                 read_bytes_n( buffer, data_length );
-    VDP_drawText("L 5 ", 0, 5 );
+                VDP_drawText("L 5 ", 0, 5 );
                 if( data_type == 128 ) {
-    VDP_drawText("L 6 ", 0, 6 );
+                    VDP_drawText("L 6 ", 0, 6 );
                     // cursor update
                     cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
                 }else if( data_type == 129 ) {
-    VDP_drawText("L 7 ", 0, 7 );
+                    VDP_drawText("L 7 ", 0, 7 );
                     // board update
                     cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
                     move_piece( (s8)buffer[2], (s8)buffer[3], (s8)buffer[0], (s8)buffer[1] );
@@ -455,7 +455,7 @@ int main(bool hard) {
                         VDP_drawText("ONE", 20, 1);
                     }
                 } 
-    VDP_drawText("L 8 ", 0, 8 );
+                VDP_drawText("L 8 ", 0, 8 );
             } 
         }
 
