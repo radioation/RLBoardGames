@@ -1,36 +1,18 @@
 #include <genesis.h>
 #include "resources.h"
 #include "network.h" 
+#include "logic.h"
 
 #define INPUT_WAIT_COUNT 10
 
 int text_cursor_x, text_cursor_y;
+bool online = false;
 
 // Chess Piece data
-// Enum to represent piece types
-typedef enum {
-    EMPTY = 0,
-    KING = 3, 
-    QUEEN = 6, 
-    ROOK = 9, 
-    BISHOP = 12, 
-    KNIGHT = 15, 
-    PAWN = 18 
-} PIECE_TYPE;
 
-typedef enum {
-    NO_PLAYER = 0,
-    PLAYER_ONE = 1,
-    PLAYER_TWO = 2
-} PLAYER;
 
-// Structure to represent a chess piece
-typedef struct {
-    PIECE_TYPE type;   // Type of the piece
-    PLAYER player;     // which player  
-} CHESS_PIECE;
 
-CHESS_PIECE board[8][8]; // X, Y
+extern CHESS_PIECE board[8][8]; // X, Y
 int piecesTileIndex = -1;
 const s8 boardStartCol = 8;
 const s8 boardStartRow = 2;
@@ -281,12 +263,57 @@ int main(bool hard) {
 
     VDP_drawText("Detecting adapter...[  ]", text_cursor_x, text_cursor_y); text_cursor_x+=21;   
     NET_initialize(); // Detect cartridge and set 'cart_present'
+    u8 me = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
 
     if(cart_present)
     {
         VDP_setTextPalette(2); // Green text
         VDP_drawText("Ok", text_cursor_x, text_cursor_y); text_cursor_x=0; text_cursor_y+=2;
         VDP_setTextPalette(0); // White text
+
+
+        VDP_drawText("IP Address:", text_cursor_x, text_cursor_y);
+        NET_printIP(text_cursor_x+12, text_cursor_y); text_cursor_y++;
+
+        VDP_drawText("MAC:", text_cursor_x, text_cursor_y);
+        NET_printMAC(text_cursor_x+5, text_cursor_y); text_cursor_y+=2;
+
+
+        NET_resetAdapter();
+        VDP_drawText("          (A) - Host Game", 0, 5);
+        VDP_drawText("          (C) - Join Game", 0, 7);
+
+
+        //////////////////////////////////////////////////////////////
+        // Networking Loop  
+        u8 buttons_prev;
+        while(1) 
+        {
+            u8 buttons = JOY_readJoypad(JOY_1);
+            // MODE NOT SET, button press will determine server or client.
+            if(buttons & BUTTON_A && buttons_prev == 0x00) {
+                VDP_drawText("                         ", 0, 5);
+                VDP_drawText("                         ", 0, 7);
+                text_cursor_y = 5;
+                me = PLAYER_ONE;
+                // start listening
+                host_game();
+                break;
+
+            }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
+                VDP_drawText("                         ", 0, 5);
+                VDP_drawText("                         ", 0, 7);
+                // try to connect to server.
+                me = PLAYER_TWO;
+                text_cursor_y = 5;
+                NET_connect(text_cursor_x, text_cursor_y, "010.086.022.026:5364"); text_cursor_x=0; text_cursor_y++;
+                break;
+            }
+            buttons_prev = buttons;
+            SYS_doVBlankProcess();
+        }
+        NET_flushBuffers();
+        online = true;
     }
     else
     {
@@ -294,52 +321,15 @@ int main(bool hard) {
         VDP_drawText("XX", text_cursor_x, text_cursor_y); text_cursor_x=0; text_cursor_y+=2;
         VDP_setTextPalette(0); // White text
         VDP_drawText("Adapter not present", text_cursor_x, text_cursor_y);
-        while(1) { SYS_doVBlankProcess(); }
-    }
-
-
-    VDP_drawText("IP Address:", text_cursor_x, text_cursor_y);
-    NET_printIP(text_cursor_x+12, text_cursor_y); text_cursor_y++;
-
-    VDP_drawText("MAC:", text_cursor_x, text_cursor_y);
-    NET_printMAC(text_cursor_x+5, text_cursor_y); text_cursor_y+=2;
-
-
-    NET_resetAdapter();
-    VDP_drawText("          (A) - Host Game", 0, 5);
-    VDP_drawText("          (C) - Join Game", 0, 7);
-
-    u8 me = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
-
-    //////////////////////////////////////////////////////////////
-    // Networking Loop  
-    u8 buttons_prev;
-    while(1) 
-    {
-        u8 buttons = JOY_readJoypad(JOY_1);
-        // MODE NOT SET, button press will determine server or client.
-        if(buttons & BUTTON_A && buttons_prev == 0x00) {
-            VDP_drawText("                         ", 0, 5);
-            VDP_drawText("                         ", 0, 7);
-            text_cursor_y = 5;
-            me = PLAYER_ONE;
-            // start listening
-            host_game();
-            break;
-
-        }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
-            VDP_drawText("                         ", 0, 5);
-            VDP_drawText("                         ", 0, 7);
-            // try to connect to server.
-            me = PLAYER_TWO;
-            text_cursor_y = 5;
-            NET_connect(text_cursor_x, text_cursor_y, "010.086.022.026:5364"); text_cursor_x=0; text_cursor_y++;
-            break;
+        while(1) { 
+            u16 joypad = JOY_readJoypad( JOY_1 );
+            if( joypad & BUTTON_START ) {
+                break;
+            }
+            SYS_doVBlankProcess();
         }
-        buttons_prev = buttons;
-        SYS_doVBlankProcess();
+        online = false;
     }
-    NET_flushBuffers();
     VDP_clearPlane( BG_A, TRUE);
     VDP_clearPlane( BG_B, TRUE);
 
@@ -376,7 +366,7 @@ int main(bool hard) {
     VDP_drawText("PLAYER ONE MOVE", 13, 1);
     while(TRUE)
     {
-        if( currentPlayer == me ) {
+        if( currentPlayer == me || !online ) { 
             // read joypad to mover cursor
             u16 joypad  = JOY_readJoypad( JOY_1 );
             if( inputWait == 0 ) {
@@ -400,20 +390,20 @@ int main(bool hard) {
                             VDP_drawText("ONE", 20, 1);
                         }
                     } else {
-                        cursor_send_data( &cursor, 0 ); // just update cursor
+                        if( online )  cursor_send_data( &cursor, 0 ); // just update cursor
                     }
                 } else if( joypad & BUTTON_C ) {
                     cursor_clear_selected( &cursor );
                     inputWait = INPUT_WAIT_COUNT;
                     // send cursor data
-                    cursor_send_data( &cursor,0 );
+                    if(online) cursor_send_data( &cursor,0 );
                 }
             } else {
                 if( inputWait > 0 ) {
                     --inputWait;
                 }
             }
-        } else {
+        } /*else {
             // current player is not me, listen for data
 
             // check if readable
@@ -457,7 +447,8 @@ int main(bool hard) {
                 } 
                 VDP_drawText("L 8 ", 0, 8 );
             } 
-        }
+        }*/
+
 
         //////////////////////////////////////////////////////////////
         // update sprites
