@@ -185,12 +185,12 @@ bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE],
                 if ( board[col+1][row][layer] == PLAYER_ONE )  {
                     rightOffset = 0;
                 } else if ( board[col+1][row][layer] == PLAYER_TWO )  {
+                    rightOffset = 4;
                 }
             } 
             if ( col > 0 ) {
                 if ( board[col-1][row][layer] == PLAYER_ONE )  {
                     leftOffset = 0;
-                } else if ( board[col-1][row][layer] == PLAYER_TWO )  {
                 }
             }
             VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
@@ -205,7 +205,7 @@ bool cursor_action( CURSOR* cursor, s16 brd[BOARD_SIZE][BOARD_SIZE][BOARD_SIZE],
             // * if col 3, just draw tiles  for 2 and 3
             if ( col > 0 ) {
                 if ( board[col-1][row][layer] == PLAYER_ONE )  {
-                    leftOffset = 3;
+                    leftOffset = 4;
                 }
             }
             VDP_setTileMapXY( BG_A, TILE_ATTR_FULL( PAL0, TRUE, FALSE, FALSE, x_o_tiles_index+leftOffset ), startX, startY );
@@ -402,16 +402,16 @@ int main()
     SPR_init();
     CURSOR cursor;
     cursor_init(&cursor,
-            SPR_addSprite( &blue_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, TRUE, FALSE, FALSE )),
-            SPR_addSprite( &yellow_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, TRUE, FALSE, FALSE )) );
+            SPR_addSprite( &blue_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, FALSE, FALSE, FALSE )),
+            SPR_addSprite( &yellow_cursor, cursor.pos_x, cursor.pos_y, TILE_ATTR(PAL0, FALSE, FALSE, FALSE )) );
 
     //////////////////////////////////////////////////////////////
     // MAIN LOOP
     u8 inputWait = 0;
-    u8 current_player = PLAYER_TWO; 
+    u8 current_player = PLAYER_ONE; 
     while(1) // Loop forever
     {
-        // read joypad to mover cursor
+        // read joypad to move cursor
         u16 joypad  = JOY_readJoypad( JOY_1 );
         if( inputWait == 0 ) {
             if( cursor_move( &cursor, joypad ) == TRUE ) {
@@ -423,6 +423,9 @@ int main()
             }
             if( joypad & BUTTON_A ) {
                 bool didMove = cursor_action( &cursor, board, current_player );
+                if ( didMove ) {
+                    current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
+                }
                 inputWait = INPUT_WAIT_COUNT;
             } 
         } else {
