@@ -12,4 +12,5 @@ PALETTE cursor_pal "sprites/cursor.png"
 PALETTE background_pal "bg/bluebg.png"
 PALETTE ip_cursor_pal "sprites/ip_cursor.png"
 
-
+WAV move_snd "sounds/Blip_Select4.wav" XGM
+WAV buzz_snd "sounds/buzz.wav" XGM

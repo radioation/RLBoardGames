@@ -32,5 +32,9 @@ typedef struct {
 CHESS_PIECE board[8][8]; // X, Y
 
 
+//bool move_piece( int x0,int y0, int x1,int y1);
+bool check_win( );
+
+
 #endif
 

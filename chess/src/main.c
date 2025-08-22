@@ -5,12 +5,13 @@
 
 #define INPUT_WAIT_COUNT 10
 
+#define SND_MOVE 64
+#define SND_BUZZ 63
+
 int text_cursor_x, text_cursor_y;
 bool online = false;
 
 // Chess Piece data
-
-
 
 extern CHESS_PIECE board[8][8]; // X, Y
 int piecesTileIndex = -1;
@@ -117,21 +118,33 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
     bool didMove = FALSE;
     if( joypad & BUTTON_LEFT ) {
         cursor->col--;
+        if( cursor->col < 0 ) {
+            cursor->col = 7;
+        }
         cursor->pos_x = cursor->col * cursorStep + cursorColStart;
         didMove = TRUE;
     } 
     if( joypad & BUTTON_RIGHT ) {
         cursor->col++;
+        if( cursor->col > 7 ) {
+            cursor->col = 0;
+        }
         cursor->pos_x = cursor->col * cursorStep + cursorColStart;
         didMove = TRUE;
     } 
     if( joypad & BUTTON_UP ) {
         cursor->row--;
+        if( cursor->row < 0 ) {
+            cursor->row = 7;
+        }
         cursor->pos_y = cursor->row * cursorStep + cursorRowStart;
         didMove = TRUE;
     }
     if( joypad & BUTTON_DOWN ) {
         cursor->row++;
+        if( cursor->row > 7 ) {
+            cursor->row = 0;
+        }
         cursor->pos_y = cursor->row * cursorStep + cursorRowStart;
         didMove = TRUE;
     }
@@ -246,6 +259,12 @@ void read_bytes_n(u8* data, u8 length ) {
 
 
 int main(bool hard) {
+
+    //////////////////////////////////////////////////////////////
+    // Setup Sound
+    XGM_setPCM(  SND_MOVE, move_snd, sizeof(move_snd));
+    XGM_setPCM(  SND_BUZZ, buzz_snd, sizeof(buzz_snd));
+
 
     //////////////////////////////////////////////////////////////
     // setup screen and palettes
@@ -371,6 +390,7 @@ int main(bool hard) {
             u16 joypad  = JOY_readJoypad( JOY_1 );
             if( inputWait == 0 ) {
                 if( cursor_move( &cursor, joypad ) == TRUE ) {
+                    XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                     inputWait = INPUT_WAIT_COUNT;
                     // send cursor data
                     cursor_send_data( &cursor, 0 );
