@@ -123,6 +123,7 @@ bool check_horizontal( s8 x0,s8 y0, s8 x1,s8 y1 ) {
     return true;
 }
 
+
 bool check_vertical( s8 x0,s8 y0, s8 x1,s8 y1 ) {
     s8 dy = y1 - y0;
     if( abs(dy) == 1 ) {
@@ -164,11 +165,10 @@ bool try_queen_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst 
             (abs( x0 - x1 ) == 0 && abs( y0 - y1 ) > 0 )  // vertical
       ){
         // and nothing must be in the way
-        // and nothing must be in the way
-        if( x0 != x1 && !check_horizontal( x0, y0, x1, y1 ) ) {
+        if( x0 != x1 && y0 == y1 && !check_horizontal( x0, y0, x1, y1 ) ) {
             return false;
         }
-        if( y0 != y1 && !check_vertical( x0, y0, x1, y1 ) ) {
+        if( y0 != y1 &&  x0 == x1 && !check_vertical( x0, y0, x1, y1 ) ) {
             return false;
         }
         if( !check_diagonal( x0, y0, x1, y1 ) ) {
@@ -180,7 +180,7 @@ bool try_queen_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst 
 }
 
 bool try_king_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
-    if( abs( x0 - x1 ) <= 2 && abs( y0 - y1 ) <=2 ){
+    if( abs( x0 - x1 ) <= 1 && abs( y0 - y1 ) <=1 ){
         return true;
     }
     return false;
