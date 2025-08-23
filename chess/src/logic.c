@@ -2,6 +2,11 @@
 
 CHESS_PIECE board[8][8]; // X, Y
 
+static const s8 KNIGHT_MOVES[ 8 ][2] = {
+    {+1, -2}, {+2, -1}, {+2, +1}, {+1, +2},
+    {-1, +2}, {-2, +1}, {-2, -1}, {-1, -2}
+};
+
 bool in_bounds( s8 x, s8 y ) {
     if( x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE ) {
         return true;
@@ -57,7 +62,7 @@ bool try_pawn_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst )
 
 bool try_knight_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
     // valid knight moves work in all dirs for both players
-    if( abs(x0 - x1) == 1 && abs( y0 - y1) == 2 || abs(x0 - x1) == 2 && abs( y0 - y1) == 1 ) {
+    if( ( abs(x0 - x1) == 1 && abs( y0 - y1) == 2 ) || ( abs(x0 - x1) == 2 && abs( y0 - y1) == 1 ) ) {
         if ( dst.player != src.player || dst.player == NO_PLAYER) {
             return true;
         }
@@ -109,12 +114,12 @@ bool check_horizontal( s8 x0,s8 y0, s8 x1,s8 y1 ) {
     while( cx != x1 ) {
         KLog_S2(" cx ", cx, " y0 ", y0 );
         if( board[(u8)cx][(u8)y0].player != NO_PLAYER ) {
-        KLog("HORIZ BAD" );
+            KLog("HORIZ BAD" );
             return false;
         }
         cx += dx;
     }
-        KLog("HORIZ OK" );
+    KLog("HORIZ OK" );
     return true;
 }
 
@@ -154,9 +159,9 @@ bool try_rook_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst )
 }
 
 bool try_queen_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
-    if( abs(x0-x1) == abs(y0-y1)  ||  // diag
-            abs( x0 - x1 ) > 0 && abs( y0 - y1 ) == 0  || // horizontal
-            abs( x0 - x1 ) == 0 && abs( y0 - y1 ) > 0   // vertical
+    if( (abs(x0-x1) == abs(y0-y1) ) ||  // diag
+            (abs( x0 - x1 ) > 0 && abs( y0 - y1 ) == 0 ) || // horizontal
+            (abs( x0 - x1 ) == 0 && abs( y0 - y1 ) > 0 )  // vertical
       ){
         // and nothing must be in the way
         // and nothing must be in the way
@@ -187,25 +192,32 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
         return false; // nothing to atck in this square.
     }
     // just need to check square that can possibly attack king
+    PLAYER atkr = PLAYER_ONE == player ? PLAYER_TWO : PLAYER_ONE;
 
     // PAWN : immediate diagonal from opposite side for pawns )
-    if( player == PLAYER_ONE ) {
+    s8 atk_y = y - 1 ;
+    if( player == PLAYER_TWO ) {
         // check if player two is attacking player one's square
-         
-    } else if ( player == PLAYER_TWO ) {
-        // check if player one is attacking palyer two square
+        s8 atk_y = y + 1;         
+    }
+    if( in_bounds( (u8)(x-1), (u8)atk_y ) && board[ (u8)(x-1) ][(u8)atk_y].type == PAWN && board[(u8)(x-1)][(u8)atk_y].player == atkr ) {
+        return true;
     }
 
     // Knight : 8 possible pieces
+    for (u8 i=0;i<8;i++){
+        s8 atk_x = x + KNIGHT_MOVES[i][0];
+        s8 atk_y = y + KNIGHT_MOVES[i][1];
+        if (in_bounds(atk_x,atk_y) && board[(u8)atk_x][(u8)atk_y].type == KNIGHT && board[(u8)atk_x][(u8)atk_y].player == atkr ) return true;
+    }
+    // unobstructed diagonal is attacker's Bishop or Queen
 
-    // unobstructed diagonal Bishop or Queen
+    // unobstructed horizontal is attacker's  Rook or Queen
 
-    // unobstructed horizontal Rook or Queen
-
-    // unobstructed vertical Rook or Queen
+    // unobstructed vertical is attacker's Rook or Queen
     return false;
 }
-    
+
 
 bool is_king_in_check( PLAYER player ) {
     // find the king
@@ -213,7 +225,7 @@ bool is_king_in_check( PLAYER player ) {
     s8 y=-1;
     for( s8 i=0; i < BOARD_SIZE; i++ ) {
         for( s8 j=0; j < BOARD_SIZE; j++ ) {
-             CHESS_PIECE piece = board[(u8)i][(u8)j];
+            CHESS_PIECE piece = board[(u8)i][(u8)j];
             if( piece.type == KING && piece.player == player ) {
                 x = i;
                 y = j;
@@ -276,7 +288,7 @@ bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1)
     if( valid == true ) {
         // check if King is exposed.
     } 
-     
+
     // if we're here, nothing worked
     return valid;
 }
