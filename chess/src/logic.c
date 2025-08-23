@@ -2,6 +2,13 @@
 
 CHESS_PIECE board[8][8]; // X, Y
 
+bool in_bounds( s8 x, s8 y ) {
+    if( x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE ) {
+        return true;
+    }
+    return false;
+}
+
 bool try_pawn_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
     if( src.player == PLAYER_ONE ) {
         // white pawn can move up 
@@ -168,7 +175,63 @@ bool try_queen_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst 
 }
 
 bool try_king_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
+    if( abs( x0 - x1 ) <= 2 && abs( y0 - y1 ) <=2 ){
+        return true;
+    }
     return false;
+}
+
+
+bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
+    if( player == NO_PLAYER ) {
+        return false; // nothing to atck in this square.
+    }
+    // just need to check square that can possibly attack king
+
+    // PAWN : immediate diagonal from opposite side for pawns )
+    if( player == PLAYER_ONE ) {
+        // check if player two is attacking player one's square
+         
+    } else if ( player == PLAYER_TWO ) {
+        // check if player one is attacking palyer two square
+    }
+
+    // Knight : 8 possible pieces
+
+    // unobstructed diagonal Bishop or Queen
+
+    // unobstructed horizontal Rook or Queen
+
+    // unobstructed vertical Rook or Queen
+    return false;
+}
+    
+
+bool is_king_in_check( PLAYER player ) {
+    // find the king
+    s8 x=-1;
+    s8 y=-1;
+    for( s8 i=0; i < BOARD_SIZE; i++ ) {
+        for( s8 j=0; j < BOARD_SIZE; j++ ) {
+             CHESS_PIECE piece = board[(u8)i][(u8)j];
+            if( piece.type == KING && piece.player == player ) {
+                x = i;
+                y = j;
+                break;
+            }
+        }
+        if( x >= 0 ) {
+            break;
+        }
+    }
+
+    if( !in_bounds( x,y ) ) {
+        // out of bounds? shouldn't ever happen but false.
+        return false;
+    }    
+    // check if the player's king's square is getting attacked.
+    return is_square_attacked( x, y, player );
+
 }
 
 
@@ -205,7 +268,7 @@ bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1)
             valid = try_queen_move(x0, y0, x1, y1, src, dst );
             break;
         case KING: 
-            valid = try_queen_move(x0, y0, x1, y1, src, dst );
+            valid = try_king_move(x0, y0, x1, y1, src, dst );
             break;
         default: return false;
     }
@@ -218,7 +281,13 @@ bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1)
     return valid;
 }
 
+
+
 bool check_win( ) 
 {
+    // checkmate if 
+    // if king is in check 
+    // and king has no valid moves
+
     return false;
 }

@@ -32,6 +32,7 @@ typedef struct {
 
 
 bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1);
+bool is_king_in_check( PLAYER player );
 bool check_win( );
 
 
