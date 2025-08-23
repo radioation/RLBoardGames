@@ -180,8 +180,10 @@ void cursor_clear_selected( CURSOR* cursor ) {
 }
 
 bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
+    KLog_S1(" cursor sel x ", cursor->sel_col );
     if( cursor->sel_col < 0 ) {
         // no piece selected yet, check if player owns the current piece.
+        KLog_S4(" col ", cursor->col, " row ", cursor->row, " player ",  (s8) brd[(u8)cursor->col][(u8)cursor->row].player, " p ", (s8)player ); 
         if( brd[(u8)cursor->col][(u8)cursor->row].player == player ) { 
             cursor->sel_col = cursor->col;
             cursor->sel_row = cursor->row;
@@ -190,8 +192,10 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
             SPR_setVisibility( cursor->selected_spr, VISIBLE );
         }
     } else {
-        // A piece is selected, check if cursor position is valid )
+        // A piece is currently selected, check if cursor position is valid )
         //TODO -- (add valid move check, for now just look for empty squares)
+        //is_valid_move( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row )
+
         if( brd[(u8)cursor->col][(u8)cursor->row].type == EMPTY ) { 
             move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row );
             return true;
@@ -348,6 +352,7 @@ int main(bool hard) {
             SYS_doVBlankProcess();
         }
         online = false;
+        me = 1; 
     }
     VDP_clearPlane( BG_A, TRUE);
     VDP_clearPlane( BG_B, TRUE);
@@ -393,14 +398,14 @@ int main(bool hard) {
                     XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                     inputWait = INPUT_WAIT_COUNT;
                     // send cursor data
-                    cursor_send_data( &cursor, 0 );
+                    //cursor_send_data( &cursor, 0 );
                 }
                 if( joypad & BUTTON_A ) {
-                    bool didMove =  cursor_action( &cursor, board, me );
+                    bool didMove =  cursor_action( &cursor, board, currentPlayer );
                     inputWait = INPUT_WAIT_COUNT;
                     if( didMove ) {
                         // send move data.
-                        cursor_send_data( &cursor, 1 );  // move piece
+                        //cursor_send_data( &cursor, 1 );  // move piece
                         cursor_clear_selected(&cursor); 
                         if( currentPlayer == PLAYER_ONE ) {
                             currentPlayer = PLAYER_TWO;
@@ -410,7 +415,7 @@ int main(bool hard) {
                             VDP_drawText("ONE", 20, 1);
                         }
                     } else {
-                        if( online )  cursor_send_data( &cursor, 0 ); // just update cursor
+                        //cursor_send_data( &cursor, 0 ); // just update cursor
                     }
                 } else if( joypad & BUTTON_C ) {
                     cursor_clear_selected( &cursor );
