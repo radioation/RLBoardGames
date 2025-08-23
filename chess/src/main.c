@@ -194,11 +194,12 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
     } else {
         // A piece is currently selected, check if cursor position is valid )
         //TODO -- (add valid move check, for now just look for empty squares)
-        //is_valid_move( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row )
-
-        if( brd[(u8)cursor->col][(u8)cursor->row].type == EMPTY ) { 
+        // if( brd[(u8)cursor->col][(u8)cursor->row].type == EMPTY ) { 
+        if( is_valid_move( (u8) cursor->sel_col, (u8) cursor->sel_row,(u8)  cursor->col,(u8)  cursor->row ) ){
             move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row );
             return true;
+        } else {
+            XGM_startPlayPCM(SND_BUZZ,1,SOUND_PCM_CH2);
         }
     }
     return false;

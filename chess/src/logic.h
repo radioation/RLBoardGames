@@ -29,10 +29,9 @@ typedef struct {
     PLAYER player;     // which player  
 } CHESS_PIECE;
 
-CHESS_PIECE board[8][8]; // X, Y
 
 
-//bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1);
+bool is_valid_move( u8 x0,u8 y0, u8 x1,u8 y1);
 bool check_win( );
 
 
