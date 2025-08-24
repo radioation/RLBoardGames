@@ -284,13 +284,15 @@ void test_bishops() {
     EXPECT(is_valid_move(3,4,4,5) == true); 
     EXPECT(is_valid_move(3,4,2,5) == true);
 
+
+
 }
 
 
 void test_rooks() {
     printf("test_rooks --------------------------------------------\n");
     clear_board();
-    printf("test_bishops : setup board\n " );
+    printf("test_rooks : setup board\n " );
 
     set_piece(4,7,KING,PLAYER_ONE);
     set_piece(4,0,KING,PLAYER_TWO);
@@ -298,7 +300,19 @@ void test_rooks() {
     set_piece(3,4,ROOK,PLAYER_ONE);
     print_board();
 
+    // Must be vertical or horizontal
     // must be on diagonal
+    printf("test_rooks : can move vertical - " );
+    EXPECT(is_valid_move(3,4,3,2) == true); 
+    EXPECT(is_valid_move(3,4,3,6) == true);
+    printf("test_rooks : can move horizontal - " );
+    EXPECT(is_valid_move(3,4,6,4) == true); 
+    EXPECT(is_valid_move(3,4,1,4) == true);
+    printf("test_rooks : can't move diagonally - " );
+    EXPECT(is_valid_move(3,4,1,2) == false); 
+    EXPECT(is_valid_move(3,4,5,2) == false);
+    EXPECT(is_valid_move(3,4,5,6) == false); 
+    EXPECT(is_valid_move(3,4,1,6) == false);
 
     // can't jump over pieces
 
@@ -311,6 +325,7 @@ int main( int argc, char* argv[] ) {
     test_pawns();
     test_knights();
     test_bishops();
+    test_rooks();
 
     return 0;
 }
