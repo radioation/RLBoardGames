@@ -627,6 +627,44 @@ int test_check() {
         set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],EMPTY,NO_PLAYER);
     }
 
+    // queen
+
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(rook_pos[i][0],rook_pos[i][1],QUEEN,PLAYER_ONE);
+        print_board();
+        printf("test_check : threatening queen %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
+    }
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],QUEEN,PLAYER_ONE);
+        print_board();
+        printf("test_check : threatening queen -diag %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
+    }
+
+
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(rook_pos[i][0],rook_pos[i][1],QUEEN,PLAYER_ONE);
+        set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],PAWN,PLAYER_TWO);
+        print_board();
+        printf("test_check : blocked queen %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+        set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
+        set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],EMPTY,NO_PLAYER);
+    }
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],QUEEN,PLAYER_ONE);
+        set_piece(blocker_pos[i][0],blocker_pos[i][1],PAWN,PLAYER_TWO);
+        print_board();
+        printf("test_check : blocked bishop -diag %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
+        set_piece(blocker_pos[i][0],blocker_pos[i][1],EMPTY,NO_PLAYER);
+    }
+        
+
         
 
 
