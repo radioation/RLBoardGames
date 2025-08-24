@@ -366,7 +366,43 @@ void test_queens() {
     EXPECT(is_valid_move(3,4,5,6) == true); 
     EXPECT(is_valid_move(3,4,1,6) == true);
 
+    printf("test_quens : odd moves - " );
+    EXPECT(is_valid_move(3,4,6,3) == false); 
+    EXPECT(is_valid_move(3,4,2,1) == false); 
+    EXPECT(is_valid_move(3,4,5,0) == false); 
+    EXPECT(is_valid_move(3,4,7,6) == false); 
 
+    // can't jump over pieces
+    set_piece(3,3,PAWN,PLAYER_TWO);
+    set_piece(4,4,KNIGHT,PLAYER_TWO);
+    set_piece(3,5,BISHOP,PLAYER_TWO);
+    set_piece(2,4,ROOK,PLAYER_TWO);
+    set_piece(2,3,PAWN,PLAYER_ONE);
+    set_piece(4,3,KNIGHT,PLAYER_ONE);
+    set_piece(4,5,BISHOP,PLAYER_ONE);
+    set_piece(2,5,ROOK,PLAYER_ONE);
+    print_board();
+    printf("test_queens : can't jump - " );
+    EXPECT(is_valid_move(3,4,3,2) == false); 
+    EXPECT(is_valid_move(3,4,5,4) == false);
+    EXPECT(is_valid_move(3,4,3,6) == false); 
+    EXPECT(is_valid_move(3,4,1,4) == false);
+    EXPECT(is_valid_move(3,4,1,2) == false); 
+    EXPECT(is_valid_move(3,4,5,2) == false);
+    EXPECT(is_valid_move(3,4,5,6) == false); 
+    EXPECT(is_valid_move(3,4,1,6) == false);
+
+    printf("test_queens : can capture opposite side- " );
+    EXPECT(is_valid_move(3,4,3,3) == true); 
+    EXPECT(is_valid_move(3,4,4,4) == true);
+    EXPECT(is_valid_move(3,4,3,5) == true); 
+    EXPECT(is_valid_move(3,4,2,4) == true);
+
+    printf("test_queens : can't capture same side- " );
+    EXPECT(is_valid_move(3,4,2,3) == false); 
+    EXPECT(is_valid_move(3,4,4,3) == false);
+    EXPECT(is_valid_move(3,4,4,5) == false); 
+    EXPECT(is_valid_move(3,4,2,5) == false);
 }
 
 
