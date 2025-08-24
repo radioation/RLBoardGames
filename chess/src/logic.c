@@ -2,10 +2,10 @@
 
 CHESS_PIECE board[8][8]; // X, Y
 
-static const s8 KNIGHT_MOVES[ 8 ][2] = {
-    {+1, -2}, {+2, -1}, {+2, +1}, {+1, +2},
-    {-1, +2}, {-2, +1}, {-2, -1}, {-1, -2}
-};
+static const s8 KNIGHT_MOVES[8][2] = { {1, -2}, {2, -1}, {2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2} };
+
+static const s8 DIAGONAL_MOVES[4][2] = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } };
+
 
 bool in_bounds( s8 x, s8 y ) {
     if( x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE ) {
@@ -198,7 +198,7 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
     s8 atk_y = y - 1 ;
     if( player == PLAYER_TWO ) {
         // check if player two is attacking player one's square
-        s8 atk_y = y + 1;         
+        atk_y = y + 1;         
     }
     if( in_bounds( (u8)(x-1), (u8)atk_y ) && board[ (u8)(x-1) ][(u8)atk_y].type == PAWN && board[(u8)(x-1)][(u8)atk_y].player == atkr ) {
         return true;
@@ -208,18 +208,68 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
     for (u8 i=0;i<8;i++){
         s8 atk_x = x + KNIGHT_MOVES[i][0];
         s8 atk_y = y + KNIGHT_MOVES[i][1];
-        if (in_bounds(atk_x,atk_y) && board[(u8)atk_x][(u8)atk_y].type == KNIGHT && board[(u8)atk_x][(u8)atk_y].player == atkr ) return true;
+        if (in_bounds(atk_x,atk_y) && board[(u8)atk_x][(u8)atk_y].type == KNIGHT && board[(u8)atk_x][(u8)atk_y].player == atkr ) {
+            return true;
+         }     
     }
     // unobstructed diagonal is attacker's Bishop or Queen
+    for( u8 i=0; i < 4; i++ ) {
+        s8 dx = DIAGONAL_MOVES[i][0];
+        s8 dy = DIAGONAL_MOVES[i][1];
+        s8 atk_x = x + dx;
+        s8 atk_y = y + dy;
+        while( in_bounds( atk_x, atk_y ) ) {
+            CHESS_PIECE piece = board[(u8)atk_x][(u8)atk_y];
+            if( piece.type != EMPTY && piece.player == player ) {
+                break;
+            }
+            if( ( piece.type == BISHOP || piece.type == QUEEN ) && piece.player == atkr) 
+            {
+                return true;
+            } 
+            atk_x = x + dx;
+            atk_y = y + dy;
+        }
 
+    }
     // unobstructed horizontal is attacker's  Rook or Queen
+    for( s8 dx = -1; dx < 2; dx+=2 ) {
+        s8 atk_x = x + dx;
+        while( in_bounds( atk_x, y ) ) {
+            CHESS_PIECE piece = board[(u8)atk_x][(u8)y];
+            if( piece.type != EMPTY && piece.player == player ) {
+                break;
+            }
+            if( ( piece.type == ROOK || piece.type == QUEEN ) && piece.player == atkr) 
+            {
+                return true;
+            } 
+            atk_x = x + dx;
+        }
+    }
+
 
     // unobstructed vertical is attacker's Rook or Queen
+    for( s8 dy = -1; dy < 2; dy+=2 ) {
+        s8 atk_y = y + dy;
+        while( in_bounds( x, atk_y ) ) {
+            CHESS_PIECE piece = board[(u8)x][(u8)atk_y];
+            if( piece.type != EMPTY && piece.player == player ) {
+                break;
+            }
+            if( ( piece.type == ROOK || piece.type == QUEEN ) && piece.player == atkr) 
+            {
+                return true;
+            } 
+            atk_y = y + dy;
+        }
+    }
+
     return false;
 }
 
 
-bool is_king_in_check( PLAYER player ) {
+bool is_my_king_in_check( PLAYER player ) {
     // find the king
     s8 x=-1;
     s8 y=-1;
@@ -287,6 +337,7 @@ bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1)
 
     if( valid == true ) {
         // check if King is exposed.
+        valid = is_my_king_in_check( src.player );
     } 
 
     // if we're here, nothing worked
