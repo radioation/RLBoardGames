@@ -537,8 +537,65 @@ int test_check() {
     EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
 
 
-    // knights
-    
+    // knights (way more typing than I was hoping to do)
+    set_piece(2,5,KNIGHT,PLAYER_ONE);
+    print_board();
+    printf("test_check : Non threatening knight " );
+    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+
+    const s8 knight_pos[8][2] = {
+        { 2,2 },
+        { 4,2 },
+        { 5,3 },
+        { 5,5 },
+        { 4,6 },
+        { 2,6 },
+        { 1,5 },
+        { 1,3 },
+    };
+
+    set_piece(2,5,EMPTY,NO_PLAYER);
+    for( s8 i=0; i < 8; i++ ) {
+        set_piece(knight_pos[i][0],knight_pos[i][1],KNIGHT,PLAYER_ONE);
+        print_board();
+        printf("test_check : threatening knight %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        set_piece(knight_pos[i][0],knight_pos[i][1],EMPTY,NO_PLAYER);
+    }
+
+    const s8 bishop_pos[4][2] = {
+        { 1,2 },
+        { 5,2 },
+        { 5,6 },
+        { 1,6 },
+    };
+
+    set_piece(2,5,EMPTY,NO_PLAYER);
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],BISHOP,PLAYER_ONE);
+        print_board();
+        printf("test_check : threatening bishop %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
+    }
+
+    const s8 blocker_pos[4][2] = {
+        { 2,3 },
+        { 4,3 },
+        { 4,5 },
+        { 2,5 },
+    };
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],BISHOP,PLAYER_ONE);
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],PAWN,PLAYER_TWO);
+        print_board();
+        printf("test_check : blocked bishop %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
+    }
+        
+
+        
 
 
 }
