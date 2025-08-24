@@ -563,6 +563,7 @@ int test_check() {
         set_piece(knight_pos[i][0],knight_pos[i][1],EMPTY,NO_PLAYER);
     }
 
+    // bishwop
     const s8 bishop_pos[4][2] = {
         { 1,2 },
         { 5,2 },
@@ -570,7 +571,6 @@ int test_check() {
         { 1,6 },
     };
 
-    set_piece(2,5,EMPTY,NO_PLAYER);
     for( s8 i=0; i < 4; i++ ) {
         set_piece(bishop_pos[i][0],bishop_pos[i][1],BISHOP,PLAYER_ONE);
         print_board();
@@ -587,13 +587,45 @@ int test_check() {
     };
     for( s8 i=0; i < 4; i++ ) {
         set_piece(bishop_pos[i][0],bishop_pos[i][1],BISHOP,PLAYER_ONE);
-        set_piece(bishop_pos[i][0],bishop_pos[i][1],PAWN,PLAYER_TWO);
+        set_piece(blocker_pos[i][0],blocker_pos[i][1],PAWN,PLAYER_TWO);
         print_board();
         printf("test_check : blocked bishop %d ", i );
         EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
         set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
+        set_piece(blocker_pos[i][0],blocker_pos[i][1],EMPTY,NO_PLAYER);
     }
         
+    //rook 
+    const s8 rook_pos[4][2] = {
+        { 3,2 },
+        { 5,4 },
+        { 3,6 },
+        { 1,4 },
+    };
+
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(rook_pos[i][0],rook_pos[i][1],ROOK,PLAYER_ONE);
+        print_board();
+        printf("test_check : threatening rook %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
+    }
+
+    const s8 rook_blocker_pos[4][2] = {
+        { 3,3 },
+        { 4,4 },
+        { 3,5 },
+        { 2,4 },
+    };
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(rook_pos[i][0],rook_pos[i][1],ROOK,PLAYER_ONE);
+        set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],PAWN,PLAYER_TWO);
+        print_board();
+        printf("test_check : blocked rook %d ", i );
+        EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+        set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
+        set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],EMPTY,NO_PLAYER);
+    }
 
         
 
