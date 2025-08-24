@@ -462,6 +462,7 @@ int test_check() {
     set_piece(3,4,KING,PLAYER_ONE);
     print_board();
 
+
     printf("test_check : no threatening pieces" );
     EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
 
@@ -480,8 +481,64 @@ int test_check() {
     print_board();
     printf("test_check : black pawn NOT ATTACKING " );
     EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+
+
+    set_piece(3,3,EMPTY,NO_PLAYER);
+    set_piece(4,3,PAWN,PLAYER_ONE);
+    print_board();
+    printf("test_check : white pawn at diagonal " );
+    EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+
+    set_piece(4,3,EMPTY,NO_PLAYER);
+    set_piece(2,3,PAWN,PLAYER_ONE);
+    print_board();
+    printf("test_check : white pawn at diagonal 2 " );
+    EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+
+
+    // black king
+    clear_board();
+    set_piece(3,4,KING,PLAYER_TWO);
+    set_piece(4,6,PAWN,PLAYER_ONE);
+    print_board();
+
+
+    printf("test_check : no threatening pieces" );
+    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+
+    printf("test_check : white pawn " );
+    set_piece(4,6,EMPTY,NO_PLAYER);
+    set_piece(4,5,PAWN,PLAYER_ONE);
+    print_board();
+    EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+
+    printf("test_check : white pawn 2" );
+    set_piece(4,5,EMPTY,NO_PLAYER);
+    set_piece(2,5,PAWN,PLAYER_ONE);
+    print_board();
+    EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+
+    printf("test_check : white pawn NOT ATTACKING" );
+    set_piece(2,5,EMPTY,NO_PLAYER);
+    set_piece(3,5,PAWN,PLAYER_ONE);
+    print_board();
+    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+
+    set_piece(3,5,EMPTY,NO_PLAYER);
+    set_piece(4,5,PAWN,PLAYER_TWO);
+    print_board();
+    printf("test_check : black pawn at diagonal " );
+    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+
+    set_piece(4,5,EMPTY,NO_PLAYER);
+    set_piece(2,5,PAWN,PLAYER_TWO);
+    print_board();
+    printf("test_check : black pawn at diagonal 2 " );
+    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+
+
+    // knights
     
-        
 
 
 }
