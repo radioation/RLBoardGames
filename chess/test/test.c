@@ -670,6 +670,15 @@ int test_check() {
 
 }
 
+int test_checkmate() {
+    printf("test_check --------------------------------------------\n");
+    clear_board();
+    printf("test_check : setup board\n " );
+    set_piece(3,4,KING,PLAYER_ONE);
+    print_board();
+}
+
+
 int main( int argc, char* argv[] ) {
     test_pawns();
     test_knights();
@@ -680,6 +689,7 @@ int main( int argc, char* argv[] ) {
 
     test_check();
 
+    test_checkmate();
 
     return 0;
 }
