@@ -1,10 +1,21 @@
 #include "logic.h"
 
-CHESS_PIECE board[8][8]; // X, Y
+CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
 
 static const s8 KNIGHT_MOVES[8][2] = { {1, -2}, {2, -1}, {2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2} };
 
 static const s8 DIAGONAL_MOVES[4][2] = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } };
+
+void clear_board() {
+    for( u8 x=0; x < BOARD_SIZE; x++ ) {
+        printf("x: %d", x );
+        for( u8 y=0; y < BOARD_SIZE; y++ ){
+            board[x][y].type = EMPTY;
+            board[x][y].player = NO_PLAYER;
+        }
+    }
+}
+
 
 
 bool in_bounds( s8 x, s8 y ) {
@@ -16,7 +27,6 @@ bool in_bounds( s8 x, s8 y ) {
 
 bool try_pawn_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
     if( src.player == PLAYER_ONE ) {
-        // white pawn can move up 
         if( x0 == x1 ) {
             // can only move up
             if ( y0 - y1  == 1  && dst.player == NO_PLAYER ) {
@@ -36,7 +46,6 @@ bool try_pawn_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst )
         }
 
     } else {
-        // black pawn can move down.
         if( x0 == x1 ) {
             // can only move down
             if ( y1 - y0  == 1  && dst.player == NO_PLAYER ) {
@@ -50,7 +59,7 @@ bool try_pawn_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst )
                     }
                 }
             }
-        } else if ( abs( x0 - x1 ) == 1 && (y0-y1) == 1 && dst.player == PLAYER_ONE ) {
+        } else if ( abs( x0 - x1 ) == 1 && (y1-y0) == 1 && dst.player == PLAYER_ONE ) {
             // captures are diagonal.
             return true; 
         }
@@ -83,7 +92,7 @@ bool check_diagonal( s8 x0,s8 y0, s8 x1,s8 y1 ) {
     s8 cy = y0 + dy;
     while( cx  != x1 ) {
         if( board[(u8)cx][(u8)cy].player != NO_PLAYER ) {
-            KLog("DIAG BAD");
+            //KLog("DIAG BAD");
             return false;
         }
         cx += dx;
@@ -106,20 +115,20 @@ bool try_bishop_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst
 bool check_horizontal( s8 x0,s8 y0, s8 x1,s8 y1 ) {
     s8 dx = x1 - x0;
     if( abs(dx) == 1 ) {
-        KLog("HORIZ fine" );
+        //KLog("HORIZ fine" );
         return true; // fine.
     }
     dx = dx < 0 ? -1 : 1 ;
     s8 cx = x0 + dx;
     while( cx != x1 ) {
-        KLog_S2(" cx ", cx, " y0 ", y0 );
+        //KLog_S2(" cx ", cx, " y0 ", y0 );
         if( board[(u8)cx][(u8)y0].player != NO_PLAYER ) {
-            KLog("HORIZ BAD" );
+            //KLog("HORIZ BAD" );
             return false;
         }
         cx += dx;
     }
-    KLog("HORIZ OK" );
+    //KLog("HORIZ OK" );
     return true;
 }
 
@@ -335,10 +344,10 @@ bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1)
         default: return false;
     }
 
-    if( valid == true ) {
-        // check if King is exposed.
-        valid = is_my_king_in_check( src.player );
-    } 
+   // if( valid == true ) {
+   //     // check if King is exposed.
+   //     valid = is_my_king_in_check( src.player );
+   // } 
 
     // if we're here, nothing worked
     return valid;
@@ -353,4 +362,10 @@ bool check_win( )
     // and king has no valid moves
 
     return false;
+}
+
+void set_piece( s8 x, s8 y, PIECE_TYPE t, PLAYER p ) 
+{
+    board[x][y].type = t;
+    board[x][y].player = p;
 }

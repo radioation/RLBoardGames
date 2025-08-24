@@ -66,4 +66,5 @@ void test_all_win_conditions(short player) {
 int main( int argc, char* argv[] ) {
    test_all_win_conditions(1);
    test_all_win_conditions(2);
+    return 0;
 }

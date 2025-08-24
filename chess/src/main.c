@@ -13,7 +13,7 @@ bool online = false;
 
 // Chess Piece data
 
-extern CHESS_PIECE board[8][8]; // X, Y
+extern CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
 int piecesTileIndex = -1;
 const s8 boardStartCol = 8;
 const s8 boardStartRow = 2;
