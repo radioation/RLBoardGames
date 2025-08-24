@@ -164,14 +164,79 @@ void test_pawns() {
     EXPECT(is_valid_move(4,1,3,2) == false);
     EXPECT(is_valid_move(4,1,5,2) == false);
 
+}
 
+void test_knights() {
+    printf("test_knights --------------------------------------------\n");
+    clear_board();
+
+    printf("test_knights : setup board\n " );
+
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(4,0,KING,PLAYER_TWO);
+
+    // Knight at d4-ish (3,4)
+    set_piece(3,4,KNIGHT,PLAYER_ONE);
+    print_board();
+
+    printf("test_knights : standard L - " );
+    EXPECT(is_valid_move(3,4,4,2) == true);
+    EXPECT(is_valid_move(3,4,5,3) == true);
+    EXPECT(is_valid_move(3,4,5,5) == true);
+    EXPECT(is_valid_move(3,4,4,6) == true);
+    EXPECT(is_valid_move(3,4,2,6) == true);
+    EXPECT(is_valid_move(3,4,1,5) == true);
+    EXPECT(is_valid_move(3,4,1,3) == true);
+    EXPECT(is_valid_move(3,4,2,2) == true);
+    
+    // Friendly piece at one target
+    set_piece(4,2,PAWN,PLAYER_ONE);
+    // Enemy piece at another target
+    set_piece(4,6,PAWN,PLAYER_TWO);
+    print_board();
+    printf("test_knights : white can't capture white - " );
+    EXPECT(is_valid_move(3,4,4,2) == false); // friendly occupied
+    printf("test_knights : white can capture black - " );
+    EXPECT(is_valid_move(3,4,4,6) == true);  // capture enemy
+
+    printf("test_knights : white must move with L shape - " );
+    EXPECT(is_valid_move(3,4,3,6) == false);
+
+    // Knight at d4-ish (3,4)
+    set_piece(3,4,KNIGHT,PLAYER_TWO);
+    set_piece(4,2,EMPTY,NO_PLAYER);
+    set_piece(4,6,EMPTY,NO_PLAYER);
+    print_board();
+
+    printf("test_knights : standard L - " );
+    EXPECT(is_valid_move(3,4,4,2) == true);
+    EXPECT(is_valid_move(3,4,5,3) == true);
+    EXPECT(is_valid_move(3,4,5,5) == true);
+    EXPECT(is_valid_move(3,4,4,6) == true);
+    EXPECT(is_valid_move(3,4,2,6) == true);
+    EXPECT(is_valid_move(3,4,1,5) == true);
+    EXPECT(is_valid_move(3,4,1,3) == true);
+    EXPECT(is_valid_move(3,4,2,2) == true);
+
+    set_piece(4,2,PAWN,PLAYER_TWO);
+    set_piece(4,6,PAWN,PLAYER_ONE);
+    print_board();
+    printf("test_knights : black can't capture black - " );
+    EXPECT(is_valid_move(3,4,4,2) == false); // friendly occupied
+    printf("test_knights : black can capture white - " );
+    EXPECT(is_valid_move(3,4,4,6) == true);  // capture enemy
+
+    printf("test_knights : black must move with L shape - " );
+    EXPECT(is_valid_move(3,4,3,6) == false);
 
 }
 
 
 
+
 int main( int argc, char* argv[] ) {
     test_pawns();
+    test_knights();
 
     return 0;
 }
