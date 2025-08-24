@@ -231,12 +231,86 @@ void test_knights() {
 
 }
 
+void test_bishops() {
+    printf("test_bishops --------------------------------------------\n");
+    clear_board();
+    printf("test_bishops : setup board\n " );
+
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(4,0,KING,PLAYER_TWO);
+
+    set_piece(3,4,BISHOP,PLAYER_ONE);
+    print_board();
+
+    // must be on diagonal
+    printf("test_bishops : can't move vertical - " );
+    EXPECT(is_valid_move(3,4,3,2) == false); 
+    EXPECT(is_valid_move(3,4,3,6) == false);
+    printf("test_bishops : can't move horizontal - " );
+    EXPECT(is_valid_move(3,4,6,4) == false); 
+    EXPECT(is_valid_move(3,4,1,4) == false);
+    printf("test_bishops : can move diagonally - " );
+    EXPECT(is_valid_move(3,4,1,2) == true); 
+    EXPECT(is_valid_move(3,4,5,2) == true);
+    EXPECT(is_valid_move(3,4,5,6) == true); 
+    EXPECT(is_valid_move(3,4,1,6) == true);
+
+    // can't jump over pieces
+    set_piece(2,3,PAWN,PLAYER_ONE);
+    set_piece(4,3,KNIGHT,PLAYER_ONE);
+    set_piece(4,5,BISHOP,PLAYER_ONE);
+    set_piece(2,5,ROOK,PLAYER_ONE);
+    print_board();
+    printf("test_bishops : can't jump over pieces - " );
+    EXPECT(is_valid_move(3,4,1,2) == false); 
+    EXPECT(is_valid_move(3,4,5,2) == false);
+    EXPECT(is_valid_move(3,4,5,6) == false); 
+    EXPECT(is_valid_move(3,4,1,6) == false);
+
+    printf("test_bishops : can't capture same side- " );
+    EXPECT(is_valid_move(3,4,2,3) == false); 
+    EXPECT(is_valid_move(3,4,4,3) == false);
+    EXPECT(is_valid_move(3,4,4,5) == false); 
+    EXPECT(is_valid_move(3,4,2,5) == false);
+
+    printf("test_bishops : can capture opposite side- " );
+    set_piece(2,3,PAWN,PLAYER_TWO);
+    set_piece(4,3,KNIGHT,PLAYER_TWO);
+    set_piece(4,5,BISHOP,PLAYER_TWO);
+    set_piece(2,5,ROOK,PLAYER_TWO);
+    print_board();
+    EXPECT(is_valid_move(3,4,2,3) == true); 
+    EXPECT(is_valid_move(3,4,4,3) == true);
+    EXPECT(is_valid_move(3,4,4,5) == true); 
+    EXPECT(is_valid_move(3,4,2,5) == true);
+
+}
+
+
+void test_rooks() {
+    printf("test_rooks --------------------------------------------\n");
+    clear_board();
+    printf("test_bishops : setup board\n " );
+
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(4,0,KING,PLAYER_TWO);
+
+    set_piece(3,4,ROOK,PLAYER_ONE);
+    print_board();
+
+    // must be on diagonal
+
+    // can't jump over pieces
+
+
+}
 
 
 
 int main( int argc, char* argv[] ) {
     test_pawns();
     test_knights();
+    test_bishops();
 
     return 0;
 }
