@@ -405,7 +405,57 @@ void test_queens() {
     EXPECT(is_valid_move(3,4,2,5) == false);
 }
 
+void test_kings() {
+    printf("test_kings --------------------------------------------\n");
+    clear_board();
+    printf("test_kings : setup board\n " );
 
+
+    set_piece(3,4,KING,PLAYER_ONE);
+    print_board();
+    // Can move vertical, horizontal, or diagonally
+    printf("test_kings : can move one square " );
+    EXPECT(is_valid_move(3,4,3,3) == true ); 
+    EXPECT(is_valid_move(3,4,4,4) == true );
+    EXPECT(is_valid_move(3,4,3,5) == true ); 
+    EXPECT(is_valid_move(3,4,2,4) == true );
+    EXPECT(is_valid_move(3,4,2,3) == true ); 
+    EXPECT(is_valid_move(3,4,4,3) == true );
+    EXPECT(is_valid_move(3,4,4,5) == true ); 
+    EXPECT(is_valid_move(3,4,2,5) == true );
+
+    printf("test_kings : can't move two squares " );
+    EXPECT(is_valid_move(3,4,3,2) == false); 
+    EXPECT(is_valid_move(3,4,5,4) == false);
+    EXPECT(is_valid_move(3,4,3,6) == false); 
+    EXPECT(is_valid_move(3,4,1,4) == false);
+    EXPECT(is_valid_move(3,4,1,2) == false); 
+    EXPECT(is_valid_move(3,4,5,2) == false);
+    EXPECT(is_valid_move(3,4,5,6) == false); 
+    EXPECT(is_valid_move(3,4,1,6) == false);
+
+
+    set_piece(3,3,PAWN,PLAYER_TWO);
+    set_piece(4,4,KNIGHT,PLAYER_TWO);
+    set_piece(3,5,BISHOP,PLAYER_TWO);
+    set_piece(2,4,ROOK,PLAYER_TWO);
+    set_piece(2,3,PAWN,PLAYER_ONE);
+    set_piece(4,3,KNIGHT,PLAYER_ONE);
+    set_piece(4,5,BISHOP,PLAYER_ONE);
+    set_piece(2,5,ROOK,PLAYER_ONE);
+    print_board();
+    printf("test_queens : can capture opposite side- " );
+    EXPECT(is_valid_move(3,4,3,3) == true); 
+    EXPECT(is_valid_move(3,4,4,4) == true);
+    EXPECT(is_valid_move(3,4,3,5) == true); 
+    EXPECT(is_valid_move(3,4,2,4) == true);
+
+    printf("test_queens : can't capture same side- " );
+    EXPECT(is_valid_move(3,4,2,3) == false); 
+    EXPECT(is_valid_move(3,4,4,3) == false);
+    EXPECT(is_valid_move(3,4,4,5) == false); 
+    EXPECT(is_valid_move(3,4,2,5) == false);
+}
 
 int main( int argc, char* argv[] ) {
     test_pawns();
@@ -413,6 +463,9 @@ int main( int argc, char* argv[] ) {
     test_bishops();
     test_rooks();
     test_queens();
+    test_kings();
+
+    //check attack ();
 
     return 0;
 }
