@@ -409,8 +409,6 @@ void test_kings() {
     printf("test_kings --------------------------------------------\n");
     clear_board();
     printf("test_kings : setup board\n " );
-
-
     set_piece(3,4,KING,PLAYER_ONE);
     print_board();
     // Can move vertical, horizontal, or diagonally
@@ -457,6 +455,37 @@ void test_kings() {
     EXPECT(is_valid_move(3,4,2,5) == false);
 }
 
+int test_check() {
+    printf("test_check --------------------------------------------\n");
+    clear_board();
+    printf("test_check : setup board\n " );
+    set_piece(3,4,KING,PLAYER_ONE);
+    print_board();
+
+    printf("test_check : no threatening pieces" );
+    EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+
+    set_piece(2,3,PAWN,PLAYER_TWO);
+    print_board();
+    printf("test_check : black pawn " );
+    EXPECT(is_my_king_in_check( PLAYER_ONE) == true );
+    set_piece(2,3,EMPTY,NO_PLAYER);
+    set_piece(4,3,PAWN,PLAYER_TWO);
+    print_board();
+    printf("test_check : black pawn v2 " );
+    EXPECT(is_my_king_in_check( PLAYER_ONE) == true );
+
+    set_piece(4,3,EMPTY,NO_PLAYER);
+    set_piece(3,3,PAWN,PLAYER_TWO);
+    print_board();
+    printf("test_check : black pawn NOT ATTACKING " );
+    EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+    
+        
+
+
+}
+
 int main( int argc, char* argv[] ) {
     test_pawns();
     test_knights();
@@ -465,7 +494,8 @@ int main( int argc, char* argv[] ) {
     test_queens();
     test_kings();
 
-    //check attack ();
+    test_check();
+
 
     return 0;
 }
