@@ -32,10 +32,18 @@ typedef struct {
 
 void clear_board();
 bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1);
-bool is_king_in_check( PLAYER player );
-bool check_win( );
+bool is_my_king_in_check( PLAYER player );
 
 void set_piece( s8 x, s8 y, PIECE_TYPE t, PLAYER p );
+
+bool is_checkmate( PLAYER player );
+bool is_stalemate( PLAYER player );
+
+bool have_any_valid_moves( PLAYER player );
+bool find_king( PLAYER player, s8 * kings_x, s8  *kings_y );
+
+
+
 
 #endif
 

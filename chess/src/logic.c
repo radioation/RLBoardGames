@@ -8,7 +8,6 @@ static const s8 DIAGONAL_MOVES[4][2] = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 
 
 void clear_board() {
     for( u8 x=0; x < BOARD_SIZE; x++ ) {
-        printf("x: %d", x );
         for( u8 y=0; y < BOARD_SIZE; y++ ){
             board[x][y].type = EMPTY;
             board[x][y].player = NO_PLAYER;
@@ -83,8 +82,8 @@ bool try_knight_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst
 bool check_diagonal( s8 x0,s8 y0, s8 x1,s8 y1 ) {
     s8 dx = x1 - x0;
     s8 dy = y1 - y0;
-    if( abs(dx) == 1 ) {
-        return true; // fine.
+    if( abs(dx) != abs(dy) || abs(dx) == 0 || abs(dy) == 0 ) {
+        return false; 
     }
     dx = dx < 0 ? -1 : 1 ;
     dy = dy < 0 ? -1 : 1 ;
@@ -174,16 +173,13 @@ bool try_queen_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst 
             (abs( x0 - x1 ) == 0 && abs( y0 - y1 ) > 0 )  // vertical
       ){
         // and nothing must be in the way
-        if( x0 != x1 && y0 == y1 && !check_horizontal( x0, y0, x1, y1 ) ) {
-            return false;
-        }
-        if( y0 != y1 &&  x0 == x1 && !check_vertical( x0, y0, x1, y1 ) ) {
-            return false;
-        }
-        if( !check_diagonal( x0, y0, x1, y1 ) ) {
-            return false;
-        }
-        return true; 
+        if( x0 != x1 && y0 == y1 ) {
+            return  check_horizontal( x0, y0, x1, y1 );
+        } else if( y0 != y1 &&  x0 == x1 ) {
+            return check_vertical( x0, y0, x1, y1 );
+        } 
+        // diagonal is all that's left
+        return check_diagonal( x0, y0, x1, y1 );
     }
     return false;
 }
@@ -209,7 +205,14 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
         // check if player two is attacking player one's square
         atk_y = y + 1;         
     }
-    if( in_bounds( (u8)(x-1), (u8)atk_y ) && board[ (u8)(x-1) ][(u8)atk_y].type == PAWN && board[(u8)(x-1)][(u8)atk_y].player == atkr ) {
+    if( in_bounds( (u8)(x-1), (u8)atk_y ) 
+        && board[ (u8)(x-1) ][(u8)atk_y].type == PAWN 
+        && board[(u8)(x-1)][(u8)atk_y].player == atkr ) {
+        return true;
+    }
+    if( in_bounds( (u8)(x+1), (u8)atk_y ) 
+        && board[ (u8)(x+1) ][(u8)atk_y].type == PAWN 
+        && board[(u8)(x+1)][(u8)atk_y].player == atkr ) {
         return true;
     }
 
@@ -236,8 +239,8 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
             {
                 return true;
             } 
-            atk_x = x + dx;
-            atk_y = y + dy;
+            atk_x = atk_x + dx;
+            atk_y = atk_y + dy;
         }
 
     }
@@ -253,7 +256,7 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
             {
                 return true;
             } 
-            atk_x = x + dx;
+            atk_x = atk_x + dx;
         }
     }
 
@@ -270,30 +273,37 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
             {
                 return true;
             } 
-            atk_y = y + dy;
+            atk_y = atk_y + dy;
         }
     }
 
     return false;
 }
 
-
-bool is_my_king_in_check( PLAYER player ) {
+bool find_king( PLAYER player, s8 *x, s8 *y ) {
     // find the king
-    s8 x=-1;
-    s8 y=-1;
     for( s8 i=0; i < BOARD_SIZE; i++ ) {
         for( s8 j=0; j < BOARD_SIZE; j++ ) {
             CHESS_PIECE piece = board[(u8)i][(u8)j];
             if( piece.type == KING && piece.player == player ) {
-                x = i;
-                y = j;
+                *x = i;
+                *y = j;
                 break;
             }
         }
-        if( x >= 0 ) {
-            break;
+        if( *x >= 0 ) {
+            return true;
         }
+    }
+    return false; 
+}
+
+
+bool is_my_king_in_check( PLAYER player ) {
+    s8 x=-1;
+    s8 y=-1;
+    if( !find_king( player, &x, &y ) ) {
+        return false; // not found, cant' be in check.
     }
 
     if( !in_bounds( x,y ) ) {
@@ -353,19 +363,38 @@ bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1)
     return valid;
 }
 
-
-
-bool check_win( ) 
-{
-    // checkmate if 
-    // if king is in check 
-    // and king has no valid moves
-
-    return false;
-}
-
 void set_piece( s8 x, s8 y, PIECE_TYPE t, PLAYER p ) 
 {
     board[x][y].type = t;
     board[x][y].player = p;
 }
+
+
+
+
+bool is_checkmate( PLAYER player ) 
+{
+    // checkmate if 
+    // if king is in check 
+    // and king has no valid moves
+    // and no other piece can cancel check
+
+    return false;
+}
+
+
+bool is_stalemate( PLAYER player ) 
+{
+    // stalemate if 
+    // if king is NOT in check 
+    // no legal moves left.
+
+    return false;
+}
+
+bool have_any_valid_moves( PLAYER player ) {
+
+}
+
+
+
