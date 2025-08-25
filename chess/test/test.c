@@ -188,7 +188,7 @@ void test_knights() {
     EXPECT(is_valid_move(3,4,1,5) == true);
     EXPECT(is_valid_move(3,4,1,3) == true);
     EXPECT(is_valid_move(3,4,2,2) == true);
-    
+
     // Friendly piece at one target
     set_piece(4,2,PAWN,PLAYER_ONE);
     // Enemy piece at another target
@@ -464,36 +464,36 @@ int test_check() {
 
 
     printf("test_check : no threatening pieces" );
-    EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == false );
 
     set_piece(2,3,PAWN,PLAYER_TWO);
     print_board();
     printf("test_check : black pawn " );
-    EXPECT(is_my_king_in_check( PLAYER_ONE) == true );
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == true );
     set_piece(2,3,EMPTY,NO_PLAYER);
     set_piece(4,3,PAWN,PLAYER_TWO);
     print_board();
     printf("test_check : black pawn v2 " );
-    EXPECT(is_my_king_in_check( PLAYER_ONE) == true );
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == true );
 
     set_piece(4,3,EMPTY,NO_PLAYER);
     set_piece(3,3,PAWN,PLAYER_TWO);
     print_board();
     printf("test_check : black pawn NOT ATTACKING " );
-    EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == false );
 
 
     set_piece(3,3,EMPTY,NO_PLAYER);
     set_piece(4,3,PAWN,PLAYER_ONE);
     print_board();
     printf("test_check : white pawn at diagonal " );
-    EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == false );
 
     set_piece(4,3,EMPTY,NO_PLAYER);
     set_piece(2,3,PAWN,PLAYER_ONE);
     print_board();
     printf("test_check : white pawn at diagonal 2 " );
-    EXPECT(is_my_king_in_check( PLAYER_ONE) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == false );
 
 
     // black king
@@ -504,44 +504,44 @@ int test_check() {
 
 
     printf("test_check : no threatening pieces" );
-    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
 
     printf("test_check : white pawn " );
     set_piece(4,6,EMPTY,NO_PLAYER);
     set_piece(4,5,PAWN,PLAYER_ONE);
     print_board();
-    EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+    EXPECT(is_my_king_in_check( board, PLAYER_TWO) == true );
 
     printf("test_check : white pawn 2" );
     set_piece(4,5,EMPTY,NO_PLAYER);
     set_piece(2,5,PAWN,PLAYER_ONE);
     print_board();
-    EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+    EXPECT(is_my_king_in_check( board, PLAYER_TWO) == true );
 
     printf("test_check : white pawn NOT ATTACKING" );
     set_piece(2,5,EMPTY,NO_PLAYER);
     set_piece(3,5,PAWN,PLAYER_ONE);
     print_board();
-    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
 
     set_piece(3,5,EMPTY,NO_PLAYER);
     set_piece(4,5,PAWN,PLAYER_TWO);
     print_board();
     printf("test_check : black pawn at diagonal " );
-    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
 
     set_piece(4,5,EMPTY,NO_PLAYER);
     set_piece(2,5,PAWN,PLAYER_TWO);
     print_board();
     printf("test_check : black pawn at diagonal 2 " );
-    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
 
 
     // knights (way more typing than I was hoping to do)
     set_piece(2,5,KNIGHT,PLAYER_ONE);
     print_board();
     printf("test_check : Non threatening knight " );
-    EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+    EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
 
     const s8 knight_pos[8][2] = {
         { 2,2 },
@@ -559,7 +559,7 @@ int test_check() {
         set_piece(knight_pos[i][0],knight_pos[i][1],KNIGHT,PLAYER_ONE);
         print_board();
         printf("test_check : threatening knight %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == true );
         set_piece(knight_pos[i][0],knight_pos[i][1],EMPTY,NO_PLAYER);
     }
 
@@ -575,7 +575,7 @@ int test_check() {
         set_piece(bishop_pos[i][0],bishop_pos[i][1],BISHOP,PLAYER_ONE);
         print_board();
         printf("test_check : threatening bishop %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == true );
         set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
     }
 
@@ -590,11 +590,11 @@ int test_check() {
         set_piece(blocker_pos[i][0],blocker_pos[i][1],PAWN,PLAYER_TWO);
         print_board();
         printf("test_check : blocked bishop %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
         set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
         set_piece(blocker_pos[i][0],blocker_pos[i][1],EMPTY,NO_PLAYER);
     }
-        
+
     //rook 
     const s8 rook_pos[4][2] = {
         { 3,2 },
@@ -607,7 +607,7 @@ int test_check() {
         set_piece(rook_pos[i][0],rook_pos[i][1],ROOK,PLAYER_ONE);
         print_board();
         printf("test_check : threatening rook %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == true );
         set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
     }
 
@@ -622,7 +622,7 @@ int test_check() {
         set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],PAWN,PLAYER_TWO);
         print_board();
         printf("test_check : blocked rook %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
         set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
         set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],EMPTY,NO_PLAYER);
     }
@@ -633,14 +633,14 @@ int test_check() {
         set_piece(rook_pos[i][0],rook_pos[i][1],QUEEN,PLAYER_ONE);
         print_board();
         printf("test_check : threatening queen %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == true );
         set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
     }
     for( s8 i=0; i < 4; i++ ) {
         set_piece(bishop_pos[i][0],bishop_pos[i][1],QUEEN,PLAYER_ONE);
         print_board();
         printf("test_check : threatening queen -diag %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == true );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == true );
         set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
     }
 
@@ -650,7 +650,7 @@ int test_check() {
         set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],PAWN,PLAYER_TWO);
         print_board();
         printf("test_check : blocked queen %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
         set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
         set_piece(rook_blocker_pos[i][0],rook_blocker_pos[i][1],EMPTY,NO_PLAYER);
     }
@@ -659,19 +659,233 @@ int test_check() {
         set_piece(blocker_pos[i][0],blocker_pos[i][1],PAWN,PLAYER_TWO);
         print_board();
         printf("test_check : blocked bishop -diag %d ", i );
-        EXPECT(is_my_king_in_check( PLAYER_TWO) == false );
+        EXPECT(is_my_king_in_check( board, PLAYER_TWO) == false );
         set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
         set_piece(blocker_pos[i][0],blocker_pos[i][1],EMPTY,NO_PLAYER);
     }
-        
 
-        
+
+
 
 
 }
 
+
+void test_find_king() {
+    printf("test_find_king ----------------------------------------\n");
+    clear_board();
+    printf("test_find_king : setup board\n " );
+    set_piece(5,2,KING,PLAYER_ONE);
+    print_board();
+    s8 kings_x = 0; 
+    s8 kings_y = 0; 
+    printf("test_find_king : king in middle\n " );
+    bool ret = find_king( board, PLAYER_ONE, &kings_x, &kings_y );
+    EXPECT( kings_x == 5 );
+    EXPECT( kings_y == 2 );
+
+    set_piece(5,2,EMPTY,NO_PLAYER);
+    set_piece(0,0,KING,PLAYER_ONE);
+    print_board();
+    printf("test_find_king : king upper left\n " );
+    find_king( board, PLAYER_ONE, &kings_x, &kings_y );
+    EXPECT( kings_x == 0 );
+    EXPECT( kings_y == 0 );
+
+    printf("test_find_king : king lower right\n " );
+    set_piece(0,0,EMPTY,NO_PLAYER);
+    set_piece(7,7,KING,PLAYER_ONE);
+    print_board();
+    find_king( board, PLAYER_ONE, &kings_x, &kings_y );
+    EXPECT( kings_x == 7 );
+    EXPECT( kings_y == 7 );
+    
+}
+
+int test_find_checkers() {
+    printf("test_find_checkers --------------------------\n");
+    clear_board();
+    printf("test_find_checkers : setup board\n " );
+    set_piece(3,4,KING,PLAYER_ONE);
+    print_board();
+
+    printf("test_find_checkers : no threatening pieces" );
+    CHECKERS chkr = find_checkers( PLAYER_ONE, 3, 4);
+    EXPECT( chkr.count == 0 );
+
+    set_piece(2,3,PAWN,PLAYER_TWO);
+    print_board();
+    printf("test_find_checkers : one threatening piece" );
+    chkr = find_checkers( PLAYER_ONE, 3, 4);
+    EXPECT( chkr.count == 1 );
+
+    set_piece(4,3,PAWN,PLAYER_TWO);
+    print_board();
+    printf("test_find_checkers : two threatening pieces" );
+    chkr = find_checkers( PLAYER_ONE, 3, 4);
+    EXPECT( chkr.count == 2 );
+
+
+    clear_board();
+    set_piece(3,4,KING,PLAYER_TWO);
+    set_piece(4,6,PAWN,PLAYER_ONE);
+    print_board();
+    printf("test_check : no threatening pieces" );
+    chkr = find_checkers( PLAYER_TWO, 3, 4);
+    printf("chkr.count = %d", chkr.count );
+    EXPECT( chkr.count == 0 );
+
+    set_piece(4,6,EMPTY,NO_PLAYER);
+    set_piece(4,5,PAWN,PLAYER_ONE);
+    print_board();
+    printf("test_find_checkers : one threatening piece" );
+    chkr = find_checkers( PLAYER_TWO, 3, 4);
+    EXPECT( chkr.count == 1 );
+
+    set_piece(2,5,PAWN,PLAYER_ONE);
+    print_board();
+    printf("test_find_checkers : two threatening pieces" );
+    chkr = find_checkers( PLAYER_TWO, 3, 4);
+    EXPECT( chkr.count == 2 );
+
+    // knights 
+    set_piece(4,5,EMPTY,NO_PLAYER);
+    set_piece(2,5,EMPTY,NO_PLAYER);
+    set_piece(2,5,KNIGHT,PLAYER_ONE);
+    print_board();
+    printf("test_find_checkers : Non threatening knight " );
+    chkr = find_checkers( PLAYER_TWO, 3, 4);
+    EXPECT( chkr.count == 0 );
+
+    const s8 knight_pos[8][2] = {
+        { 2,2 },
+        { 4,2 },
+        { 5,3 },
+        { 5,5 },
+        { 4,6 },
+        { 2,6 },
+        { 1,5 },
+        { 1,3 },
+    };
+
+    set_piece(2,5,EMPTY,NO_PLAYER);
+    for( s8 i=0; i < 8; i = i+2 ) {
+        set_piece(knight_pos[i][0],knight_pos[i][1],KNIGHT,PLAYER_ONE);
+        set_piece(knight_pos[i+1][0],knight_pos[i+1][1],KNIGHT,PLAYER_ONE);
+        print_board();
+        printf("test_checkers : threatening knightS %d ", i );
+        chkr = find_checkers( PLAYER_TWO, 3, 4);
+        EXPECT( chkr.count == 2 );
+        set_piece(knight_pos[i][0],knight_pos[i][1],EMPTY,NO_PLAYER);
+        set_piece(knight_pos[i+1][0],knight_pos[i+1][1],EMPTY,NO_PLAYER);
+    }
+
+    const s8 bishop_pos[4][2] = {
+        { 1,2 },
+        { 5,2 },
+        { 5,6 },
+        { 1,6 },
+    };
+
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],BISHOP,PLAYER_ONE);
+        print_board();
+        printf("test_checkers : threatening bishop(s) %d ", i+1 );
+        chkr = find_checkers( PLAYER_TWO, 3, 4);
+        s8 expected = i+1;
+        if( expected > 2 ) expected = 2;
+        EXPECT( chkr.count == expected );
+    }
+
+    //rook 
+    const s8 rook_pos[4][2] = {
+        { 3,2 },
+        { 5,4 },
+        { 3,6 },
+        { 1,4 },
+    };
+
+    clear_board();
+    set_piece(3,4,KING,PLAYER_ONE);
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(rook_pos[i][0],rook_pos[i][1],ROOK,PLAYER_TWO);
+        print_board();
+        printf("test_checkers : threatening rook %d ", i );
+        chkr = find_checkers( PLAYER_ONE, 3, 4);
+        s8 expected = i+1;
+        if( expected > 2 ) expected = 2;
+        EXPECT( chkr.count == expected );
+    }
+
+    // harmless
+    clear_board();
+    set_piece(3,4,KING,PLAYER_ONE);
+    set_piece(3,2, ROOK, PLAYER_ONE);
+    set_piece(1,2,BISHOP,PLAYER_ONE);
+    print_board();
+    printf("test_checkers : non threatening rook  and bishop " );
+    chkr = find_checkers( PLAYER_ONE, 3, 4);
+    EXPECT( chkr.count == 0 );
+
+    set_piece(3,4,KING,PLAYER_TWO);
+    print_board();
+    printf("test_checkers :  threatening rook  and bishop " );
+    chkr = find_checkers( PLAYER_TWO, 3, 4);
+    EXPECT( chkr.count == 2 );
+
+    set_piece(3,4,KING,PLAYER_TWO);
+    set_piece(3,3, PAWN, PLAYER_TWO);
+    print_board();
+    printf("test_checkers :  blocked rook and threatening bishop " );
+    chkr = find_checkers( PLAYER_TWO, 3, 4);
+    EXPECT( chkr.count == 1 );
+
+
+    set_piece(3,2,EMPTY,NO_PLAYER);
+    set_piece(1,2,EMPTY,NO_PLAYER);  
+    set_piece(4,3, PAWN, PLAYER_TWO);
+    set_piece(4,4, PAWN, PLAYER_TWO);
+    print_board();
+
+
+    // queen
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(rook_pos[i][0],rook_pos[i][1],QUEEN,PLAYER_ONE);
+        print_board();
+        chkr = find_checkers( PLAYER_TWO, 3, 4);
+        s8 expected = i < 2 ? 0 : 1;
+        printf("test_checkers : threatening queen %d : expect: %d ", i, expected );
+        EXPECT( chkr.count == expected );
+        set_piece(rook_pos[i][0],rook_pos[i][1],EMPTY,NO_PLAYER);
+    }
+    for( s8 i=0; i < 4; i++ ) {
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],QUEEN,PLAYER_ONE);
+        print_board();
+        chkr = find_checkers( PLAYER_TWO, 3, 4);
+        s8 expected = i == 1 ? 0 : 1;
+        printf("test_checkers : threatening queen %d : expect: %d ", i, expected );
+        EXPECT( chkr.count == expected );
+        set_piece(bishop_pos[i][0],bishop_pos[i][1],EMPTY,NO_PLAYER);
+    }
+
+
+}
+
+
+
+
+int test_block_square() {
+    printf("test_block_square -------------------------------------\n");
+    clear_board();
+    printf("test_block_square : setup board\n " );
+    set_piece(3,4,KING,PLAYER_ONE);
+    print_board();
+
+}
+
+
 int test_checkmate() {
-    printf("test_check --------------------------------------------\n");
+    printf("test_checkmate ----------------------------------------\n");
     clear_board();
     printf("test_check : setup board\n " );
     set_piece(3,4,KING,PLAYER_ONE);
@@ -688,8 +902,25 @@ int main( int argc, char* argv[] ) {
     test_kings();
 
     test_check();
+    test_find_king();
 
-    test_checkmate();
+    test_find_checkers();
+
+
+    /*
+
+       find_checkers
+       test_block_square();
+
+
+       any_valid_king_move
+
+       has_any_valid_move
+
+       is_checkmate
+
+       is_stalemate
+     */
 
     return 0;
 }

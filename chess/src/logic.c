@@ -224,6 +224,8 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
             return true;
          }     
     }
+
+
     // unobstructed diagonal is attacker's Bishop or Queen
     for( u8 i=0; i < 4; i++ ) {
         s8 dx = DIAGONAL_MOVES[i][0];
@@ -280,11 +282,13 @@ bool is_square_attacked( u8 x, u8 y, PLAYER player ) {
     return false;
 }
 
-bool find_king( PLAYER player, s8 *x, s8 *y ) {
+bool find_king( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player, s8 *x, s8 *y ) {
     // find the king
+    *x = -1;
+    *y = -1;
     for( s8 i=0; i < BOARD_SIZE; i++ ) {
         for( s8 j=0; j < BOARD_SIZE; j++ ) {
-            CHESS_PIECE piece = board[(u8)i][(u8)j];
+            CHESS_PIECE piece = b[(u8)i][(u8)j];
             if( piece.type == KING && piece.player == player ) {
                 *x = i;
                 *y = j;
@@ -299,10 +303,10 @@ bool find_king( PLAYER player, s8 *x, s8 *y ) {
 }
 
 
-bool is_my_king_in_check( PLAYER player ) {
+bool is_my_king_in_check( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player ) {
     s8 x=-1;
     s8 y=-1;
-    if( !find_king( player, &x, &y ) ) {
+    if( !find_king( b, player, &x, &y ) ) {
         return false; // not found, cant' be in check.
     }
 
@@ -369,6 +373,257 @@ void set_piece( s8 x, s8 y, PIECE_TYPE t, PLAYER p )
     board[x][y].player = p;
 }
 
+CHECKERS find_checkers( PLAYER player, s8 x, s8 y )
+{
+    CHECKERS check_out = {0}; 
+
+    PLAYER atkr = ( player == PLAYER_ONE ) ? PLAYER_TWO : PLAYER_ONE;
+
+    // PAWN : immediate diagonal from opposite side for pawns )
+    s8 atk_y = y - 1 ;
+    if( player == PLAYER_TWO ) {
+        // check if player two is attacking player one's square
+        atk_y = y + 1;         
+    }
+    if( in_bounds( (u8)(x-1), (u8)atk_y ) 
+        && board[ (u8)(x-1) ][(u8)atk_y].type == PAWN 
+        && board[(u8)(x-1)][(u8)atk_y].player == atkr ) {
+        check_out.x[check_out.count] = x-1;
+        check_out.y[check_out.count] = atk_y;
+        check_out.is_biroqu[check_out.count] = false;
+        check_out.count++;
+        if( check_out.count >=2 ) return check_out;
+    
+    }
+    if( in_bounds( (u8)(x+1), (u8)atk_y ) 
+        && board[ (u8)(x+1) ][(u8)atk_y].type == PAWN 
+        && board[(u8)(x+1)][(u8)atk_y].player == atkr ) {
+        check_out.x[check_out.count] = x+1;
+        check_out.y[check_out.count] = atk_y;
+        check_out.is_biroqu[check_out.count] = false;
+        check_out.count++;
+        if( check_out.count >=2 ) return check_out;
+    }
+
+    // Knight : 8 possible pieces
+    for (u8 i=0;i<8;i++){
+        s8 atk_x = x + KNIGHT_MOVES[i][0];
+        s8 atk_y = y + KNIGHT_MOVES[i][1];
+        if (in_bounds(atk_x,atk_y) && board[(u8)atk_x][(u8)atk_y].type == KNIGHT && board[(u8)atk_x][(u8)atk_y].player == atkr ) {
+            check_out.x[check_out.count] = atk_x;
+            check_out.y[check_out.count] = atk_y;
+            check_out.is_biroqu[check_out.count] = false;
+            check_out.count++;
+            if( check_out.count >=2 ) return check_out;
+        }     
+    }
+    // unobstructed diagonal is attacker's Bishop or Queen
+    for( u8 i=0; i < 4; i++ ) {
+        s8 dx = DIAGONAL_MOVES[i][0];
+        s8 dy = DIAGONAL_MOVES[i][1];
+        s8 atk_x = x + dx;
+        s8 atk_y = y + dy;
+        while( in_bounds( atk_x, atk_y ) ) {
+            CHESS_PIECE piece = board[(u8)atk_x][(u8)atk_y];
+            if( piece.type != EMPTY && piece.player == player ) {
+                break;
+            }
+            if( ( piece.type == BISHOP || piece.type == QUEEN ) && piece.player == atkr) 
+            {
+                check_out.x[check_out.count] = atk_x;
+                check_out.y[check_out.count] = atk_y;
+                check_out.is_biroqu[check_out.count] = true;
+                check_out.count++;
+                if( check_out.count >=2 ) return check_out;
+            } 
+            atk_x = atk_x + dx;
+            atk_y = atk_y + dy;
+        }
+
+    }
+    // unobstructed horizontal is attacker's  Rook or Queen
+    for( s8 dx = -1; dx < 2; dx+=2 ) {
+        s8 atk_x = x + dx;
+        while( in_bounds( atk_x, y ) ) {
+            CHESS_PIECE piece = board[(u8)atk_x][(u8)y];
+            if( piece.type != EMPTY && piece.player == player ) {
+                break;
+            }
+            if( ( piece.type == ROOK || piece.type == QUEEN ) && piece.player == atkr) 
+            {
+                check_out.x[check_out.count] = atk_x;
+                check_out.y[check_out.count] = y;
+                check_out.is_biroqu[check_out.count] = true;
+                check_out.count++;
+                if( check_out.count >=2 ) return check_out;
+            } 
+            atk_x = atk_x + dx;
+        }
+    }
+
+
+    // unobstructed vertical is attacker's Rook or Queen
+    for( s8 dy = -1; dy < 2; dy+=2 ) {
+        s8 atk_y = y + dy;
+        while( in_bounds( x, atk_y ) ) {
+            CHESS_PIECE piece = board[(u8)x][(u8)atk_y];
+            if( piece.type != EMPTY && piece.player == player ) {
+                break;
+            }
+            if( ( piece.type == ROOK || piece.type == QUEEN ) && piece.player == atkr) 
+            {
+                check_out.x[check_out.count] = x;
+                check_out.y[check_out.count] = atk_y;
+                check_out.is_biroqu[check_out.count] = true;
+                check_out.count++;
+                if( check_out.count >=2 ) return check_out;
+            } 
+            atk_y = atk_y + dy;
+        }
+    }
+
+    return check_out;
+}
+
+
+bool is_block_square(s8 kx, s8 ky, s8 cx, s8 cy,  s8 bx, s8 by) {
+
+    s8 dx = (cx > kx) ? 1 : (cx < kx) ? -1 : 0;
+    s8 dy = (cy > ky) ? 1 : (cy < ky) ? -1 : 0;
+
+    // same square (shouldn't happen)
+    if (dx==0 && dy==0) {
+        return false; 
+    }
+
+    s8 x = kx + dx;
+    s8 y = ky + dy;
+    while (!(x == cx && y == cy)) {
+        if (x == bx && y == by)  {
+            return true;
+        } 
+        x += dx; y += dy;
+    }
+    return false;
+}
+
+
+
+bool any_valid_king_move( PLAYER player) {
+    s8  x, y;
+    if (!find_king( board, player, &x, &y)) return false;
+    static const s8  KING_MOVE[8][2] = {
+        {1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}
+    };
+    for (s8 i=0;i<8;i++){
+        s8  nx = x + KING_MOVE[i][0], ny = y + KING_MOVE[i][1];
+        if (!in_bounds(nx,ny)) continue;
+
+        // avoid moving onto own piece (and keep castling out).
+        if (!is_valid_move( x,y, nx,ny)) {
+            continue;
+        }
+
+        CHESS_PIECE tmp[BOARD_SIZE][BOARD_SIZE]; // X, Y
+        memcpy(board, tmp, sizeof(board) );
+        tmp[nx][ny] = tmp[x][y];
+        tmp[x][y].type = EMPTY;
+        tmp[x][y].player = NO_PLAYER;
+
+        if (!is_my_king_in_check(tmp, player)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool has_any_valid_move(PLAYER player) {
+    s8  kx;
+    s8 ky;
+    if (!find_king(board, player, &kx, &ky)) return false;
+
+    bool in_check = is_my_king_in_check(board, player);
+    if (!in_check) {
+        // NOT in check → any legal move is fine (short-circuit on first).
+        for (u8 x0=0;x0<8;x0++){
+            for (u8 y0 = 0; y0 < 8 ;y0++){
+                CHESS_PIECE p = board[x0][y0];
+                if (p.player != player || p.type == EMPTY) continue;
+                for (u8 y1=0;y1<8;y1++){
+                    for (u8 x1=0;x1<8;x1++){
+                        if (x0==x1 && y0==y1)  {
+                            continue;
+                        }
+                        if (!is_valid_move(x0,y0,x1,y1)) {
+                            continue;
+                        } 
+
+                        CHESS_PIECE tmp[BOARD_SIZE][BOARD_SIZE]; // X, Y
+                        memcpy(board, tmp, sizeof(board) );
+                        tmp[x1][y1] = tmp[x0][y0];
+                        tmp[x0][y0].type = EMPTY;
+                        tmp[x0][y0].player = NO_PLAYER;
+                        if (!is_my_king_in_check(tmp, player)) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    // two checkers, there's no way to block/capture both in one move
+    // so only check for king moves
+    CHECKERS chk = find_checkers( player, kx, ky);
+    if (chk.count >= 2) {
+
+        return any_valid_king_move( player);
+    }
+
+    // Only one checker  king moves OR capture checker OR block checker (if is_biroqu).
+    if (any_valid_king_move( player)) return true;
+
+    // Try non-king pieces with constraints
+    int cx = chk.x[0], cy = chk.y[0];
+    bool is_biroqu = chk.is_biroqu[0];
+
+    for (int y0=0;y0<8;y0++){
+        for (int x0=0;x0<8;x0++){
+            CHESS_PIECE p = board[y0][x0];
+            if (p.player != player || p.type == EMPTY || p.type == KING) continue;
+
+            for (int y1=0;y1<8;y1++){
+                for (int x1=0;x1<8;x1++){
+                    if (x0==x1 && y0==y1) continue;
+                    // Must either capture the checker, or (if is_biroqu) block the line.
+                    bool candidate = false;
+                    if (x1 == cx && y1 == cy) {
+                        candidate = true; // capturing the checker
+
+                    } else if (is_biroqu && is_block_square(kx,ky,cx,cy,x1,y1)) {
+                        candidate = true; // blocking square
+                    } else {
+                        candidate = false;
+                    }
+                    if (!candidate) {
+                        continue;
+                    } 
+
+                    if (!is_valid_move(x0,y0,x1,y1)) {
+                        continue;
+                    } 
+
+                    CHESS_PIECE tmp[BOARD_SIZE][BOARD_SIZE]; // X, Y
+                    memcpy(board, tmp, sizeof(board) );
+                    tmp[x1][y1] = tmp[x0][y0];
+                    tmp[x0][y0].type = EMPTY;
+                    tmp[x0][y0].player = NO_PLAYER;
+                    if (!is_my_king_in_check(tmp, player)) return true;
+                }
+            }
+        }
+    }
+    return false;
+}
 
 
 
@@ -376,9 +631,11 @@ bool is_checkmate( PLAYER player )
 {
     // checkmate if 
     // if king is in check 
-    // and king has no valid moves
-    // and no other piece can cancel check
-
+    if( is_my_king_in_check(board, player ) == true ) {
+        // and king has no valid moves
+        // and no other piece can cancel check
+        return !has_any_valid_move( player );
+    }
     return false;
 }
 
@@ -387,13 +644,16 @@ bool is_stalemate( PLAYER player )
 {
     // stalemate if 
     // if king is NOT in check 
-    // no legal moves left.
+    if( is_my_king_in_check(board, player ) == false ) {
+        // no legal moves left.
+        return !has_any_valid_move( player );
+    }
 
     return false;
 }
 
 bool have_any_valid_moves( PLAYER player ) {
-
+    return false;
 }
 
 

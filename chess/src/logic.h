@@ -29,18 +29,28 @@ typedef struct {
     PLAYER player;     // which player  
 } CHESS_PIECE;
 
+// structure for loggin two checkers
+typedef struct {
+    int count;
+    int x[2];
+    int y[2];
+    bool is_biroqu[2]; // is a bishop, rook, or queen
+} CHECKERS;
+
 
 void clear_board();
 bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1);
-bool is_my_king_in_check( PLAYER player );
+bool is_my_king_in_check( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player );
 
 void set_piece( s8 x, s8 y, PIECE_TYPE t, PLAYER p );
+
+CHECKERS find_checkers( PLAYER palyer, s8 king_x, s8 kings_y ); // KINGS X!
 
 bool is_checkmate( PLAYER player );
 bool is_stalemate( PLAYER player );
 
 bool have_any_valid_moves( PLAYER player );
-bool find_king( PLAYER player, s8 * kings_x, s8  *kings_y );
+bool find_king(  CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player, s8 * kings_x, s8  *kings_y );
 
 
 
