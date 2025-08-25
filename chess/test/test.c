@@ -993,7 +993,6 @@ void test_has_any_valid_move() {
     EXPECT(is_my_king_in_check(board, PLAYER_TWO) == true);
     EXPECT(has_any_valid_move(PLAYER_TWO) == false); 
 
-/*
     clear_board();
     set_piece(6,7,KING,PLAYER_ONE);
     set_piece(6,6,PAWN,PLAYER_ONE);
@@ -1004,7 +1003,7 @@ void test_has_any_valid_move() {
 
     EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
     EXPECT(has_any_valid_move(PLAYER_ONE) == false); 
-*/
+
 }
 
 
