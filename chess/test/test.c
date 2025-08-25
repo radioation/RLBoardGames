@@ -878,8 +878,57 @@ int test_block_square() {
     printf("test_block_square -------------------------------------\n");
     clear_board();
     printf("test_block_square : setup board\n " );
-    set_piece(3,4,KING,PLAYER_ONE);
-    print_board();
+    s8 kings_x = 4;
+    s8 kings_y = 4;
+    s8 checker_x = 4;
+    s8 checker_y = 0;
+    printf("king (4,4) checker is rook (or queen) at 4,0\n");
+    printf("* Blocking squares -");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,4,3) == true);
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,4,2) == true);
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,4,1) == true);
+    printf("* rook square - ");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,4,0) == false); // checker square itself
+    printf("* past king ( not inline ) - ");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,4,5) == false); // behind king
+    printf("* not on vertical - ");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,3,3) == false); // off vertical 
+    
+    checker_x = 0;
+    checker_y = 4;
+    printf("king (4,4) checker is rook (or queen) at 0,4\n");
+    printf("* Blocking squares -");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,3,4) == true);
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,2,4) == true);
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,1,4) == true);
+    printf("* rook square - ");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,0,4) == false); // checker/ROOK
+    printf("* past king ( not inline ) - ");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,5,4) == false); // behind king
+    printf("* not on horizontal - ");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,3,3) == false); // off horizontal
+
+    checker_x = 7;
+    checker_y = 7;
+    printf("king (4,4) checker is bishop (or queen) at 7,7\n");
+    printf("* Blocking squares -");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,5,5) == true);
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,6,6) == true);
+    printf("* bishop square - ");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,7,7) == false); // checker
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,3,3) == false); // past king
+
+    checker_x = 1;
+    checker_y = 7;
+    printf("king (4,4) checker is bishop (or queen) at 1,7\n");
+    printf("* Blocking squares -");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,3,5) == true);
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,2,6) == true);
+    printf("* bishop square - ");
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,1,7) == false); // checker
+    EXPECT(is_block_square(kings_x,kings_y,checker_x,checker_y,5,3) == false); // past-king
+
+
 
 }
 
@@ -905,13 +954,10 @@ int main( int argc, char* argv[] ) {
     test_find_king();
 
     test_find_checkers();
+    test_block_square();
 
 
     /*
-
-       find_checkers
-       test_block_square();
-
 
        any_valid_king_move
 

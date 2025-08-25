@@ -486,20 +486,22 @@ CHECKERS find_checkers( PLAYER player, s8 x, s8 y )
 }
 
 
-bool is_block_square(s8 kx, s8 ky, s8 cx, s8 cy,  s8 bx, s8 by) {
+bool is_block_square(s8 kings_x, s8 kings_y, s8 checker_x, s8 checker_y,  s8 blocker_x, s8 blocker_y) {
 
-    s8 dx = (cx > kx) ? 1 : (cx < kx) ? -1 : 0;
-    s8 dy = (cy > ky) ? 1 : (cy < ky) ? -1 : 0;
+    // general direction of Checker.
+    s8 dx = (checker_x > kings_x) ? 1 : (checker_x < kings_x) ? -1 : 0;
+    s8 dy = (checker_y > kings_y) ? 1 : (checker_y < kings_y) ? -1 : 0;
 
     // same square (shouldn't happen)
     if (dx==0 && dy==0) {
         return false; 
     }
 
-    s8 x = kx + dx;
-    s8 y = ky + dy;
-    while (!(x == cx && y == cy)) {
-        if (x == bx && y == by)  {
+    // runtowrads the checker and see if we can block it
+    s8 x = kings_x + dx;
+    s8 y = kings_y + dy;
+    while (!(x == checker_x && y == checker_y)) {
+        if (x == blocker_x && y == blocker_y)  {
             return true;
         } 
         x += dx; y += dy;
