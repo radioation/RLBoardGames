@@ -877,7 +877,6 @@ int test_find_checkers() {
 int test_block_square() {
     printf("test_block_square -------------------------------------\n");
     clear_board();
-    printf("test_block_square : setup board\n " );
     s8 kings_x = 4;
     s8 kings_y = 4;
     s8 checker_x = 4;
@@ -933,6 +932,82 @@ int test_block_square() {
 }
 
 
+void test_has_any_valid_move() {
+    printf("test_has_any_valid_move -------------------------------\n");
+    clear_board();
+
+
+    // Not in check : any legal move exists
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(4,6,PAWN,PLAYER_ONE); // white pawn can move to (4,5)
+    print_board();
+
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == false );
+    EXPECT(has_any_valid_move(PLAYER_ONE) == true);
+
+
+    clear_board();
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(4,0,KING,PLAYER_TWO);
+
+    set_piece(5,5,KNIGHT,PLAYER_TWO); // checking knight
+    set_piece(6,6,PAWN,PLAYER_ONE);   // can capture up-left to (5,5)
+    print_board();
+    EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
+    EXPECT(has_any_valid_move(PLAYER_ONE) == true);
+
+    clear_board();
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(0,0,KING,PLAYER_TWO);
+
+    set_piece(1,4,BISHOP,PLAYER_TWO); // checking along (1,4)->(4,7)
+                                      // Empty the line (2,5) and (3,6)
+                                      // White rook that can drop to (2,5) (ensure (2,6) empty)
+    set_piece(2,7,ROOK,PLAYER_ONE);
+    print_board();
+
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == true); // bishop
+    EXPECT(has_any_valid_move( PLAYER_ONE) == true); // rook can block 
+
+
+    clear_board();
+    set_piece(4,4,KING,PLAYER_ONE);
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(4,0,ROOK,PLAYER_TWO);   // check on file
+    set_piece(7,7,BISHOP,PLAYER_TWO); // check on diagonal to (4,4)
+    print_board();                    // Make sure (3,4) is empty and not attacked by other pieces
+
+    EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
+    EXPECT(has_any_valid_move(PLAYER_ONE) == true); // king step should exist
+
+
+    clear_board();
+    set_piece(4,4,KING,PLAYER_ONE);
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(4,0,ROOK,PLAYER_TWO);   
+    set_piece(0,7,ROOK,PLAYER_ONE); // check 
+    set_piece(1,3,ROOK,PLAYER_ONE); 
+    print_board();                 
+
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == true);
+    EXPECT(has_any_valid_move(PLAYER_TWO) == false); 
+
+/*
+    clear_board();
+    set_piece(6,7,KING,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(4,7,ROOK,PLAYER_TWO);   
+    set_piece(6,4,KNIGHT,PLAYER_TWO); // check 
+    print_board();                 
+
+    EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
+    EXPECT(has_any_valid_move(PLAYER_ONE) == false); 
+*/
+}
+
+
 int test_checkmate() {
     printf("test_checkmate ----------------------------------------\n");
     clear_board();
@@ -956,12 +1031,12 @@ int main( int argc, char* argv[] ) {
     test_find_checkers();
     test_block_square();
 
+    test_has_any_valid_move();
 
     /*
 
        any_valid_king_move
 
-       has_any_valid_move
 
        is_checkmate
 
