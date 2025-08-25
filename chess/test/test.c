@@ -942,7 +942,6 @@ void test_has_any_valid_move() {
     set_piece(4,0,KING,PLAYER_TWO);
     set_piece(4,6,PAWN,PLAYER_ONE); // white pawn can move to (4,5)
     print_board();
-
     EXPECT(is_my_king_in_check( board, PLAYER_ONE) == false );
     EXPECT(has_any_valid_move(PLAYER_ONE) == true);
 
@@ -950,12 +949,13 @@ void test_has_any_valid_move() {
     clear_board();
     set_piece(4,7,KING,PLAYER_ONE);
     set_piece(4,0,KING,PLAYER_TWO);
-
     set_piece(5,5,KNIGHT,PLAYER_TWO); // checking knight
     set_piece(6,6,PAWN,PLAYER_ONE);   // can capture up-left to (5,5)
     print_board();
     EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
     EXPECT(has_any_valid_move(PLAYER_ONE) == true);
+
+
 
     clear_board();
     set_piece(4,7,KING,PLAYER_ONE);
@@ -966,7 +966,6 @@ void test_has_any_valid_move() {
                                       // White rook that can drop to (2,5) (ensure (2,6) empty)
     set_piece(2,7,ROOK,PLAYER_ONE);
     print_board();
-
     EXPECT(is_my_king_in_check( board, PLAYER_ONE) == true); // bishop
     EXPECT(has_any_valid_move( PLAYER_ONE) == true); // rook can block 
 
@@ -977,7 +976,6 @@ void test_has_any_valid_move() {
     set_piece(4,0,ROOK,PLAYER_TWO);   // check on file
     set_piece(7,7,BISHOP,PLAYER_TWO); // check on diagonal to (4,4)
     print_board();                    // Make sure (3,4) is empty and not attacked by other pieces
-
     EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
     EXPECT(has_any_valid_move(PLAYER_ONE) == true); // king step should exist
 
@@ -989,9 +987,9 @@ void test_has_any_valid_move() {
     set_piece(0,7,ROOK,PLAYER_ONE); // check 
     set_piece(1,3,ROOK,PLAYER_ONE); 
     print_board();                 
-
     EXPECT(is_my_king_in_check(board, PLAYER_TWO) == true);
     EXPECT(has_any_valid_move(PLAYER_TWO) == false); 
+
 
     clear_board();
     set_piece(6,7,KING,PLAYER_ONE);
@@ -1000,9 +998,74 @@ void test_has_any_valid_move() {
     set_piece(4,7,ROOK,PLAYER_TWO);   
     set_piece(6,4,KNIGHT,PLAYER_TWO); // check 
     print_board();                 
-
     EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
     EXPECT(has_any_valid_move(PLAYER_ONE) == false); 
+
+
+    clear_board();
+    set_piece(6,7,KING,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(3,4,ROOK,PLAYER_ONE); // should NOT be able to block
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(4,7,ROOK,PLAYER_TWO);   
+    set_piece(6,4,KNIGHT,PLAYER_TWO); // check 
+    print_board();                 
+    EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
+    EXPECT(has_any_valid_move(PLAYER_ONE) == false); 
+
+
+    clear_board();
+    set_piece(6,7,KING,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(3,4,ROOK,PLAYER_ONE); // should be able to block
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(1,7,ROOK,PLAYER_TWO);   
+    set_piece(6,4,KNIGHT,PLAYER_TWO); // check 
+    print_board();                 
+    EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
+    EXPECT(has_any_valid_move(PLAYER_ONE) == true); 
+
+
+
+    clear_board();
+    set_piece(6,7,KING,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(4,4,BISHOP,PLAYER_ONE); // should be able to capture
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(1,7,ROOK,PLAYER_TWO);   
+    set_piece(6,4,KNIGHT,PLAYER_TWO); // check 
+    print_board();                 
+    EXPECT(is_my_king_in_check(board, PLAYER_ONE) == true);
+    EXPECT(has_any_valid_move(PLAYER_ONE) == true); 
+
+
+    clear_board();
+    set_piece(1,0,KING,PLAYER_TWO);
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(1,7,ROOK,PLAYER_TWO);   // should be able to attack queen
+    set_piece(6,7,KING,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(5,7,KNIGHT,PLAYER_ONE);
+    set_piece(4,4,BISHOP,PLAYER_ONE); 
+    set_piece(1,1,QUEEN,PLAYER_ONE); 
+    print_board();                 
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == true);
+    EXPECT(has_any_valid_move(PLAYER_TWO) == true); 
+
+
+    clear_board();
+    set_piece(1,0,KING,PLAYER_TWO);
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(6,7,KING,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(5,7,KNIGHT,PLAYER_ONE);
+    set_piece(4,4,BISHOP,PLAYER_ONE); 
+    set_piece(1,1,QUEEN,PLAYER_ONE); 
+    print_board();                 
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == true);
+    EXPECT(has_any_valid_move(PLAYER_TWO) == false); 
 
 }
 
