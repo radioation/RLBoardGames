@@ -1069,6 +1069,49 @@ void test_has_any_valid_move() {
 
 }
 
+bool test_any_valid_king_move() {
+    printf("test_any_valid_king_move ------------------------------\n");
+
+    clear_board();
+    set_piece(4,4,KING,PLAYER_ONE);
+    set_piece(0,0,KING,PLAYER_TWO);
+    print_board();                 
+    EXPECT(any_valid_king_move(PLAYER_TWO) == true ); 
+
+    clear_board();
+    set_piece(4,4,KING,PLAYER_ONE);
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(4,0,ROOK,PLAYER_TWO);   
+    set_piece(0,7,ROOK,PLAYER_ONE); // check mate probably
+    set_piece(1,3,ROOK,PLAYER_ONE); 
+    print_board();                 
+    EXPECT(any_valid_king_move(PLAYER_TWO) == false); 
+
+
+    clear_board();
+    set_piece(6,7,KING,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE); 
+    set_piece(7,6,PAWN,PLAYER_ONE); 
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(4,5,BISHOP,PLAYER_TWO);  // check, but should be able to get out
+    set_piece(5,1,ROOK,PLAYER_TWO);  
+    print_board();                 
+    EXPECT(any_valid_king_move(PLAYER_ONE) == true); 
+
+    clear_board();
+    set_piece(6,7,KING,PLAYER_ONE);
+    set_piece(5,7,BISHOP,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE); 
+    set_piece(6,6,PAWN,PLAYER_ONE); 
+    set_piece(7,6,PAWN,PLAYER_ONE); 
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(4,5,BISHOP,PLAYER_TWO);  // check, but should be able to get out
+    set_piece(5,1,ROOK,PLAYER_TWO);  
+    print_board();                 
+    EXPECT(any_valid_king_move(PLAYER_ONE) == false); 
+
+}
 
 int test_checkmate() {
     printf("test_checkmate ----------------------------------------\n");
@@ -1095,9 +1138,10 @@ int main( int argc, char* argv[] ) {
 
     test_has_any_valid_move();
 
+    test_any_valid_king_move();
+
     /*
 
-       any_valid_king_move
 
 
        is_checkmate

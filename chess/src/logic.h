@@ -51,6 +51,7 @@ bool is_stalemate( PLAYER player );
 
 bool is_block_square(s8 kings_x, s8 kings_y, s8 checker_x, s8 checker_y,  s8 blocker_x, s8 blocker_y);
 bool has_any_valid_move( PLAYER player );
+bool any_valid_king_move( PLAYER player);
 bool find_king(  CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player, s8 * kings_x, s8  *kings_y );
 
 
