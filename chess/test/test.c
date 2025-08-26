@@ -62,7 +62,7 @@ void test_pawns() {
     printf("test_pawns ----------------------------------------------\n");
     clear_board();
 
-    printf("test_pawns : setup board\n " );
+    printf("test_pawns : setup board\n" );
     set_piece(4,7,KING,PLAYER_ONE);
     set_piece(4,0,KING,PLAYER_TWO);
 
@@ -170,7 +170,7 @@ void test_knights() {
     printf("test_knights --------------------------------------------\n");
     clear_board();
 
-    printf("test_knights : setup board\n " );
+    printf("test_knights : setup board\n" );
 
     set_piece(4,7,KING,PLAYER_ONE);
     set_piece(4,0,KING,PLAYER_TWO);
@@ -234,7 +234,7 @@ void test_knights() {
 void test_bishops() {
     printf("test_bishops --------------------------------------------\n");
     clear_board();
-    printf("test_bishops : setup board\n " );
+    printf("test_bishops : setup board\n" );
 
     set_piece(4,7,KING,PLAYER_ONE);
     set_piece(4,0,KING,PLAYER_TWO);
@@ -292,7 +292,7 @@ void test_bishops() {
 void test_rooks() {
     printf("test_rooks --------------------------------------------\n");
     clear_board();
-    printf("test_rooks : setup board\n " );
+    printf("test_rooks : setup board\n" );
 
     set_piece(4,7,KING,PLAYER_ONE);
     set_piece(4,0,KING,PLAYER_TWO);
@@ -348,7 +348,7 @@ void test_rooks() {
 void test_queens() {
     printf("test_queens --------------------------------------------\n");
     clear_board();
-    printf("test_queens : setup board\n " );
+    printf("test_queens : setup board\n" );
 
 
     set_piece(3,4,QUEEN,PLAYER_ONE);
@@ -408,7 +408,7 @@ void test_queens() {
 void test_kings() {
     printf("test_kings --------------------------------------------\n");
     clear_board();
-    printf("test_kings : setup board\n " );
+    printf("test_kings : setup board\n" );
     set_piece(3,4,KING,PLAYER_ONE);
     print_board();
     // Can move vertical, horizontal, or diagonally
@@ -458,7 +458,7 @@ void test_kings() {
 int test_check() {
     printf("test_check --------------------------------------------\n");
     clear_board();
-    printf("test_check : setup board\n " );
+    printf("test_check : setup board\n" );
     set_piece(3,4,KING,PLAYER_ONE);
     print_board();
 
@@ -674,12 +674,12 @@ int test_check() {
 void test_find_king() {
     printf("test_find_king ----------------------------------------\n");
     clear_board();
-    printf("test_find_king : setup board\n " );
+    printf("test_find_king : setup board\n" );
     set_piece(5,2,KING,PLAYER_ONE);
     print_board();
     s8 kings_x = 0; 
     s8 kings_y = 0; 
-    printf("test_find_king : king in middle\n " );
+    printf("test_find_king : king in middle\n" );
     bool ret = find_king( board, PLAYER_ONE, &kings_x, &kings_y );
     EXPECT( kings_x == 5 );
     EXPECT( kings_y == 2 );
@@ -687,12 +687,12 @@ void test_find_king() {
     set_piece(5,2,EMPTY,NO_PLAYER);
     set_piece(0,0,KING,PLAYER_ONE);
     print_board();
-    printf("test_find_king : king upper left\n " );
+    printf("test_find_king : king upper left\n" );
     find_king( board, PLAYER_ONE, &kings_x, &kings_y );
     EXPECT( kings_x == 0 );
     EXPECT( kings_y == 0 );
 
-    printf("test_find_king : king lower right\n " );
+    printf("test_find_king : king lower right\n" );
     set_piece(0,0,EMPTY,NO_PLAYER);
     set_piece(7,7,KING,PLAYER_ONE);
     print_board();
@@ -705,7 +705,7 @@ void test_find_king() {
 int test_find_checkers() {
     printf("test_find_checkers --------------------------\n");
     clear_board();
-    printf("test_find_checkers : setup board\n " );
+    printf("test_find_checkers : setup board\n" );
     set_piece(3,4,KING,PLAYER_ONE);
     print_board();
 
@@ -1118,7 +1118,7 @@ bool test_any_valid_king_move() {
 int test_checkmate() {
     printf("test_checkmate ----------------------------------------\n");
     clear_board();
-    printf("test_checkmate : setup board\n " );
+    printf("test_checkmate : setup board\n" );
 
 
     clear_board();
@@ -1126,7 +1126,7 @@ int test_checkmate() {
     set_piece(1,1,QUEEN,PLAYER_ONE);
     set_piece(2,2,KING,PLAYER_ONE);
     print_board();
-    printf("test_checkmate : king and queen\n " );
+    printf("test_checkmate : king and queen\n" );
     EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == true);
     EXPECT(is_stalemate(PLAYER_TWO) == false);
@@ -1137,7 +1137,7 @@ int test_checkmate() {
     set_piece(6,1,QUEEN,PLAYER_ONE);
     set_piece(5,2,KING,PLAYER_ONE);
     print_board();
-    printf("test_checkmate : king and queen 2\n " );
+    printf("test_checkmate : king and queen 2\n" );
     EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == true);
     EXPECT(is_stalemate(PLAYER_TWO) == false);
@@ -1147,7 +1147,7 @@ int test_checkmate() {
     set_piece(7,0,ROOK,PLAYER_ONE);
     set_piece(1,2,KING,PLAYER_ONE);
     print_board();
-    printf("test_checkmate : king and rook\n " );
+    printf("test_checkmate : king and rook\n" );
     EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == true);
     EXPECT(is_stalemate(PLAYER_TWO) == false);
@@ -1158,7 +1158,7 @@ int test_checkmate() {
     set_piece(5,2,BISHOP,PLAYER_ONE);
     set_piece(7,2,KING,PLAYER_ONE);
     print_board();
-    printf("test_checkmate : two bishops one king\n " );
+    printf("test_checkmate : two bishops one king\n" );
     EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == true);
     EXPECT(is_stalemate(PLAYER_TWO) == false);
@@ -1200,7 +1200,7 @@ int test_checkmate() {
     set_piece(6,7,KNIGHT,PLAYER_ONE);
     set_piece(7,7,ROOK,PLAYER_ONE);
     print_board();
-    printf("test_checkmate : Fool's mate\n " );
+    printf("test_checkmate : Fool's mate\n" );
     EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == true);
     EXPECT(is_stalemate(PLAYER_TWO) == false);
@@ -1241,25 +1241,163 @@ int test_checkmate() {
     set_piece(6,7,KNIGHT,PLAYER_ONE);
     set_piece(7,7,ROOK,PLAYER_ONE);
     print_board();
-    printf("test_checkmate : Four move mate\n " );
+    printf("test_checkmate : Four move mate\n" );
     EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == true);
     EXPECT(is_stalemate(PLAYER_TWO) == false);
 
 
     clear_board();
+    set_piece(7,1,KING,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(5,0,ROOK,PLAYER_TWO);
+
+    set_piece(7,7,ROOK,PLAYER_ONE);
+    set_piece(6,5,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,KING,PLAYER_ONE);
+    set_piece(4,1,KNIGHT,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Anastasia's mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+
+    clear_board();
     set_piece(6,0,KING,PLAYER_TWO);
     set_piece(5,1,PAWN,PLAYER_TWO);
     set_piece(6,1,PAWN,PLAYER_TWO);
     set_piece(7,1,PAWN,PLAYER_TWO);
-
     set_piece(4,0,ROOK,PLAYER_ONE);
     set_piece(5,6,PAWN,PLAYER_ONE);
     set_piece(6,6,PAWN,PLAYER_ONE);
     set_piece(7,6,PAWN,PLAYER_ONE);
     set_piece(6,7,KING,PLAYER_ONE);
     print_board();
-    printf("test_checkmate : Back Rank mate\n " );
+    printf("test_checkmate : Back Rank mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+
+
+
+    clear_board();
+    set_piece(3,0,KING,PLAYER_TWO);
+    set_piece(2,0,ROOK,PLAYER_TWO);
+    set_piece(4,0,ROOK,PLAYER_TWO);
+    set_piece(3,2,QUEEN,PLAYER_ONE);
+    set_piece(6,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Epaulette mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+
+
+    clear_board();
+    set_piece(2,0,KING,PLAYER_TWO);
+    set_piece(3,0,ROOK,PLAYER_TWO);
+    set_piece(6,0,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(3,1,KNIGHT,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+    set_piece(2,2,PAWN,PLAYER_TWO);
+    set_piece(4,2,PAWN,PLAYER_TWO);
+    set_piece(7,7,QUEEN,PLAYER_TWO);
+    set_piece(0,2,BISHOP,PLAYER_ONE);
+    set_piece(1,4,PAWN,PLAYER_ONE);
+    set_piece(3,6,PAWN,PLAYER_ONE);
+    set_piece(5,4,BISHOP,PLAYER_ONE);
+    set_piece(2,5,KNIGHT,PLAYER_ONE);
+    set_piece(7,5,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(3,6,KING,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Boden mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(1,1,KING,PLAYER_TWO);
+    set_piece(1,0,ROOK,PLAYER_TWO);
+    set_piece(0,1,ROOK,PLAYER_TWO);
+    set_piece(2,2,QUEEN,PLAYER_ONE);
+    set_piece(3,3,PAWN,PLAYER_ONE);
+    set_piece(6,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Dovetail mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(4,1,KING,PLAYER_TWO);
+    set_piece(3,0,ROOK,PLAYER_TWO);
+    set_piece(5,0,ROOK,PLAYER_TWO);
+    set_piece(7,2,ROOK,PLAYER_ONE);
+    set_piece(4,2,QUEEN,PLAYER_ONE);
+    set_piece(6,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Swallow's Tail mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(3,0,ROOK,PLAYER_ONE);
+    set_piece(6,3,BISHOP,PLAYER_ONE);
+    set_piece(6,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Opera mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(6,0,KING,PLAYER_TWO);
+    set_piece(5,0,ROOK,PLAYER_TWO);
+    set_piece(7,1,BISHOP,PLAYER_ONE);
+    set_piece(4,3,BISHOP,PLAYER_ONE);
+    set_piece(6,3,KNIGHT,PLAYER_ONE);
+    set_piece(6,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Blackburne's mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(6,0,KING,PLAYER_TWO);
+    set_piece(5,0,ROOK,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,QUEEN,PLAYER_ONE);
+    set_piece(6,2,PAWN,PLAYER_ONE);
+    set_piece(6,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Domiano's mate\n" );
+    EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == true);
+    EXPECT(is_stalemate(PLAYER_TWO) == false);
+    
+    clear_board();
+    set_piece(7,0,KING,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+    set_piece(5,2,BISHOP,PLAYER_ONE);
+    set_piece(6,7,ROOK,PLAYER_ONE);
+    set_piece(7,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_checkmate : Morphy's mate\n" );
     EXPECT(is_my_king_in_check(board,PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == true);
     EXPECT(is_stalemate(PLAYER_TWO) == false);
@@ -1271,14 +1409,14 @@ int test_checkmate() {
 int test_stalemate() {
     printf("test_stalemate ----------------------------------------\n");
     clear_board();
-    printf("test_stalemate : setup board\n " );
+    printf("test_stalemate : setup board\n" );
 
 
     set_piece(0,0,KING,PLAYER_TWO);
     set_piece(1,2,QUEEN,PLAYER_ONE);
     set_piece(2,1,KING,PLAYER_ONE);
     print_board();
-    printf("test_stalemate : King and Queen\n " );
+    printf("test_stalemate : King and Queen\n" );
     EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
     EXPECT(is_stalemate(PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == false);
@@ -1288,7 +1426,28 @@ int test_stalemate() {
     set_piece(5,6,QUEEN,PLAYER_ONE);
     set_piece(0,0,KING,PLAYER_ONE);
     print_board();
-    printf("test_stalemate : King and Queen 2\n " );
+    printf("test_stalemate : King and Queen 2\n" );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(7,7,KING,PLAYER_TWO);
+    set_piece(7,6,PAWN,PLAYER_TWO);
+    set_piece(6,5,QUEEN,PLAYER_ONE);
+    set_piece(3,0,KING,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : King and Queen 3\n" );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(7,3,KING,PLAYER_TWO);
+    set_piece(5,2,QUEEN,PLAYER_ONE);
+    set_piece(5,3,KING,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : King and Queen 4\n" );
     EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
     EXPECT(is_stalemate(PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == false);
@@ -1305,10 +1464,64 @@ int test_stalemate() {
     set_piece(1,7,QUEEN,PLAYER_ONE);
     set_piece(7,7,KING,PLAYER_ONE);
     print_board();
-    printf("test_stalemate : Pinned Knight\n " );
+    printf("test_stalemate : Pinned Knight\n" );
     EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
     EXPECT(is_stalemate(PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(4,1,PAWN,PLAYER_ONE);
+    set_piece(4,2,KING,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : King and Pawn\n" );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(1,2,PAWN,PLAYER_ONE);
+    set_piece(2,1,KING,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : King and Pawn 2\n" );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(2,1,KING,PLAYER_TWO);
+    set_piece(0,1,PAWN,PLAYER_ONE);
+    set_piece(0,0,KING,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : King and Pawn 3\n" );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_ONE) == true);
+    EXPECT(is_checkmate(PLAYER_ONE) == false);
+
+    clear_board();
+    set_piece(7,0,KING,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_ONE);
+    set_piece(7,2,KING,PLAYER_ONE);
+    set_piece(4,4,BISHOP,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : King and Pawn 4\n" );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(0,7,KING,PLAYER_TWO);
+    set_piece(1,6,ROOK,PLAYER_ONE);
+    set_piece(2,5,KING,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : King and Rook \n" );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+
+
 
 }
 
