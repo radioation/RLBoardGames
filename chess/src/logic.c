@@ -1,8 +1,19 @@
 #include "logic.h"
 
+////////////////////////////////////////////////////////////
+// state variables
 CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
 
+bool PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+bool PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+bool PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+bool PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
 
+
+
+
+////////////////////////////////////////////////////////////
+// move deltas
 static const s8 KNIGHT_MOVES[8][2] = { {1, -2}, {2, -1}, {2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2} };
 
 static const s8 DIAGONAL_MOVES[4][2] = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } };
@@ -11,6 +22,8 @@ static const s8 DIAGONAL_MOVES[4][2] = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 
 static const s8 KING_MOVES [8][2] = { {1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1} };
 
 
+////////////////////////////////////////////////////////////
+// utility
 void clear_board() {
     for( u8 x=0; x < BOARD_SIZE; x++ ) {
         for( u8 y=0; y < BOARD_SIZE; y++ ){
@@ -18,6 +31,14 @@ void clear_board() {
             board[x][y].player = NO_PLAYER;
         }
     }
+}
+
+void reset_state() {
+    clear_board();
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
 }
 
 #ifdef CLITEST
@@ -61,12 +82,54 @@ void draw_board( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE] ) {
 }
 #endif
 
+////////////////////////////////////////////////////////////
+// Logic
+
 bool in_bounds( s8 x, s8 y ) {
     if( x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE ) {
         return true;
     }
     return false;
 }
+
+bool is_rank_empty_between(  s8 y, s8 x0, s8 x1 ) {
+    s8 start_x = x0;
+    s8 end_x = x1;
+    if( x1 < x0 ) {
+        start_x = x1;
+        end_x = x0;
+    }
+    for( s8 x = start_x; x <= end_x; x++ ) {
+        if( board[x][y].type == EMPTY ) {
+            return false;
+        } 
+    }
+    return true;
+}
+
+bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x0, s8 x1, PLAYER player ) {
+    s8 start_x = x0;
+    s8 end_x = x1;
+    if( x1 < x0 ) {
+        start_x = x1;
+        end_x = x0;
+    }
+    for( s8 x = start_x; x <= end_x; x++ ) {
+        if( is_square_attacked( b, x, y, player )) {
+            return true;
+        } 
+    }
+    return false;
+
+}
+
+bool can_castle_kingside( PLAYER player ) {
+    return false;
+}
+bool can_castle_queenside( PLAYER player ) {
+    return false;
+}
+
 
 bool try_pawn_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
     if( src.player == PLAYER_ONE ) {

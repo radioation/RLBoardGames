@@ -55,6 +55,11 @@ bool any_valid_king_move( PLAYER player);
 bool find_king(  CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player, s8 * kings_x, s8  *kings_y );
 
 
+bool is_rank_empty_between(  s8 y, s8 x0, s8 x1 );
+bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAYER player );
+bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x0, s8 x1, PLAYER player );
+bool can_castle_kingside( PLAYER player );
+bool can_castle_queenside( PLAYER player );
 
 
 #endif
