@@ -2,9 +2,14 @@
 
 CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
 
+
 static const s8 KNIGHT_MOVES[8][2] = { {1, -2}, {2, -1}, {2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2} };
 
 static const s8 DIAGONAL_MOVES[4][2] = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } };
+
+// King (non-castling) 
+static const s8 KING_MOVES [8][2] = { {1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1} };
+
 
 void clear_board() {
     for( u8 x=0; x < BOARD_SIZE; x++ ) {
@@ -15,8 +20,9 @@ void clear_board() {
     }
 }
 
+#ifdef CLITEST
 void draw_board( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE] ) {
-    printf("\n--------\n");
+    printf("\n+-+-+-+-+\n");
     printf("  0 1 2 3 4 5 6 7\n");
     for (int y=0;y<8;y++){
         printf("%d ", y );
@@ -53,7 +59,7 @@ void draw_board( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE] ) {
         printf("\n");
     }
 }
-
+#endif
 
 bool in_bounds( s8 x, s8 y ) {
     if( x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE ) {
@@ -231,15 +237,18 @@ bool try_king_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst )
 
 
 bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAYER player ) {
-    printf(">>>>>> ISA 1\n");
+    //printf(">>>>>> ISA 1\n");
     if( player == NO_PLAYER ) {
         return false; // nothing to atck in this square.
     }
     // just need to check square that can possibly attack king
     PLAYER atkr = PLAYER_ONE == player ? PLAYER_TWO : PLAYER_ONE;
 
+
+
+
     // PAWN : immediate diagonal from opposite side for pawns )
-    printf(">>>>>> ISA 2\n");
+    //printf(">>>>>> ISA 2\n");
     s8 atk_y = y - 1 ;
     if( player == PLAYER_TWO ) {
         // check if player two is attacking player one's square
@@ -257,7 +266,7 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
     }
 
     // Knight : 8 possible pieces
-    printf(">>>>>> ISA 3\n");
+    //printf(">>>>>> ISA 3\n");
     for (u8 i=0;i<8;i++){
         s8 atk_x = x + KNIGHT_MOVES[i][0];
         s8 atk_y = y + KNIGHT_MOVES[i][1];
@@ -268,7 +277,7 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
 
 
     // unobstructed diagonal is attacker's Bishop or Queen
-    printf(">>>>>> ISA 4\n");
+    //printf(">>>>>> ISA 4\n");
     for( u8 i=0; i < 4; i++ ) {
         s8 dx = DIAGONAL_MOVES[i][0];
         s8 dy = DIAGONAL_MOVES[i][1];
@@ -289,15 +298,15 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
 
     }
     // unobstructed horizontal is attacker's  Rook or Queen
-    printf(">>>>>> ISA 5\n");
+    //printf(">>>>>> ISA 5\n");
     for( s8 dx = -1; dx < 2; dx+=2 ) {
         s8 atk_x = x + dx;
-    printf(">>>>>> ISA 5 : atk_x %d \n", atk_x);
+    //printf(">>>>>> ISA 5 : atk_x %d \n", atk_x);
         while( in_bounds( atk_x, y ) ) {
-            printf(">>>>>> ISA 5 : atk_x %d y %d \n", atk_x, y );
+            //printf(">>>>>> ISA 5 : atk_x %d y %d \n", atk_x, y );
             CHESS_PIECE piece = b[(u8)atk_x][(u8)y];
             if( ( piece.type != EMPTY && piece.type != KING ) && piece.player == player ) {
-                printf(">>>>>> ISA 5 : blocked by type %d player %d \n", piece.type, piece.player );
+                //printf(">>>>>> ISA 5 : blocked by type %d player %d \n", piece.type, piece.player );
                 break;
             }
             if( ( piece.type == ROOK || piece.type == QUEEN ) && piece.player == atkr) 
@@ -310,7 +319,7 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
 
 
     // unobstructed vertical is attacker's Rook or Queen
-    printf(">>>>>> ISA 6\n");
+    //printf(">>>>>> ISA 6\n");
     for( s8 dy = -1; dy < 2; dy+=2 ) {
         s8 atk_y = y + dy;
         while( in_bounds( x, atk_y ) ) {
@@ -326,7 +335,13 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
         }
     }
 
-    printf(">>>>>> ISA 7\n");
+    //printf(">>>>>> ISA 7\n");
+    // Kings (adjacent)
+    for (u8 i=0;i<8;i++){
+        s8 atk_x = x + KING_MOVES[i][0];
+        s8 atk_y = y + KING_MOVES[i][1];
+        if (in_bounds(atk_x,atk_y) && b[(u8)atk_x][(u8)atk_y].type == KING && b[(u8)atk_x][(u8)atk_y].player == atkr) return true;
+    }
     return false;
 }
 
@@ -352,21 +367,21 @@ bool find_king( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player, s8 *x, s8 
 
 
 bool is_my_king_in_check( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player ) {
-    printf(">>>> IMKIC: ENTERED player: %d\n", player);
+    //printf(">>>> IMKIC: ENTERED player: %d\n", player);
     
     s8 x=-1;
     s8 y=-1;
-    printf(">>>> IMKIC: find king\n");
+    //printf(">>>> IMKIC: find king\n");
     if( !find_king( b, player, &x, &y ) ) {
-    printf(">>>> IMKIC: NO king?\n");
+    //printf(">>>> IMKIC: NO king?\n");
         return false; // not found, cant' be in check.
     }
-    printf(">>>> IMKIC: found king\n");
+    //printf(">>>> IMKIC: found king\n");
     if( !in_bounds( x,y ) ) {
         // out of bounds? shouldn't ever happen but false.
         return false;
     }    
-    printf(">>>> IMKIC:  king in bounds\n");
+    //printf(">>>> IMKIC:  king in bounds\n");
     // check if the player's king's square is getting attacked.
     return is_square_attacked(b, x, y, player );
 
@@ -570,18 +585,18 @@ bool any_valid_king_move( PLAYER player) {
     static const s8  KING_MOVE[8][2] = {
         {1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}
     };
-    printf(">> AVKM: FOUND KING\n");
+    //printf(">> AVKM: FOUND KING\n");
     for (s8 i=0;i<8;i++){
         s8 nx = x + KING_MOVE[i][0];
         s8 ny = y + KING_MOVE[i][1];
-        printf(">> AVKM: i: %d new x: %d new y %d \n", i, nx, ny );
+        //printf(">> AVKM: i: %d new x: %d new y %d \n", i, nx, ny );
         if (!in_bounds(nx,ny)) {
-            printf(">> AVKM: out of bounds, skip\n");
+            //printf(">> AVKM: out of bounds, skip\n");
              continue;
         }
         // avoid moving onto own piece (and keep castling out).
         if (!is_valid_move( x,y, nx,ny)) {
-            printf(">> AVKM: invalid move, skip\n");
+            //printf(">> AVKM: invalid move, skip\n");
             continue;
         }
 
@@ -593,9 +608,13 @@ bool any_valid_king_move( PLAYER player) {
         tmp[x][y].type = EMPTY;
         tmp[x][y].player = NO_PLAYER;
 
-        printf(">> AVKM: call is_my_king_in_check()\n");
+        //printf(">> AVKM: call is_my_king_in_check()\n");
+#ifdef CLITEST
+        draw_board(board);
+        draw_board(tmp);
+#endif
         if (!is_my_king_in_check(tmp, player)) {
-            printf(">> AVKM: NOT IN CHECK i: %d new x: %d new y %d \n", i, nx, ny );
+            //printf(">> AVKM: NOT IN CHECK i: %d new x: %d new y %d \n", i, nx, ny );
             return true;
         }
     }
@@ -606,9 +625,9 @@ bool has_any_valid_move(PLAYER player) {
     s8 kx;
     s8 ky;
     if (!find_king(board, player, &kx, &ky)) return false;
-    printf("FOUND KING \n" );
+    //printf("FOUND KING \n" );
     bool in_check = is_my_king_in_check(board, player);
-    printf(" KING IN CHECK? %d \n", in_check );
+    //printf(" KING IN CHECK? %d \n", in_check );
     if (!in_check) {
         // NOT in check → any legal move is fine (short-circuit on first).
         for (u8 x0=0;x0<8;x0++){
@@ -640,26 +659,26 @@ bool has_any_valid_move(PLAYER player) {
     // two checkers, there's no way to block/capture both in one move
     // so only check for king moves
     CHECKERS chk = find_checkers( player, kx, ky);
-    printf(" checkers count: %d \n", chk.count );
+    //printf(" checkers count: %d \n", chk.count );
     if (chk.count >= 2) {
 
         return any_valid_king_move( player);
     }
 
     // Only one checker  king moves OR capture checker OR block checker (if is_biroqu).
-    printf(" check for valid king move\n");
+    //printf(" check for valid king move\n");
     if (any_valid_king_move( player)) {
-    printf(" VALID KING MOVE FOUND\n");
+    //printf(" VALID KING MOVE FOUND\n");
         return true;
     }
 
-    printf(" No valid king move found\n");
+    //printf(" No valid king move found\n");
 
     // Try non-king pieces with constraints
     s8 checker_x = chk.x[0];
     s8 checker_y  = chk.y[0];
     bool is_biroqu = chk.is_biroqu[0];
-    printf("  is checker Bishop Rook or Queen? %d \n", is_biroqu );
+    //printf("  is checker Bishop Rook or Queen? %d \n", is_biroqu );
 
     // entire board
     for (s8 y0=0;y0<8;y0++){
@@ -670,7 +689,7 @@ bool has_any_valid_move(PLAYER player) {
                 continue;
             }
             // found a piece on our team
-            printf("   minion %d at %d,%d\n", p.type, x0, y0 );
+            //printf("   minion %d at %d,%d\n", p.type, x0, y0 );
             for (s8 y1=0;y1<8;y1++){
                 for (s8 x1=0;x1<8;x1++){
 
@@ -681,7 +700,7 @@ bool has_any_valid_move(PLAYER player) {
                     if (x1 == checker_x && y1 == checker_y) {
                         candidate = true; // capturing the checker
                     } else if (is_biroqu && is_block_square(kx,ky,checker_x,checker_y,x1,y1)) {
-                        printf("  attacker can be blocked! \n");
+                        //printf("  attacker can be blocked! \n");
                         candidate = true; // blocking square
                     } else {
                         candidate = false;
@@ -689,9 +708,9 @@ bool has_any_valid_move(PLAYER player) {
                     if (!candidate) {
                         continue;
                     } 
-                    printf("test move from %d,%d to %d,%d\n", x0,y0,x1,y1);
+                    //printf("test move from %d,%d to %d,%d\n", x0,y0,x1,y1);
                     if (!is_valid_move(x0,y0,x1,y1)) {
-                       printf("   invalid move from %d,%d to %d,%d\n", x0,y0,x1,y1);
+                       //printf("   invalid move from %d,%d to %d,%d\n", x0,y0,x1,y1);
                         
                         continue;
                     } 
@@ -702,9 +721,11 @@ bool has_any_valid_move(PLAYER player) {
                     tmp[x0][y0].type = EMPTY;
                     tmp[x0][y0].player = NO_PLAYER;
 
-                    printf(" check king \n");
+                    //printf(" check king \n");
+#ifdef CLITEST
                     draw_board( board );
                     draw_board( tmp );
+#endif
                     if (!is_my_king_in_check(tmp, player)) {
                         return true;
                     }
@@ -724,6 +745,7 @@ bool is_checkmate( PLAYER player )
     if( is_my_king_in_check(board, player ) == true ) {
         // and king has no valid moves
         // and no other piece can cancel check
+//printf("----------------------------------------------");
         return !has_any_valid_move( player );
     }
     return false;

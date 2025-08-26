@@ -1272,14 +1272,44 @@ int test_stalemate() {
     printf("test_stalemate ----------------------------------------\n");
     clear_board();
     printf("test_stalemate : setup board\n " );
+
+
     set_piece(0,0,KING,PLAYER_TWO);
     set_piece(1,2,QUEEN,PLAYER_ONE);
     set_piece(2,1,KING,PLAYER_ONE);
     print_board();
-
+    printf("test_stalemate : King and Queen\n " );
     EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
     EXPECT(is_stalemate(PLAYER_TWO) == true);
     EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+    clear_board();
+    set_piece(7,7,KING,PLAYER_TWO);
+    set_piece(5,6,QUEEN,PLAYER_ONE);
+    set_piece(0,0,KING,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : King and Queen 2\n " );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == false);
+
+
+    clear_board();
+    set_piece(0,0,KING,PLAYER_TWO);
+    set_piece(0,4,KNIGHT,PLAYER_TWO);
+    set_piece(3,3,PAWN,PLAYER_TWO);
+
+    set_piece(3,4,PAWN,PLAYER_ONE);
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(7,1,ROOK,PLAYER_ONE);
+    set_piece(1,7,QUEEN,PLAYER_ONE);
+    set_piece(7,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_stalemate : Pinned Knight\n " );
+    EXPECT(is_my_king_in_check(board, PLAYER_TWO) == false);
+    EXPECT(is_stalemate(PLAYER_TWO) == true);
+    EXPECT(is_checkmate(PLAYER_TWO) == false);
+
 }
 
 
@@ -1302,7 +1332,7 @@ int main( int argc, char* argv[] ) {
     test_any_valid_king_move();
     test_checkmate();
 
-//    test_stalemate();
+    test_stalemate();
 
     return 0;
 }
