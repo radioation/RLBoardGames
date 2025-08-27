@@ -47,11 +47,11 @@ const s16 layerStep = 5;
 
 void clear_board() {
     memset(board,0, sizeof(board));
-    VDP_clearPlane(BG_A, false ); 
+    VDP_clearPlane(BG_A, true ); 
 }
 
 void clear_top_text() {
-    VDP_clearTextArea( 0, 0, 40, 4 );
+    VDP_clearTextArea( 0, 0, 40, 4 ); 
 }
 
 void init_board_pos_lookup () {
@@ -321,15 +321,16 @@ void setWhoAmI() {
 void reset_game() {
     current_player = PLAYER_ONE; 
     char message[40];
+    memset(message,0, sizeof(message));
     game_won = false;
     clear_board();
     clear_top_text();
     VDP_setTextPalette(0); 
     if( online ) { 
         // check whoAmI
-        //VDP_drawText("Connected to %s", 15, 1);
+        VDP_drawText("Connected to %s", 15, 0);
     } else {
-        VDP_drawText("Local Play", 15, 1);
+        VDP_drawText("Local Play", 15, 0);
     }
     sprintf( message, "Player %d turn    ", current_player);
     VDP_setTextPalette(current_player); 
