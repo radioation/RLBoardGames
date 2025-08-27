@@ -68,20 +68,21 @@ void draw_pieces(){
 }
 
 
-void move_piece( int startCol, int startRow, int endCol, int endRow ){
-    board[endCol][endRow] = board[startCol][startRow];
-    board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
-    draw_pieces();
+void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow ){
+    if( do_move( startCol, startRow, endCol, endRow ) ) {
+        //board[endCol][endRow] = board[startCol][startRow];
+        //board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        draw_pieces();
 
-    VDP_setTileMapEx( BG_A, pieces_img.tilemap, TILE_ATTR_FULL(PAL1, TRUE, FALSE, FALSE, piecesTileIndex),    
-            boardStartCol + startCol * boardStep,  // PLANE X Dest in tiles
-            boardStartRow + startRow * boardStep,  // PLANE Y Dest in tiles
-            EMPTY,  // REGION X start
-            0,  // REGION Y start
-            boardStep,  // Width
-            boardStep,  // Height
-            CPU);
-
+        VDP_setTileMapEx( BG_A, pieces_img.tilemap, TILE_ATTR_FULL(PAL1, TRUE, FALSE, FALSE, piecesTileIndex),    
+                boardStartCol + startCol * boardStep,  // PLANE X Dest in tiles
+                boardStartRow + startRow * boardStep,  // PLANE Y Dest in tiles
+                EMPTY,  // REGION X start
+                0,  // REGION Y start
+                boardStep,  // Width
+                boardStep,  // Height
+                CPU);
+    }
 }
 
 // Sprite data structures

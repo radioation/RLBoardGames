@@ -61,6 +61,7 @@ bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x
 bool can_castle_kingside( PLAYER player );
 bool can_castle_queenside( PLAYER player );
 
+bool do_move ( s8 x0, s8 y0,  s8 x1, s8 y1 );
 
 #endif
 

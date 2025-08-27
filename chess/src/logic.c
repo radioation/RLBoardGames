@@ -130,7 +130,7 @@ bool can_castle_kingside( PLAYER player ) {
         if( ! PLAYER_ONE_CAN_CASTLE_KING_SIDE ) {
             return false;
         }
-        if( board[5][7] != EMPTY || board[6][7] != EMPTY ) {
+        if( board[5][7].type != EMPTY || board[6][7].type != EMPTY ) {
             return false;
         } 
         return is_rank_attacked_between( board, 7, 5, 6, player );
@@ -138,7 +138,7 @@ bool can_castle_kingside( PLAYER player ) {
         if( ! PLAYER_TWO_CAN_CASTLE_KING_SIDE ) {
             return false;
         }
-        if( board[5][0] != EMPTY || board[6][0] != EMPTY ) {
+        if( board[5][0].type != EMPTY || board[6][0].type != EMPTY ) {
             return false;
         } 
         return is_rank_attacked_between( board, 0, 5, 6, player );
@@ -150,7 +150,7 @@ bool can_castle_queenside( PLAYER player ) {
         if( !PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE  ){
             return false;
         }
-        if( board[1][7] != EMPTY || board[2][7] != EMPTY || board[3][7] != EMPTY ) {
+        if( board[1][7].type != EMPTY || board[2][7].type != EMPTY || board[3][7].type != EMPTY ) {
             return false;
         } 
         return is_rank_attacked_between( board, 7, 1, 3, player );
@@ -158,7 +158,7 @@ bool can_castle_queenside( PLAYER player ) {
         if( !PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE  ){
             return false;
         }
-        if( board[1][0] != EMPTY || board[2][0] != EMPTY || board[3][0] != EMPTY ) {
+        if( board[1][0].type != EMPTY || board[2][0].type != EMPTY || board[3][0].type != EMPTY ) {
             return false;
         } 
         return is_rank_attacked_between( board, 0, 1, 3, player );
@@ -329,22 +329,22 @@ bool try_queen_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst 
 
 bool try_king_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
     // check if moves look like castles?
-    if( player == PLAYER_ONE ) {
+    if( src.player == PLAYER_ONE ) {
         if( y0 == 7 && y1 == 7 &&  x0 == 4 && x1 == 6 ) {   
-            return can_castle_kingside( player );
+            return can_castle_kingside( src.player );
         } else if( y0 == 7 && y1 == 7 &&  x0 == 4 && x1 == 1 ) {   
-            return can_castle_queenside( player ); 
+            return can_castle_queenside( src.player ); 
         }
-    } else if ( player == PLAYER_TWO ) {
+    } else if ( src.player == PLAYER_TWO ) {
         if( y0 == 0 && y1 == 0 &&  x0 == 4 && x1 == 6 ) {   
-            return can_castle_kingside( player );
+            return can_castle_kingside( src.player );
         } else if( y0 == 0 && y1 == 0 &&  x0 == 4 && x1 == 1 ) {   
-            return can_castle_queenside( player ); 
+            return can_castle_queenside( src.player ); 
         }
     }
 
     if( abs( x0 - x1 ) <= 1 && abs( y0 - y1 ) <=1 ){
-        if( 
+        
         return true;
     }
     return false;
@@ -492,7 +492,7 @@ bool is_my_king_in_check( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], PLAYER player )
         return false; // not found, cant' be in check.
     }
     //printf(">>>> IMKIC: found king\n");
-    if( !in_bounds( x,y ) ) {
+    if( !in_bounds( (u8)x,(u8)y ) ) {
         // out of bounds? shouldn't ever happen but false.
         return false;
     }    
@@ -552,8 +552,107 @@ bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1)
 
 void set_piece( s8 x, s8 y, PIECE_TYPE t, PLAYER p ) 
 {
-    board[x][y].type = t;
-    board[x][y].player = p;
+    board[(u8)x][(u8)y].type = t;
+    board[(u8)x][(u8)y].player = p;
+}
+
+bool do_move ( s8 x0, s8 y0,  s8 x1, s8 y1 ) 
+{
+    // check in bounds
+    if( !in_bounds( x0, y0 ) || !in_bounds( x1, y1 )) {
+        return false;
+    }
+    CHESS_PIECE moving_piece = board[(u8)x0][(u8)y0];
+    PLAYER player = moving_piece.player;
+   
+    PIECE_TYPE captured_type = board[x1][y1].type; 
+    
+    // check  for rook capture    
+    if( captured_type == ROOK ) {
+        // if a rook is captured on it's original square turn off the boolean.
+        if( y1 == 7 ) {
+            if( x1 == 7  && PLAYER_ONE_CAN_CASTLE_KING_SIDE ) {
+                PLAYER_ONE_CAN_CASTLE_KING_SIDE= false;  
+            } else if ( x1 == 0  && PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE ) {
+                PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = false;
+            }
+        } else if ( y1 == 0 ) {
+            if( x1 == 7  && PLAYER_TWO_CAN_CASTLE_KING_SIDE ) {
+                PLAYER_TWO_CAN_CASTLE_KING_SIDE= false;  
+            } else if ( x1 == 0  && PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE ) {
+                PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = false;
+            }
+        }
+
+    } 
+
+    // do the move
+    board[(u8)x1][(u8)y1] = moving_piece;
+    board[(u8)x0][(u8)y0].type = EMPTY;
+    board[(u8)x0][(u8)y0].player = NO_PLAYER;
+
+    // check for king castle
+    bool is_castling = ( moving_piece.type == KING) && 
+            (( y0 == 0 || y0 == 7 ) &&  (y0 == y1 )) &&
+            (( x0 == 4 ) && ( x1 == 6 || x1 == 2 ) );
+
+
+    if ( is_castling ) {
+        if( player == PLAYER_ONE ) {
+            if( x1 == 6 ) { // king side
+                board[7][7].type = EMPTY;
+                board[7][7].player = NO_PLAYER;
+                board[5][7].type = ROOK;
+                board[5][7].player = PLAYER_ONE;
+            } else{ // queen siide.
+                board[0][7].type = EMPTY;
+                board[0][7].player = NO_PLAYER;
+                board[3][7].type = ROOK;
+                board[3][7].player = PLAYER_TWO;
+            }    
+        } else if (player == PLAYER_TWO ) {
+            if( x1 == 6 ) { // king side
+                board[7][0].type = EMPTY;
+                board[7][0].player = NO_PLAYER;
+                board[5][0].type = ROOK;
+                board[5][0].player = PLAYER_ONE;
+            } else{ // queen siide.
+                board[0][0].type = EMPTY;
+                board[0][0].player = NO_PLAYER;
+                board[3][0].type = ROOK;
+                board[3][0].player = PLAYER_TWO;
+            }    
+        }
+    }
+
+    // if moving pieces is a king disable casting
+    if( moving_piece.type == KING ) {
+        if( moving_piece.player == PLAYER_ONE ) {
+            PLAYER_ONE_CAN_CASTLE_KING_SIDE = false;
+            PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = false;
+        }  else {
+            PLAYER_TWO_CAN_CASTLE_KING_SIDE = false;
+            PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = false;
+        }
+    } else if ( moving_piece.type == ROOK ) {
+        if( y0 == 7 ) {
+            if( x0 == 7  && PLAYER_ONE_CAN_CASTLE_KING_SIDE ) {
+                PLAYER_ONE_CAN_CASTLE_KING_SIDE= false;  
+            } else if ( x0 == 0  && PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE ) {
+                PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = false;
+            }
+        } else if ( y0 == 0 ) {
+            if( x0 == 7  && PLAYER_TWO_CAN_CASTLE_KING_SIDE ) {
+                PLAYER_TWO_CAN_CASTLE_KING_SIDE= false;  
+            } else if ( x0 == 0  && PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE ) {
+                PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = false;
+            }
+        }
+
+    }
+
+
+    return true;
 }
 
 CHECKERS find_checkers( PLAYER player, s8 x, s8 y )
@@ -701,7 +800,7 @@ bool any_valid_king_move( PLAYER player) {
         {1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}
     };
     //printf(">> AVKM: FOUND KING\n");
-    for (s8 i=0;i<8;i++){
+    for (u8 i=0;i<8;i++){
         s8 nx = x + KING_MOVE[i][0];
         s8 ny = y + KING_MOVE[i][1];
         //printf(">> AVKM: i: %d new x: %d new y %d \n", i, nx, ny );
@@ -718,10 +817,10 @@ bool any_valid_king_move( PLAYER player) {
         CHESS_PIECE tmp[BOARD_SIZE][BOARD_SIZE]; // X, Y
         memcpy(tmp, board, sizeof(board) );
         // move to new space
-        tmp[nx][ny] = tmp[x][y];
+        tmp[(u8)nx][(u8)ny] = tmp[(u8)x][(u8)y];
         // clear old space
-        tmp[x][y].type = EMPTY;
-        tmp[x][y].player = NO_PLAYER;
+        tmp[(u8)x][(u8)y].type = EMPTY;
+        tmp[(u8)x][(u8)y].player = NO_PLAYER;
 
         //printf(">> AVKM: call is_my_king_in_check()\n");
 #ifdef CLITEST
@@ -798,7 +897,7 @@ bool has_any_valid_move(PLAYER player) {
     // entire board
     for (s8 y0=0;y0<8;y0++){
         for (s8 x0=0;x0<8;x0++){
-            CHESS_PIECE p = board[x0][y0];
+            CHESS_PIECE p = board[(u8)x0][(u8)y0];
             if (p.player != player || p.type == EMPTY || p.type == KING) {
                 
                 continue;
@@ -832,9 +931,9 @@ bool has_any_valid_move(PLAYER player) {
 
                     CHESS_PIECE tmp[BOARD_SIZE][BOARD_SIZE]; // X, Y
                     memcpy(tmp, board, sizeof(board) );
-                    tmp[x1][y1] = tmp[x0][y0];
-                    tmp[x0][y0].type = EMPTY;
-                    tmp[x0][y0].player = NO_PLAYER;
+                    tmp[(u8)x1][(u8)y1] = tmp[(u8)x0][(u8)y0];
+                    tmp[(u8)x0][(u8)y0].type = EMPTY;
+                    tmp[(u8)x0][(u8)y0].player = NO_PLAYER;
 
                     //printf(" check king \n");
 #ifdef CLITEST
