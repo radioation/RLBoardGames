@@ -8,5 +8,6 @@ SPRITE ip_cursor_spr "sprites/ip_cursor.png" 4 2 NONE 5
 PALETTE tictactoe_pal "bg/tictactoe_board.png"
 PALETTE ip_cursor_pal "sprites/ip_cursor.png"
 
-
+WAV move_snd "sounds/click.wav" XGM
+WAV place_snd "sounds/pickup.wav" XGM
 

@@ -114,6 +114,7 @@ void getIPFromUser( char* ipaddr ) {
 
     //////////////////////////////////////////////////////////////
     // setup controls
+    VDP_drawText( "Enter Server Address", 10, 9 );
     JOY_setEventHandler( &inputCallback );
     VDP_drawText( "Press A to save", 13, 16 );
     VDP_drawText( "Press B to cancel", 12, 18 );

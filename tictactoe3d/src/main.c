@@ -10,6 +10,9 @@
 
 #define INPUT_WAIT_COUNT 10
 
+#define SND_MOVE 63
+#define SND_PLACE 64
+
 int text_cursor_x, text_cursor_y;
 u8 buttons, buttons_prev;
 bool game_won = false;
@@ -167,11 +170,16 @@ bool cursor_move( CURSOR *cursor, u16 joypad ) {
 }
 
 
-void cursor_update_from_pos( CURSOR *cursor, s8 col, s8 row ) {
+void cursor_update_from_pos( CURSOR *cursor, s8 col, s8 row, s8 layer ) {
     cursor->col = col;
-    cursor->pos_x = cursor->col * cursorStep + cursorColStart;
     cursor->row = row;
-    cursor->pos_y = cursor->row * cursorStep + cursorRowStart;
+    cursor->layer = layer;
+
+    cursor->pos_x = board_pos_x_to_pixel_x[ (u8)cursor->col ][ (u8)cursor->row][ (u8)cursor->layer ];
+    cursor->pos_y = board_pos_y_to_pixel_y[ (u8)cursor->col ][ (u8)cursor->row][ (u8)cursor->layer ];
+
+    SPR_setPosition( cursor->p1_sprite, cursor->pos_x, cursor->pos_y );
+    SPR_update();
 
 }
 
@@ -326,10 +334,7 @@ void reset_game() {
     clear_board();
     clear_top_text();
     VDP_setTextPalette(0); 
-    if( online ) { 
-        // check whoAmI
-        VDP_drawText("Connected to %s", 15, 0);
-    } else {
+    if( !online ) { 
         VDP_drawText("Local Play", 15, 0);
     }
     sprintf( message, "Player %d turn    ", current_player);
@@ -358,6 +363,12 @@ int main()
 {
 
     //////////////////////////////////////////////////////////////
+    // Setup Sound
+    XGM_setPCM(  SND_MOVE, move_snd, sizeof(move_snd));
+    XGM_setPCM(  SND_PLACE, place_snd, sizeof(place_snd));
+
+
+    //////////////////////////////////////////////////////////////
     // setup screen and palettes
     SYS_disableInts();
     VDP_setScreenWidth320();
@@ -366,7 +377,7 @@ int main()
     VDP_setTextPlane(BG_A);
     SYS_enableInts();                      // enable interrupts for networking print routines.
 
-
+    PAL_setPalette( PAL0, tictactoe_pal.data, CPU );
 
     //////////////////////////////////////////////////////////////
     // Networking setup
@@ -430,7 +441,7 @@ int main()
         whoAmI = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
 
         setWhoAmI(); // loops until true. TODO: let you break out and stay local
-                    // or loop back to pick a different host.
+                     // or loop back to pick a different host.
         online = true;
     }
     else
@@ -454,7 +465,6 @@ int main()
 
     //////////////////////////////////////////////////////////////
     // Background setup
-    PAL_setPalette( PAL0, tictactoe_pal.data, CPU );
     x_o_tiles_index = TILE_USER_INDEX;
     VDP_loadTileSet( &tictactoe_x_o_tiles, x_o_tiles_index, CPU);
     board_index = x_o_tiles_index + tictactoe_x_o_tiles.numTile;
@@ -490,15 +500,18 @@ int main()
                     u16 joypad  = JOY_readJoypad( JOY_1 );
                     if( inputWait == 0 ) {
                         if( cursor_move( &cursor, joypad ) == TRUE ) {
+                            XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                             inputWait = INPUT_WAIT_COUNT;
                             cursor_send_data( &cursor, 0 );
                         }
                         if( joypad & BUTTON_A ) {
                             bool didMove = cursor_action( &cursor, board, current_player );
                             if ( didMove ) {
+                                XGM_startPlayPCM(SND_PLACE,1,SOUND_PCM_CH2);
                                 cursor_send_data( &cursor, 1 );
 
                                 if( check_win( board, current_player ) ) {
+                                    // TODO: figure out how to make horn/trumpet music
                                     sprintf( message, "PLAYER %d WINS    ", current_player);
                                     VDP_drawText(message, 13, 1 );
                                     game_won = true;
@@ -538,15 +551,17 @@ int main()
                     u8 buffer[16];
                     read_bytes_n( buffer, data_length );
                     if( data_type == 128 ) {
+                        XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                         // just moving the cursor around
-                        VDP_drawText("L 6 ", 0, 6 );
+                        VDP_drawText("128 ", 2, 6 );
                         // cursor update
-                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1] );
+                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2] );
                     }else if( data_type == 129 ) {
+                        XGM_startPlayPCM(SND_PLACE,1,SOUND_PCM_CH2);
                         // 129 means button was pressed.
-                        VDP_drawText("L 7 ", 0, 7 );
+                        VDP_drawText("129 ", 2, 7 );
                         //
-                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1] );
+                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2] );
 
                         // board update
                         update_board( (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], current_player );
@@ -566,15 +581,13 @@ int main()
                 u16 joypad  = JOY_readJoypad( JOY_1 );
                 if( inputWait == 0 ) {
                     if( cursor_move( &cursor, joypad ) == TRUE ) {
+                        XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                         inputWait = INPUT_WAIT_COUNT;
-                        if( online ) {
-                            // send cursor data
-                            //cursor_send_data( &cursor, 0 );
-                        }
                     }
                     if( joypad & BUTTON_A ) {
                         bool didMove = cursor_action( &cursor, board, current_player );
                         if ( didMove ) {
+                            XGM_startPlayPCM(SND_PLACE,1,SOUND_PCM_CH2);
                             if( check_win( board, current_player ) ) {
                                 sprintf( message, "PLAYER %d WINS    ", current_player);
                                 VDP_drawText(message, 13, 1 );
