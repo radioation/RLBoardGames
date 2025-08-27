@@ -9,10 +9,15 @@
 #define SND_BUZZ 63
 
 int text_cursor_x, text_cursor_y;
+u8 buttons, buttons_prev;
+
+////////////////////////////////////////////////////////////////////////////
+// network stuff
+char server[16] = "000.000.000.000";
 bool online = false;
+u8 whoAmI = NO_PLAYER;
 
 // Chess Piece data
-
 extern CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
 int piecesTileIndex = -1;
 const s8 boardStartCol = 8;
@@ -235,6 +240,50 @@ void host_game() {
 }
 
 
+bool join_game() {
+    VDP_drawText("   Connect to server    ", 0, 5);
+    text_cursor_y = 5;
+    // blocks whilewaiting for network to be ready.
+    char fullserver[21];
+    memset(fullserver,0, sizeof(fullserver));
+    sprintf( fullserver, "%s:5364", server);
+    return NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+}
+
+
+void setWhoAmI() {
+    buttons = 0;
+    buttons_prev = 0;
+    VDP_clearTextArea( 0, 0,  40, 13  );
+    VDP_drawText("          (A) - Host Game", 0, 5);
+    VDP_drawText("          (C) - Join Game", 0, 7);
+    NET_resetAdapter();
+    while(1) // loop forever
+    {
+        buttons = JOY_readJoypad(JOY_1);
+        // MODE NOT SET, button press will determine server or client.
+        if(buttons & BUTTON_A && buttons_prev == 0x00) {
+            VDP_clearTextArea( 0, 5,  40, 3 );
+            text_cursor_y = 5;
+            whoAmI = PLAYER_ONE;
+            // start listening
+            host_game();
+            break;
+        }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
+            VDP_clearTextArea( 0, 5,  40, 3 );
+            // try to connect to server.
+            whoAmI = PLAYER_TWO;
+            join_game();
+            break;
+
+        }
+        buttons_prev = buttons;
+        SYS_doVBlankProcess();
+    }
+    NET_flushBuffers();
+
+}
+
 
 void cursor_send_data( CURSOR* cursor, u8 type  ) {
     NET_sendByte( 128 + type ); // first bit is always on, and 4 bytesl
@@ -287,7 +336,7 @@ int main(bool hard) {
 
     VDP_drawText("Detecting adapter...[  ]", text_cursor_x, text_cursor_y); text_cursor_x+=21;   
     NET_initialize(); // Detect cartridge and set 'cart_present'
-    u8 me = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
+    whoAmI= 0; // 0 - not set, 1 - PLAYER_ONE/HOST/LIGHT, 2 - PLAYER_TWO/CLIENT/DARK
 
     if(cart_present)
     {
@@ -302,6 +351,67 @@ int main(bool hard) {
         VDP_drawText("MAC:", text_cursor_x, text_cursor_y);
         NET_printMAC(text_cursor_x+5, text_cursor_y); text_cursor_y+=2;
 
+        waitMs(2000);
+
+
+        // get server address from SRAM or user.
+        SRAM_enable();
+        u8 part = SRAM_readByte(0);
+        sprintf( server, "%03d.", part );
+        part = SRAM_readByte(1);
+        sprintf( server+4, "%03d.", part );
+        part = SRAM_readByte(2);
+        sprintf( server+8, "%03d.", part );
+        part = SRAM_readByte(3);
+        sprintf( server+12, "%03d", part );
+
+
+        VDP_drawText( server, 13 , 3 );
+
+        getIPFromUser(server);
+
+        SYS_doVBlankProcess();
+        // clear out last input and wait a sec.
+        waitMs(1000);
+        JOY_update();
+
+        VDP_drawText( "Got Address", 13 ,12 );
+        VDP_drawText( server, 13 , 13 );
+
+         getIPFromUser(server);
+
+
+     // clear out last input and wait a sec.
+        waitMs(1000);
+        JOY_update();
+
+        VDP_drawText( "Got Address", 13 ,12 );
+        VDP_drawText( server, 13 , 13 );
+
+        // TODO: add ping here and save if successful.
+        //  for now, saving always.
+        SRAM_writeByte(0, atoi( server ));
+        SRAM_writeByte(1, atoi( server + 4 ));
+        SRAM_writeByte(2, atoi( server + 8 ));
+        SRAM_writeByte(3, atoi( server + 12));
+
+        whoAmI = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
+
+        setWhoAmI(); // loops until true. TODO: let you break out and stay local
+                     // or loop back to pick a different host.
+        if( whoAmI == 1 ) {
+            while(1) {
+                u16 joypad  = JOY_readJoypad( JOY_1 );
+                SYS_doVBlankProcess();
+                if( joypad & BUTTON_START ) {
+                    break;
+                }
+            }
+        }
+        online = true;
+   
+
+/*
 
         NET_resetAdapter();
         VDP_drawText("          (A) - Host Game", 0, 5);
@@ -319,7 +429,7 @@ int main(bool hard) {
                 VDP_drawText("                         ", 0, 5);
                 VDP_drawText("                         ", 0, 7);
                 text_cursor_y = 5;
-                me = PLAYER_ONE;
+                whoAmI = PLAYER_ONE;
                 // start listening
                 host_game();
                 break;
@@ -328,7 +438,7 @@ int main(bool hard) {
                 VDP_drawText("                         ", 0, 5);
                 VDP_drawText("                         ", 0, 7);
                 // try to connect to server.
-                me = PLAYER_TWO;
+                whoAmI = PLAYER_TWO;
                 text_cursor_y = 5;
                 NET_connect(text_cursor_x, text_cursor_y, "010.086.022.026:5364"); text_cursor_x=0; text_cursor_y++;
                 break;
@@ -338,6 +448,7 @@ int main(bool hard) {
         }
         NET_flushBuffers();
         online = true;
+*/
     }
     else
     {
@@ -353,7 +464,7 @@ int main(bool hard) {
             SYS_doVBlankProcess();
         }
         online = false;
-        me = 1; 
+        whoAmI = 1; 
     }
     VDP_clearPlane( BG_A, TRUE);
     VDP_clearPlane( BG_B, TRUE);
@@ -391,7 +502,7 @@ int main(bool hard) {
     VDP_drawText("PLAYER ONE MOVE", 13, 1);
     while(TRUE)
     {
-        if( currentPlayer == me || !online ) { 
+        if( currentPlayer == whoAmI || !online ) { 
             // read joypad to mover cursor
             u16 joypad  = JOY_readJoypad( JOY_1 );
             if( inputWait == 0 ) {
