@@ -92,6 +92,7 @@ bool in_bounds( s8 x, s8 y ) {
     return false;
 }
 
+/*
 bool is_rank_empty_between(  s8 y, s8 x0, s8 x1 ) {
     s8 start_x = x0;
     s8 end_x = x1;
@@ -106,6 +107,7 @@ bool is_rank_empty_between(  s8 y, s8 x0, s8 x1 ) {
     }
     return true;
 }
+*/
 
 bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x0, s8 x1, PLAYER player ) {
     s8 start_x = x0;
@@ -124,9 +126,43 @@ bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x
 }
 
 bool can_castle_kingside( PLAYER player ) {
+    if (player == PLAYER_ONE ) {   
+        if( ! PLAYER_ONE_CAN_CASTLE_KING_SIDE ) {
+            return false;
+        }
+        if( board[5][7] != EMPTY || board[6][7] != EMPTY ) {
+            return false;
+        } 
+        return is_rank_attacked_between( board, 7, 5, 6, player );
+    } else {
+        if( ! PLAYER_TWO_CAN_CASTLE_KING_SIDE ) {
+            return false;
+        }
+        if( board[5][0] != EMPTY || board[6][0] != EMPTY ) {
+            return false;
+        } 
+        return is_rank_attacked_between( board, 0, 5, 6, player );
+    }
     return false;
 }
 bool can_castle_queenside( PLAYER player ) {
+    if (player == PLAYER_ONE ) {   
+        if( !PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE  ){
+            return false;
+        }
+        if( board[1][7] != EMPTY || board[2][7] != EMPTY || board[3][7] != EMPTY ) {
+            return false;
+        } 
+        return is_rank_attacked_between( board, 7, 1, 3, player );
+    } else {
+        if( !PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE  ){
+            return false;
+        }
+        if( board[1][0] != EMPTY || board[2][0] != EMPTY || board[3][0] != EMPTY ) {
+            return false;
+        } 
+        return is_rank_attacked_between( board, 0, 1, 3, player );
+    }
     return false;
 }
 
@@ -292,7 +328,23 @@ bool try_queen_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst 
 }
 
 bool try_king_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst ) {
+    // check if moves look like castles?
+    if( player == PLAYER_ONE ) {
+        if( y0 == 7 && y1 == 7 &&  x0 == 4 && x1 == 6 ) {   
+            return can_castle_kingside( player );
+        } else if( y0 == 7 && y1 == 7 &&  x0 == 4 && x1 == 1 ) {   
+            return can_castle_queenside( player ); 
+        }
+    } else if ( player == PLAYER_TWO ) {
+        if( y0 == 0 && y1 == 0 &&  x0 == 4 && x1 == 6 ) {   
+            return can_castle_kingside( player );
+        } else if( y0 == 0 && y1 == 0 &&  x0 == 4 && x1 == 1 ) {   
+            return can_castle_queenside( player ); 
+        }
+    }
+
     if( abs( x0 - x1 ) <= 1 && abs( y0 - y1 ) <=1 ){
+        if( 
         return true;
     }
     return false;
