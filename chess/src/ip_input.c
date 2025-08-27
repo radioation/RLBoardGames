@@ -38,6 +38,10 @@ Sprite * ip_cursor;
 bool doSave = false;
 bool done = false;
 
+void doNothingCallback( u16 joy, u16 changed, u16 state ) {
+}
+
+
 void inputCallback( u16 joy, u16 changed, u16 state ) {
     if(  changed & state & BUTTON_LEFT ) {
         if( curr_octet == 0 ) {
@@ -89,18 +93,14 @@ void getIPFromUser( char* ipaddr ) {
 
     //////////////////////////////////////////////////////////////
     // setup background
-    PAL_setPalette( PAL0, background_pal.data, CPU );
     PAL_setPalette( PAL1, ip_cursor_pal.data, CPU );
-
-    int ind = TILE_USER_INDEX;
-    VDP_drawImageEx(BG_B, &background_img, TILE_ATTR_FULL(PAL0, FALSE, FALSE, FALSE, ind), 0, 0, FALSE, TRUE);
 
     ip_cursor = SPR_addSprite( &ip_cursor_spr, pos_x, pos_y, TILE_ATTR(PAL1, FALSE, FALSE, FALSE ));
 
 
     //////////////////////////////////////////////////////////////
     // setup temporary values 
-    char temp_server[16];
+    //char temp_server[16];
     char textPart1[4];
     memset( textPart1, 0, sizeof(textPart1));
     char textPart2[4];
@@ -114,6 +114,7 @@ void getIPFromUser( char* ipaddr ) {
 
     //////////////////////////////////////////////////////////////
     // setup controls
+    VDP_drawText( "Enter Server Address", 10, 9 );
     JOY_setEventHandler( &inputCallback );
     VDP_drawText( "Press A to save", 13, 16 );
     VDP_drawText( "Press B to cancel", 12, 18 );
@@ -145,6 +146,7 @@ void getIPFromUser( char* ipaddr ) {
     VDP_clearTextLine( 11 );
     VDP_clearTextLine( 16 );
     VDP_clearTextLine( 18 );
+    JOY_setEventHandler( &doNothingCallback );
 
 
 }
