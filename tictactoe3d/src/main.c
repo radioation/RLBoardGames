@@ -442,6 +442,15 @@ int main()
 
         setWhoAmI(); // loops until true. TODO: let you break out and stay local
                      // or loop back to pick a different host.
+        if( whoAmI == 1 ) {
+            while(1) { 
+                u16 joypad  = JOY_readJoypad( JOY_1 );
+                SYS_doVBlankProcess();
+                if( joypad & BUTTON_START ) {
+                    break;
+                }
+            }
+        }
         online = true;
     }
     else
@@ -508,14 +517,15 @@ int main()
                             bool didMove = cursor_action( &cursor, board, current_player );
                             if ( didMove ) {
                                 XGM_startPlayPCM(SND_PLACE,1,SOUND_PCM_CH2);
-                                cursor_send_data( &cursor, 1 );
 
                                 if( check_win( board, current_player ) ) {
+                                    cursor_send_data( &cursor, 2 );
                                     // TODO: figure out how to make horn/trumpet music
                                     sprintf( message, "PLAYER %d WINS    ", current_player);
                                     VDP_drawText(message, 13, 1 );
                                     game_won = true;
                                 } else {
+                                    cursor_send_data( &cursor, 1 );
                                     current_player = current_player == PLAYER_TWO ? PLAYER_ONE : PLAYER_TWO;
                                     VDP_setTextPalette(current_player); 
                                     sprintf( message, "Player %d turn    ", current_player);
@@ -553,24 +563,30 @@ int main()
                     if( data_type == 128 ) {
                         XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                         // just moving the cursor around
-                        VDP_drawText("128 ", 2, 6 );
+                        //VDP_drawText("128 ", 2, 6 );
                         // cursor update
                         cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2] );
-                    }else if( data_type == 129 ) {
+                    }else if( data_type == 129 || data_type == 130 ) {
                         XGM_startPlayPCM(SND_PLACE,1,SOUND_PCM_CH2);
                         // 129 means button was pressed.
-                        VDP_drawText("129 ", 2, 7 );
+                        //VDP_drawText("129 ", 2, 7 );
                         //
                         cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2] );
 
                         // board update
                         update_board( (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], current_player );
-                        if( current_player == PLAYER_ONE ) {
-                            current_player = PLAYER_TWO;
-                            VDP_drawText("TWO", 20, 0);
+                        if( data_type == 130 ) {
+                            sprintf( message, "PLAYER %d WINS    ", current_player);
+                            VDP_drawText(message, 13, 1 );
+                            game_won = true;
                         } else {
-                            current_player = PLAYER_ONE;
-                            VDP_drawText("ONE", 20, 0);
+                            if( current_player == PLAYER_ONE ) {
+                                current_player = PLAYER_TWO;
+                                VDP_drawText("TWO", 20, 0);
+                            } else {
+                                current_player = PLAYER_ONE;
+                                VDP_drawText("ONE", 20, 0);
+                            }
                         }
                     }
                 }
