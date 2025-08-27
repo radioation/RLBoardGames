@@ -333,6 +333,7 @@ int main(bool hard) {
     // Networking setup
     text_cursor_x = 0; // networking text cursor location
     text_cursor_y = 0; // networking text cursor location
+    SPR_init();
 
     VDP_drawText("Detecting adapter...[  ]", text_cursor_x, text_cursor_y); text_cursor_x+=21;   
     NET_initialize(); // Detect cartridge and set 'cart_present'
@@ -411,44 +412,6 @@ int main(bool hard) {
         online = true;
    
 
-/*
-
-        NET_resetAdapter();
-        VDP_drawText("          (A) - Host Game", 0, 5);
-        VDP_drawText("          (C) - Join Game", 0, 7);
-
-
-        //////////////////////////////////////////////////////////////
-        // Networking Loop  
-        u8 buttons_prev;
-        while(1) 
-        {
-            u8 buttons = JOY_readJoypad(JOY_1);
-            // MODE NOT SET, button press will determine server or client.
-            if(buttons & BUTTON_A && buttons_prev == 0x00) {
-                VDP_drawText("                         ", 0, 5);
-                VDP_drawText("                         ", 0, 7);
-                text_cursor_y = 5;
-                whoAmI = PLAYER_ONE;
-                // start listening
-                host_game();
-                break;
-
-            }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
-                VDP_drawText("                         ", 0, 5);
-                VDP_drawText("                         ", 0, 7);
-                // try to connect to server.
-                whoAmI = PLAYER_TWO;
-                text_cursor_y = 5;
-                NET_connect(text_cursor_x, text_cursor_y, "010.086.022.026:5364"); text_cursor_x=0; text_cursor_y++;
-                break;
-            }
-            buttons_prev = buttons;
-            SYS_doVBlankProcess();
-        }
-        NET_flushBuffers();
-        online = true;
-*/
     }
     else
     {
@@ -502,22 +465,79 @@ int main(bool hard) {
     VDP_drawText("PLAYER ONE MOVE", 13, 1);
     while(TRUE)
     {
-        if( currentPlayer == whoAmI || !online ) { 
-            // read joypad to mover cursor
-            u16 joypad  = JOY_readJoypad( JOY_1 );
-            if( inputWait == 0 ) {
-                if( cursor_move( &cursor, joypad ) == TRUE ) {
-                    XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
-                    inputWait = INPUT_WAIT_COUNT;
-                    // send cursor data
-                    //cursor_send_data( &cursor, 0 );
+        if( online ) {
+            if( currentPlayer == whoAmI  ){
+                // read joypad to mover cursor
+                u16 joypad  = JOY_readJoypad( JOY_1 );
+                if( inputWait == 0 ) {
+                    if( cursor_move( &cursor, joypad ) == TRUE ) {
+                        XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
+                        inputWait = INPUT_WAIT_COUNT;
+                        // send cursor data
+                        cursor_send_data( &cursor, 0 );
+                    }
+                    if( joypad & BUTTON_A ) {
+                        bool didMove =  cursor_action( &cursor, board, currentPlayer );
+                        inputWait = INPUT_WAIT_COUNT;
+                        if( didMove ) {
+                            // send move data.
+                            cursor_send_data( &cursor, 1 );  // move piece
+                            cursor_clear_selected(&cursor); 
+                            if( currentPlayer == PLAYER_ONE ) {
+                                currentPlayer = PLAYER_TWO;
+                                VDP_drawText("TWO", 20, 1);
+                            } else {
+                                currentPlayer = PLAYER_ONE;
+                                VDP_drawText("ONE", 20, 1);
+                            }
+                        } else {
+                            cursor_send_data( &cursor, 0 ); // just update cursor
+                        }
+                    } else if( joypad & BUTTON_C ) {
+                        cursor_clear_selected( &cursor );
+                        inputWait = INPUT_WAIT_COUNT;
+                        // send cursor data
+                        if(online) cursor_send_data( &cursor,0 );
+                    }
+                } else {
+                    if( inputWait > 0 ) {
+                        --inputWait;
+                    }
                 }
-                if( joypad & BUTTON_A ) {
-                    bool didMove =  cursor_action( &cursor, board, currentPlayer );
-                    inputWait = INPUT_WAIT_COUNT;
-                    if( didMove ) {
-                        // send move data.
-                        //cursor_send_data( &cursor, 1 );  // move piece
+            } else {
+                // current player is not me, listen for data
+
+                // check if readable
+                VDP_drawText("L 0 ", 0, 0 );
+                if( NET_RXReady() ) {
+                    VDP_drawText("L 1 ", 0, 1 );
+                    // read the header
+                    u8 header[2];
+
+                    read_bytes_n( header, 2 );
+                    VDP_drawText("L 2 ", 0, 2 );
+                    u8 data_type = header[0];
+                    char message[40];
+                    strclr(message);
+                    sprintf( message, "T: %d   ", data_type);
+                    VDP_drawText(message, 0, 3);
+                    u8 data_length = header[1];
+                    sprintf( message, "L: %d   ", data_length);
+                    VDP_drawText(message, 0, 4);
+                    // read the data
+                    u8 buffer[16]; 
+                    read_bytes_n( buffer, data_length );
+                    VDP_drawText("L 5 ", 0, 5 );
+                    if( data_type == 128 ) {
+                        XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
+                        VDP_drawText("L 6 ", 0, 6 );
+                        // cursor update
+                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
+                    }else if( data_type == 129 ) {
+                        VDP_drawText("L 7 ", 0, 7 );
+                        // board update
+                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
+                        move_piece( (s8)buffer[2], (s8)buffer[3], (s8)buffer[0], (s8)buffer[1] );
                         cursor_clear_selected(&cursor); 
                         if( currentPlayer == PLAYER_ONE ) {
                             currentPlayer = PLAYER_TWO;
@@ -526,65 +546,97 @@ int main(bool hard) {
                             currentPlayer = PLAYER_ONE;
                             VDP_drawText("ONE", 20, 1);
                         }
-                    } else {
-                        //cursor_send_data( &cursor, 0 ); // just update cursor
-                    }
-                } else if( joypad & BUTTON_C ) {
-                    cursor_clear_selected( &cursor );
-                    inputWait = INPUT_WAIT_COUNT;
-                    // send cursor data
-                    if(online) cursor_send_data( &cursor,0 );
-                }
-            } else {
-                if( inputWait > 0 ) {
-                    --inputWait;
-                }
+                    } 
+                    VDP_drawText("L 8 ", 0, 8 );
+                } 
             }
-        } /*else {
+        }
+        else {
+            if( currentPlayer == whoAmI  ){
+                // read joypad to mover cursor
+                u16 joypad  = JOY_readJoypad( JOY_1 );
+                if( inputWait == 0 ) {
+                    if( cursor_move( &cursor, joypad ) == TRUE ) {
+                        XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
+                        inputWait = INPUT_WAIT_COUNT;
+                        // send cursor data
+                        //cursor_send_data( &cursor, 0 );
+                    }
+                    if( joypad & BUTTON_A ) {
+                        bool didMove =  cursor_action( &cursor, board, currentPlayer );
+                        inputWait = INPUT_WAIT_COUNT;
+                        if( didMove ) {
+                            // send move data.
+                            //cursor_send_data( &cursor, 1 );  // move piece
+                            cursor_clear_selected(&cursor); 
+                            if( currentPlayer == PLAYER_ONE ) {
+                                currentPlayer = PLAYER_TWO;
+                                VDP_drawText("TWO", 20, 1);
+                            } else {
+                                currentPlayer = PLAYER_ONE;
+                                VDP_drawText("ONE", 20, 1);
+                            }
+                        } else {
+                            //cursor_send_data( &cursor, 0 ); // just update cursor
+                        }
+                    } else if( joypad & BUTTON_C ) {
+                        cursor_clear_selected( &cursor );
+                        inputWait = INPUT_WAIT_COUNT;
+                        // send cursor data
+                        if(online) cursor_send_data( &cursor,0 );
+                    }
+                } else {
+                    if( inputWait > 0 ) {
+                        --inputWait;
+                    }
+                }
+            } /*else {
             // current player is not me, listen for data
 
             // check if readable
             VDP_drawText("L 0 ", 0, 0 );
             if( NET_RXReady() ) {
-                VDP_drawText("L 1 ", 0, 1 );
-                // read the header
-                u8 header[2];
+            VDP_drawText("L 1 ", 0, 1 );
+            // read the header
+            u8 header[2];
 
-                read_bytes_n( header, 2 );
-                VDP_drawText("L 2 ", 0, 2 );
-                u8 data_type = header[0];
-                char message[40];
-                strclr(message);
-                sprintf( message, "T: %d   ", data_type);
-                VDP_drawText(message, 0, 3);
-                u8 data_length = header[1];
-                sprintf( message, "L: %d   ", data_length);
-                VDP_drawText(message, 0, 4);
-                // read the data
-                u8 buffer[16]; 
-                read_bytes_n( buffer, data_length );
-                VDP_drawText("L 5 ", 0, 5 );
-                if( data_type == 128 ) {
-                    VDP_drawText("L 6 ", 0, 6 );
-                    // cursor update
-                    cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
-                }else if( data_type == 129 ) {
-                    VDP_drawText("L 7 ", 0, 7 );
-                    // board update
-                    cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
-                    move_piece( (s8)buffer[2], (s8)buffer[3], (s8)buffer[0], (s8)buffer[1] );
-                    cursor_clear_selected(&cursor); 
-                    if( currentPlayer == PLAYER_ONE ) {
-                        currentPlayer = PLAYER_TWO;
-                        VDP_drawText("TWO", 20, 1);
-                    } else {
-                        currentPlayer = PLAYER_ONE;
-                        VDP_drawText("ONE", 20, 1);
-                    }
-                } 
-                VDP_drawText("L 8 ", 0, 8 );
+            read_bytes_n( header, 2 );
+            VDP_drawText("L 2 ", 0, 2 );
+            u8 data_type = header[0];
+            char message[40];
+            strclr(message);
+            sprintf( message, "T: %d   ", data_type);
+            VDP_drawText(message, 0, 3);
+            u8 data_length = header[1];
+            sprintf( message, "L: %d   ", data_length);
+            VDP_drawText(message, 0, 4);
+            // read the data
+            u8 buffer[16]; 
+            read_bytes_n( buffer, data_length );
+            VDP_drawText("L 5 ", 0, 5 );
+            if( data_type == 128 ) {
+            VDP_drawText("L 6 ", 0, 6 );
+            // cursor update
+            cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
+            }else if( data_type == 129 ) {
+            VDP_drawText("L 7 ", 0, 7 );
+            // board update
+            cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
+            move_piece( (s8)buffer[2], (s8)buffer[3], (s8)buffer[0], (s8)buffer[1] );
+            cursor_clear_selected(&cursor); 
+            if( currentPlayer == PLAYER_ONE ) {
+            currentPlayer = PLAYER_TWO;
+            VDP_drawText("TWO", 20, 1);
+            } else {
+            currentPlayer = PLAYER_ONE;
+            VDP_drawText("ONE", 20, 1);
+            }
             } 
-        }*/
+            VDP_drawText("L 8 ", 0, 8 );
+            } 
+            }*/
+
+        }
 
 
         //////////////////////////////////////////////////////////////
