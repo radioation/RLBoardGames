@@ -570,10 +570,17 @@ bool is_valid_move( s8 x0,s8 y0, s8 x1,s8 y1)
         default: return false;
     }
 
-   // if( valid == true ) {
-   //     // check if King is exposed.
-   //     valid = is_my_king_in_check( src.player );
-   // } 
+    if( valid == true ) {
+        // check if King is exposed with new setup
+        CHESS_PIECE tmp[BOARD_SIZE][BOARD_SIZE]; // X, Y
+        memcpy(tmp, board, sizeof(board) );
+        tmp[(u8)x1][(u8)y1] = tmp[(u8)x0][(u8)y0];
+        tmp[(u8)x0][(u8)y0].type = EMPTY;
+        tmp[(u8)x0][(u8)y0].player = NO_PLAYER;
+
+        //printf(" check king \n");
+        valid = !is_my_king_in_check( tmp, src.player );
+    } 
 
     // if we're here, nothing worked
     return valid;
@@ -593,9 +600,9 @@ bool do_move ( s8 x0, s8 y0,  s8 x1, s8 y1 )
     }
     CHESS_PIECE moving_piece = board[(u8)x0][(u8)y0];
     PLAYER player = moving_piece.player;
-   
+
     PIECE_TYPE captured_type = board[x1][y1].type; 
-    
+
     // check  for rook capture    
     if( captured_type == ROOK ) {
         // if a rook is captured on it's original square turn off the boolean.
@@ -622,8 +629,8 @@ bool do_move ( s8 x0, s8 y0,  s8 x1, s8 y1 )
 
     // check for king castle
     bool is_castling = ( moving_piece.type == KING) && 
-            (( y0 == 0 || y0 == 7 ) &&  (y0 == y1 )) &&
-            (( x0 == 4 ) && ( x1 == 6 || x1 == 2 ) );
+        (( y0 == 0 || y0 == 7 ) &&  (y0 == y1 )) &&
+        (( x0 == 4 ) && ( x1 == 6 || x1 == 2 ) );
 
 
     if ( is_castling ) {
@@ -697,18 +704,18 @@ CHECKERS find_checkers( PLAYER player, s8 x, s8 y )
         atk_y = y + 1;         
     }
     if( in_bounds( (u8)(x-1), (u8)atk_y ) 
-        && board[ (u8)(x-1) ][(u8)atk_y].type == PAWN 
-        && board[(u8)(x-1)][(u8)atk_y].player == atkr ) {
+            && board[ (u8)(x-1) ][(u8)atk_y].type == PAWN 
+            && board[(u8)(x-1)][(u8)atk_y].player == atkr ) {
         check_out.x[check_out.count] = x-1;
         check_out.y[check_out.count] = atk_y;
         check_out.is_biroqu[check_out.count] = false;
         check_out.count++;
         if( check_out.count >=2 ) return check_out;
-    
+
     }
     if( in_bounds( (u8)(x+1), (u8)atk_y ) 
-        && board[ (u8)(x+1) ][(u8)atk_y].type == PAWN 
-        && board[(u8)(x+1)][(u8)atk_y].player == atkr ) {
+            && board[ (u8)(x+1) ][(u8)atk_y].type == PAWN 
+            && board[(u8)(x+1)][(u8)atk_y].player == atkr ) {
         check_out.x[check_out.count] = x+1;
         check_out.y[check_out.count] = atk_y;
         check_out.is_biroqu[check_out.count] = false;
@@ -835,7 +842,7 @@ bool any_valid_king_move( PLAYER player) {
         //printf(">> AVKM: i: %d new x: %d new y %d \n", i, nx, ny );
         if (!in_bounds(nx,ny)) {
             //printf(">> AVKM: out of bounds, skip\n");
-             continue;
+            continue;
         }
         // avoid moving onto own piece (and keep castling out).
         if (!is_valid_move( x,y, nx,ny)) {
@@ -911,7 +918,7 @@ bool has_any_valid_move(PLAYER player) {
     // Only one checker  king moves OR capture checker OR block checker (if is_biroqu).
     //printf(" check for valid king move\n");
     if (any_valid_king_move( player)) {
-    //printf(" VALID KING MOVE FOUND\n");
+        //printf(" VALID KING MOVE FOUND\n");
         return true;
     }
 
@@ -928,7 +935,7 @@ bool has_any_valid_move(PLAYER player) {
         for (s8 x0=0;x0<8;x0++){
             CHESS_PIECE p = board[(u8)x0][(u8)y0];
             if (p.player != player || p.type == EMPTY || p.type == KING) {
-                
+
                 continue;
             }
             // found a piece on our team
@@ -953,8 +960,8 @@ bool has_any_valid_move(PLAYER player) {
                     } 
                     //printf("test move from %d,%d to %d,%d\n", x0,y0,x1,y1);
                     if (!is_valid_move(x0,y0,x1,y1)) {
-                       //printf("   invalid move from %d,%d to %d,%d\n", x0,y0,x1,y1);
-                        
+                        //printf("   invalid move from %d,%d to %d,%d\n", x0,y0,x1,y1);
+
                         continue;
                     } 
 
@@ -988,7 +995,7 @@ bool is_checkmate( PLAYER player )
     if( is_my_king_in_check(board, player ) == true ) {
         // and king has no valid moves
         // and no other piece can cancel check
-//printf("----------------------------------------------");
+        //printf("----------------------------------------------");
         return !has_any_valid_move( player );
     }
     return false;

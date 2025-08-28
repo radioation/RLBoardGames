@@ -577,9 +577,9 @@ int main(bool hard) {
                         cursor_clear_selected(&cursor); 
                         if( is_checkmate(currentPlayer ) ) {
                             if( currentPlayer == PLAYER_ONE ) {
-                                VDP_drawText("PLAYER ONE WINS", 13, 1);
-                            } else {
                                 VDP_drawText("PLAYER TWO WINS", 13, 1);
+                            } else {
+                                VDP_drawText("PLAYER ONE WINS", 13, 1);
                             }
                         }else if( is_stalemate(currentPlayer ) ) {
                                 VDP_drawText("STALE MATE", 15, 1);

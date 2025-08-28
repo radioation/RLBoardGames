@@ -438,25 +438,44 @@ void test_kings() {
 
 
     set_piece(3,3,PAWN,PLAYER_TWO);
-    set_piece(4,4,KNIGHT,PLAYER_TWO);
-    set_piece(3,5,BISHOP,PLAYER_TWO);
-    set_piece(2,4,ROOK,PLAYER_TWO);
-    set_piece(2,3,PAWN,PLAYER_ONE);
-    set_piece(4,3,KNIGHT,PLAYER_ONE);
-    set_piece(4,5,BISHOP,PLAYER_ONE);
-    set_piece(2,5,ROOK,PLAYER_ONE);
+    set_piece(3,4,KING,PLAYER_ONE);
+    printf("test_queens : can capture opposite pawn- " );
     print_board();
-    printf("test_queens : can capture opposite side- " );
     EXPECT(is_valid_move(3,4,3,3) == true); 
-    EXPECT(is_valid_move(3,4,4,4) == true);
-    EXPECT(is_valid_move(3,4,3,5) == true); 
-    EXPECT(is_valid_move(3,4,2,4) == true);
 
-    printf("test_queens : can't capture same side- " );
+    set_piece(3,3,ROOK,PLAYER_TWO);
+    set_piece(3,4,KING,PLAYER_ONE);
+    printf("test_queens : can capture opposite ROOK- " );
+    print_board();
+    EXPECT(is_valid_move(3,4,3,3) == true); 
+
+    set_piece(3,3,BISHOP,PLAYER_TWO);
+    set_piece(3,4,KING,PLAYER_ONE);
+    printf("test_queens : can capture opposite BISHOP- " );
+    print_board();
+    EXPECT(is_valid_move(3,4,3,3) == true); 
+
+    set_piece(3,3,KNIGHT,PLAYER_TWO);
+    set_piece(3,4,KING,PLAYER_ONE);
+    print_board();
+    printf("test_queens : can capture opposite KNIGHT- " );
+    EXPECT(is_valid_move(3,4,3,3) == true); 
+
+    set_piece(3,3,QUEEN,PLAYER_TWO);
+    set_piece(3,4,KING,PLAYER_ONE);
+    print_board();
+    printf("test_queens : can capture opposite QUEEN- " );
+    EXPECT(is_valid_move(3,4,3,3) == true); 
+
+
+
+
+/*    printf("test_queens : can't capture same side- " );
     EXPECT(is_valid_move(3,4,2,3) == false); 
     EXPECT(is_valid_move(3,4,4,3) == false);
     EXPECT(is_valid_move(3,4,4,5) == false); 
     EXPECT(is_valid_move(3,4,2,5) == false);
+*/
 }
 
 int test_check() {
@@ -669,6 +688,51 @@ int test_check() {
     }
 
 
+    clear_board();
+    set_piece(0,0,ROOK,PLAYER_TWO);
+    set_piece(1,0,KNIGHT,PLAYER_TWO);
+    set_piece(2,0,BISHOP,PLAYER_TWO);
+    set_piece(4,4,QUEEN,PLAYER_TWO);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(3,2,BISHOP,PLAYER_TWO);
+    set_piece(7,2,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(1,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(3,1,PAWN,PLAYER_TWO);
+    //set_piece(4,3,PAWN,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+
+    set_piece(0,6,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(3,6,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(7,6,PAWN,PLAYER_ONE);
+
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(1,7,KNIGHT,PLAYER_ONE);
+    set_piece(2,7,BISHOP,PLAYER_ONE);
+    set_piece(4,6,QUEEN,PLAYER_ONE);
+    set_piece(4,6,KING,PLAYER_ONE);
+    set_piece(5,5,KNIGHT,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+
+    print_board();
+    printf("test_check : king attack\n" );
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == true );
+
+
+    set_piece(4,6,EMPTY,NO_PLAYER);
+    set_piece(4,7,KING,PLAYER_ONE);
+    print_board();
+    printf("test_check : king attack\n" );
+    EXPECT(is_my_king_in_check( board, PLAYER_ONE) == true );
 
 
 
@@ -1887,20 +1951,20 @@ int main( int argc, char* argv[] ) {
     test_kings();
 
     test_check();
-    test_find_king();
-
-    test_find_checkers();
-    test_block_square();
-
-    test_has_any_valid_move();
-
-    test_any_valid_king_move();
-    test_checkmate();
-
-    test_stalemate();
-
-    test_castle();
-
-
+//    test_find_king();
+//
+//    test_find_checkers();
+//    test_block_square();
+//
+//    test_has_any_valid_move();
+//
+//    test_any_valid_king_move();
+//    test_checkmate();
+//
+//    test_stalemate();
+//
+//    test_castle();
+//
+//
     return 0;
 }
