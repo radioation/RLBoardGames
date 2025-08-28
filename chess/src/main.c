@@ -562,18 +562,28 @@ int main(bool hard) {
             }
         }
         else {
-                // read joypad to mover cursor
-                u16 joypad  = JOY_readJoypad( JOY_1 );
-                if( inputWait == 0 ) {
-                    if( cursor_move( &cursor, joypad ) == TRUE ) {
-                        XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
-                        inputWait = INPUT_WAIT_COUNT;
-                    }
-                    if( joypad & BUTTON_A ) {
-                        bool didMove =  cursor_action( &cursor, board, currentPlayer );
-                        inputWait = INPUT_WAIT_COUNT;
-                        if( didMove ) {
-                            cursor_clear_selected(&cursor); 
+            // offline
+            // read joypad to mover cursor
+            u16 joypad  = JOY_readJoypad( JOY_1 );
+            if( inputWait == 0 ) {
+                if( cursor_move( &cursor, joypad ) == TRUE ) {
+                    XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
+                    inputWait = INPUT_WAIT_COUNT;
+                }
+                if( joypad & BUTTON_A ) {
+                    bool didMove =  cursor_action( &cursor, board, currentPlayer );
+                    inputWait = INPUT_WAIT_COUNT;
+                    if( didMove ) {
+                        cursor_clear_selected(&cursor); 
+                        if( is_checkmate(currentPlayer ) ) {
+                            if( currentPlayer == PLAYER_ONE ) {
+                                VDP_drawText("PLAYER ONE WINS", 13, 1);
+                            } else {
+                                VDP_drawText("PLAYER TWO WINS", 13, 1);
+                            }
+                        }else if( is_stalemate(currentPlayer ) ) {
+                                VDP_drawText("STALE MATE", 15, 1);
+                        } else {
                             if( currentPlayer == PLAYER_ONE ) {
                                 currentPlayer = PLAYER_TWO;
                                 VDP_drawText("TWO", 20, 1);
@@ -582,15 +592,16 @@ int main(bool hard) {
                                 VDP_drawText("ONE", 20, 1);
                             }
                         }
-                    } else if( joypad & BUTTON_C ) {
-                        cursor_clear_selected( &cursor );
-                        inputWait = INPUT_WAIT_COUNT;
                     }
-                } else {
-                    if( inputWait > 0 ) {
-                        --inputWait;
-                    }
+                } else if( joypad & BUTTON_C ) {
+                    cursor_clear_selected( &cursor );
+                    inputWait = INPUT_WAIT_COUNT;
                 }
+            } else {
+                if( inputWait > 0 ) {
+                    --inputWait;
+                }
+            }
 
         }
 
