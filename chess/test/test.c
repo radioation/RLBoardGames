@@ -17,6 +17,10 @@ u16 g_fail = 0;
     printf("  FAIL at %s:%d: %s\n", __FILE__, __LINE__, #expr); } }while(0)
 
 extern CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE];
+extern bool PLAYER_ONE_CAN_CASTLE_KING_SIDE;
+extern bool PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE;
+extern bool PLAYER_TWO_CAN_CASTLE_KING_SIDE;
+extern bool PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE;
 
 void print_board() {
     printf("\n--------\n");
@@ -1525,6 +1529,55 @@ int test_stalemate() {
 
 }
 
+int test_castle() {
+    printf("test_castle ----------------------------------------\n");
+    clear_board();
+    printf("test_castle : setup board\n" );
+    clear_board();
+    set_piece(0,0,ROOK,PLAYER_TWO);
+    set_piece(1,0,KNIGHT,PLAYER_TWO);
+    set_piece(2,0,BISHOP,PLAYER_TWO);
+    set_piece(3,0,QUEEN,PLAYER_TWO);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(5,0,BISHOP,PLAYER_TWO);
+    set_piece(6,0,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(1,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(3,1,PAWN,PLAYER_TWO);
+    set_piece(4,1,PAWN,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+
+    set_piece(0,6,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(3,6,PAWN,PLAYER_ONE);
+    set_piece(4,4,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(7,6,PAWN,PLAYER_ONE);
+
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(1,7,KNIGHT,PLAYER_ONE);
+    set_piece(2,7,BISHOP,PLAYER_ONE);
+    set_piece(3,7,QUEEN,PLAYER_ONE);
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(3,5,BISHOP,PLAYER_ONE);
+    set_piece(5,5,KNIGHT,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+
+    print_board();
+    printf("test_castle : basic\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_kingside(PLAYER_ONE) == true);
+}
 
 int main( int argc, char* argv[] ) {
     test_pawns();
@@ -1546,6 +1599,9 @@ int main( int argc, char* argv[] ) {
     test_checkmate();
 
     test_stalemate();
+
+    test_castle();
+
 
     return 0;
 }
