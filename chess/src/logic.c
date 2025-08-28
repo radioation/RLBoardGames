@@ -129,6 +129,9 @@ bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x
 }
 
 bool can_castle_kingside( PLAYER player ) {
+    if( is_my_king_in_check( board, player )) {
+        return false;
+    }
     if (player == PLAYER_ONE ) {   
         if( ! PLAYER_ONE_CAN_CASTLE_KING_SIDE ) {
 	//printf("ccks 1\n");
@@ -152,6 +155,9 @@ bool can_castle_kingside( PLAYER player ) {
     return false;
 }
 bool can_castle_queenside( PLAYER player ) {
+    if( is_my_king_in_check( board, player )) {
+        return false;
+    }
     if (player == PLAYER_ONE ) {   
         if( !PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE  ){
             return false;
@@ -409,6 +415,10 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
             if( ( piece.type != EMPTY && piece.type != KING ) && piece.player == player ) {
                 break;
             }
+            if( ( piece.type != EMPTY && piece.type != BISHOP && piece.type != QUEEN  ) && piece.player == atkr ) {
+                // their non bishop and non queen piece will be in the way
+                break;
+            }
             if( ( piece.type == BISHOP || piece.type == QUEEN ) && piece.player == atkr) 
             {
                 return true;
@@ -430,6 +440,10 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
                 //printf(">>>>>> ISA 5 : blocked by type %d player %d \n", piece.type, piece.player );
                 break;
             }
+            if( ( piece.type != EMPTY && piece.type != ROOK && piece.type != QUEEN  ) && piece.player == atkr ) {
+                // their non rook and non queen piece will be in the way
+                break;
+            }
             if( ( piece.type == ROOK || piece.type == QUEEN ) && piece.player == atkr) 
             {
                 return true;
@@ -443,16 +457,24 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
     //printf(">>>>>> ISA 6\n");
     for( s8 dy = -1; dy < 2; dy+=2 ) {
         s8 atk_y = y + dy;
+    //printf(">>>>>> ISA 6 %d %d \n", x, atk_y);
         while( in_bounds( x, atk_y ) ) {
             CHESS_PIECE piece = b[(u8)x][(u8)atk_y];
             if( ( piece.type != EMPTY && piece.type != KING ) && piece.player == player ) {
+                // my pieces can block
                 break;
             }
+            if( ( piece.type != EMPTY && piece.type != ROOK && piece.type != QUEEN  ) && piece.player == atkr ) {
+                // their non rook and non queen piece will be in the way
+                break;
+            }
+            
             if( ( piece.type == ROOK || piece.type == QUEEN ) && piece.player == atkr) 
             {
                 return true;
             } 
             atk_y = atk_y + dy;
+    //printf(">>>>>> ISA 6 %d %d \n", x, atk_y);
         }
     }
 

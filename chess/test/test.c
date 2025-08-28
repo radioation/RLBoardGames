@@ -1571,12 +1571,311 @@ int test_castle() {
     set_piece(7,7,ROOK,PLAYER_ONE);
 
     print_board();
-    printf("test_castle : basic\n" );
+    printf("test_castle : white king side\n" );
     PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
     PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
     PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
     PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
     EXPECT(can_castle_kingside(PLAYER_ONE) == true);
+
+    clear_board();
+    set_piece(0,0,ROOK,PLAYER_TWO);
+    set_piece(1,0,KNIGHT,PLAYER_TWO);
+    set_piece(2,0,BISHOP,PLAYER_TWO);
+    set_piece(3,0,QUEEN,PLAYER_TWO);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(5,0,BISHOP,PLAYER_TWO);
+    set_piece(6,0,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(1,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(3,1,PAWN,PLAYER_TWO);
+    set_piece(4,1,PAWN,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+
+    set_piece(0,6,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(3,4,PAWN,PLAYER_ONE);
+    set_piece(4,6,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(7,6,PAWN,PLAYER_ONE);
+
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(0,5,KNIGHT,PLAYER_ONE);
+    set_piece(4,5,BISHOP,PLAYER_ONE);
+    set_piece(3,5,QUEEN,PLAYER_ONE);
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(5,7,BISHOP,PLAYER_ONE);
+    set_piece(6,7,KNIGHT,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+
+    print_board();
+    printf("test_castle : white queen side\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_queenside(PLAYER_ONE) == true);
+
+    clear_board();
+    set_piece(0,0,ROOK,PLAYER_TWO);
+    set_piece(1,0,KNIGHT,PLAYER_TWO);
+    set_piece(2,0,BISHOP,PLAYER_TWO);
+    set_piece(3,0,QUEEN,PLAYER_TWO);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(3,2,BISHOP,PLAYER_TWO);
+    set_piece(7,2,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(1,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(3,1,PAWN,PLAYER_TWO);
+    set_piece(4,3,PAWN,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+
+    set_piece(0,6,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(3,4,PAWN,PLAYER_ONE);
+    set_piece(4,6,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(7,6,PAWN,PLAYER_ONE);
+
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(0,5,KNIGHT,PLAYER_ONE);
+    set_piece(4,5,BISHOP,PLAYER_ONE);
+    set_piece(3,5,QUEEN,PLAYER_ONE);
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(5,7,BISHOP,PLAYER_ONE);
+    set_piece(6,7,KNIGHT,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+
+    print_board();
+    printf("test_castle : black king side\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_kingside(PLAYER_TWO) == true);
+
+    clear_board();
+    set_piece(0,0,ROOK,PLAYER_TWO);
+    set_piece(2,2,KNIGHT,PLAYER_TWO);
+    set_piece(5,3,BISHOP,PLAYER_TWO);
+    set_piece(3,2,QUEEN,PLAYER_TWO);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(5,0,BISHOP,PLAYER_TWO);
+    set_piece(6,0,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(1,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(3,3,PAWN,PLAYER_TWO);
+    set_piece(4,1,PAWN,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+
+    set_piece(0,6,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(3,4,PAWN,PLAYER_ONE);
+    set_piece(4,6,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(7,6,PAWN,PLAYER_ONE);
+
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(0,5,KNIGHT,PLAYER_ONE);
+    set_piece(4,5,BISHOP,PLAYER_ONE);
+    set_piece(3,5,QUEEN,PLAYER_ONE);
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(5,7,BISHOP,PLAYER_ONE);
+    set_piece(6,7,KNIGHT,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+
+    print_board();
+    printf("test_castle : black queen side\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_queenside(PLAYER_TWO) == true);
+
+    clear_board();
+    set_piece(0,0,ROOK,PLAYER_TWO);
+    set_piece(2,2,KNIGHT,PLAYER_TWO);
+    set_piece(3,5,BISHOP,PLAYER_TWO);
+    set_piece(3,2,QUEEN,PLAYER_TWO);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(5,0,BISHOP,PLAYER_TWO);
+    set_piece(6,0,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(1,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(3,3,PAWN,PLAYER_TWO);
+    set_piece(4,1,PAWN,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+
+    set_piece(0,6,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(3,6,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(7,6,PAWN,PLAYER_ONE);
+
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(1,7,KNIGHT,PLAYER_ONE);
+    set_piece(2,7,BISHOP,PLAYER_ONE);
+    set_piece(3,7,QUEEN,PLAYER_ONE);
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(5,5,KNIGHT,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+
+    print_board();
+    printf("test_castle : white king side under attack\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_kingside(PLAYER_ONE) == false);
+
+    clear_board();
+    set_piece(0,0,ROOK,PLAYER_TWO);
+    set_piece(2,2,KNIGHT,PLAYER_TWO);
+    //set_piece(3,5,BISHOP,PLAYER_TWO);
+    set_piece(3,2,QUEEN,PLAYER_TWO);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(5,0,BISHOP,PLAYER_TWO);
+    set_piece(6,0,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(1,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(4,1,PAWN,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+
+    set_piece(0,6,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(4,6,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(7,6,PAWN,PLAYER_ONE);
+
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(0,5,KNIGHT,PLAYER_ONE);
+    set_piece(4,5,BISHOP,PLAYER_ONE);
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(5,7,BISHOP,PLAYER_ONE);
+    set_piece(6,7,KNIGHT,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+
+    print_board();
+    printf("test_castle : white queen side under attack\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_queenside(PLAYER_ONE) == false);
+
+
+    set_piece(3,5,BISHOP,PLAYER_TWO);
+    print_board();
+    printf("test_castle : white queen side NOT under attack\n" );
+    EXPECT(can_castle_queenside(PLAYER_ONE) == true);
+
+    set_piece(3,5,EMPTY,NO_PLAYER);
+    set_piece(3,2,EMPTY,NO_PLAYER);
+    set_piece(1,4,QUEEN,PLAYER_TWO);
+    print_board();
+    printf("test_castle : white queen side under attack\n" );
+    EXPECT(can_castle_queenside(PLAYER_ONE) == false);
+
+
+    clear_board();
+    set_piece(0,0,ROOK,PLAYER_TWO);
+    set_piece(1,0,KNIGHT,PLAYER_TWO);
+    set_piece(2,0,BISHOP,PLAYER_TWO);
+    set_piece(3,0,QUEEN,PLAYER_TWO);
+    set_piece(4,0,KING,PLAYER_TWO);
+    set_piece(3,2,BISHOP,PLAYER_TWO);
+    set_piece(7,2,KNIGHT,PLAYER_TWO);
+    set_piece(7,0,ROOK,PLAYER_TWO);
+
+    set_piece(0,1,PAWN,PLAYER_TWO);
+    set_piece(1,1,PAWN,PLAYER_TWO);
+    set_piece(2,1,PAWN,PLAYER_TWO);
+    set_piece(3,1,PAWN,PLAYER_TWO);
+    //set_piece(4,3,PAWN,PLAYER_TWO);
+    set_piece(5,1,PAWN,PLAYER_TWO);
+    set_piece(6,1,PAWN,PLAYER_TWO);
+    set_piece(7,1,PAWN,PLAYER_TWO);
+
+    set_piece(0,6,PAWN,PLAYER_ONE);
+    set_piece(1,6,PAWN,PLAYER_ONE);
+    set_piece(2,6,PAWN,PLAYER_ONE);
+    set_piece(3,6,PAWN,PLAYER_ONE);
+    set_piece(5,6,PAWN,PLAYER_ONE);
+    set_piece(6,6,PAWN,PLAYER_ONE);
+    set_piece(7,6,PAWN,PLAYER_ONE);
+
+    set_piece(0,7,ROOK,PLAYER_ONE);
+    set_piece(1,7,KNIGHT,PLAYER_ONE);
+    set_piece(2,7,BISHOP,PLAYER_ONE);
+    set_piece(4,6,QUEEN,PLAYER_ONE);
+    set_piece(4,7,KING,PLAYER_ONE);
+    set_piece(5,5,KNIGHT,PLAYER_ONE);
+    set_piece(7,7,ROOK,PLAYER_ONE);
+
+    print_board();
+    printf("test_castle : black king side under attack\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_kingside(PLAYER_TWO) == false);
+
+
+    set_piece(3,2,EMPTY,NO_PLAYER);
+    set_piece(4,6,EMPTY,NO_PLAYER);
+    set_piece(1,4,QUEEN,PLAYER_ONE);
+    print_board();
+    printf("test_castle : black king side under attack\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_kingside(PLAYER_TWO) == false);
+
+    set_piece(2,3,KNIGHT,PLAYER_ONE);
+    print_board();
+    printf("test_castle : black king side  NOT under attack\n" );
+    PLAYER_ONE_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_ONE_CAN_CASTLE_QUEEN_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_KING_SIDE = true;
+    PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE = true;
+    EXPECT(can_castle_kingside(PLAYER_TWO) == true);
+
 }
 
 int main( int argc, char* argv[] ) {
