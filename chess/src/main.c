@@ -553,22 +553,17 @@ int main(bool hard) {
             }
         }
         else {
-            if( currentPlayer == whoAmI  ){
                 // read joypad to mover cursor
                 u16 joypad  = JOY_readJoypad( JOY_1 );
                 if( inputWait == 0 ) {
                     if( cursor_move( &cursor, joypad ) == TRUE ) {
                         XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                         inputWait = INPUT_WAIT_COUNT;
-                        // send cursor data
-                        //cursor_send_data( &cursor, 0 );
                     }
                     if( joypad & BUTTON_A ) {
                         bool didMove =  cursor_action( &cursor, board, currentPlayer );
                         inputWait = INPUT_WAIT_COUNT;
                         if( didMove ) {
-                            // send move data.
-                            //cursor_send_data( &cursor, 1 );  // move piece
                             cursor_clear_selected(&cursor); 
                             if( currentPlayer == PLAYER_ONE ) {
                                 currentPlayer = PLAYER_TWO;
@@ -577,21 +572,16 @@ int main(bool hard) {
                                 currentPlayer = PLAYER_ONE;
                                 VDP_drawText("ONE", 20, 1);
                             }
-                        } else {
-                            //cursor_send_data( &cursor, 0 ); // just update cursor
                         }
                     } else if( joypad & BUTTON_C ) {
                         cursor_clear_selected( &cursor );
                         inputWait = INPUT_WAIT_COUNT;
-                        // send cursor data
-                        if(online) cursor_send_data( &cursor,0 );
                     }
                 } else {
                     if( inputWait > 0 ) {
                         --inputWait;
                     }
                 }
-            } 
 
         }
 
