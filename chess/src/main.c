@@ -62,6 +62,15 @@ void draw_pieces(){
                         boardStep,  // Width
                         boardStep,  // Height
                         CPU);
+            } else {
+                VDP_setTileMapEx( BG_A, pieces_img.tilemap, TILE_ATTR_FULL(PAL1, TRUE, FALSE, FALSE, piecesTileIndex),    
+                        boardStartCol + col * boardStep,  // PLANE X Dest in tiles
+                        boardStartRow + row * boardStep,  // PLANE Y Dest in tiles
+                        0,  // REGION X start
+                        0,  // REGION Y start
+                        boardStep,  // Width
+                        boardStep,  // Height
+                        CPU);
             }
         }
     }

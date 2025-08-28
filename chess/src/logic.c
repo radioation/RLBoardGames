@@ -43,10 +43,10 @@ void reset_state() {
 
 #ifdef CLITEST
 void draw_board( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE] ) {
-    printf("\n+-+-+-+-+\n");
-    printf("  0 1 2 3 4 5 6 7\n");
+    //printf("\n+-+-+-+-+\n");
+    //printf("  0 1 2 3 4 5 6 7\n");
     for (int y=0;y<8;y++){
-        printf("%d ", y );
+        //printf("%d ", y );
         for (int x=0;x<8;x++){
             const CHESS_PIECE *p = &b[x][y];
             char c='.';
@@ -75,9 +75,9 @@ void draw_board( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE] ) {
             }
             if (p->player==PLAYER_TWO) c = (char)(c + 32); 
 
-            printf("%c ", c);
+            //printf("%c ", c);
         }
-        printf("\n");
+        //printf("\n");
     }
 }
 #endif
@@ -110,6 +110,7 @@ bool is_rank_empty_between(  s8 y, s8 x0, s8 x1 ) {
 */
 
 bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x0, s8 x1, PLAYER player ) {
+	//printf("irab  y %d x0 %d x1 %d\n",y, x0, x1 );
     s8 start_x = x0;
     s8 end_x = x1;
     if( x1 < x0 ) {
@@ -118,9 +119,11 @@ bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x
     }
     for( s8 x = start_x; x <= end_x; x++ ) {
         if( is_square_attacked( b, x, y, player )) {
+	//printf("IS attacked?\n"); 
             return true;
         } 
     }
+	//printf("NOT attacked?\n"); 
     return false;
 
 }
@@ -128,12 +131,15 @@ bool is_rank_attacked_between( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], s8 y, s8 x
 bool can_castle_kingside( PLAYER player ) {
     if (player == PLAYER_ONE ) {   
         if( ! PLAYER_ONE_CAN_CASTLE_KING_SIDE ) {
+	//printf("ccks 1\n");
             return false;
         }
         if( board[5][7].type != EMPTY || board[6][7].type != EMPTY ) {
+	//printf("ccks 2\n");
             return false;
         } 
-        return is_rank_attacked_between( board, 7, 5, 6, player );
+	//printf("ccks 3\n");
+        return !is_rank_attacked_between( board, 7, 5, 6, player );
     } else {
         if( ! PLAYER_TWO_CAN_CASTLE_KING_SIDE ) {
             return false;
@@ -141,7 +147,7 @@ bool can_castle_kingside( PLAYER player ) {
         if( board[5][0].type != EMPTY || board[6][0].type != EMPTY ) {
             return false;
         } 
-        return is_rank_attacked_between( board, 0, 5, 6, player );
+        return !is_rank_attacked_between( board, 0, 5, 6, player );
     }
     return false;
 }
@@ -153,7 +159,7 @@ bool can_castle_queenside( PLAYER player ) {
         if( board[1][7].type != EMPTY || board[2][7].type != EMPTY || board[3][7].type != EMPTY ) {
             return false;
         } 
-        return is_rank_attacked_between( board, 7, 1, 3, player );
+        return !is_rank_attacked_between( board, 7, 1, 3, player );
     } else {
         if( !PLAYER_TWO_CAN_CASTLE_QUEEN_SIDE  ){
             return false;
@@ -161,7 +167,7 @@ bool can_castle_queenside( PLAYER player ) {
         if( board[1][0].type != EMPTY || board[2][0].type != EMPTY || board[3][0].type != EMPTY ) {
             return false;
         } 
-        return is_rank_attacked_between( board, 0, 1, 3, player );
+        return !is_rank_attacked_between( board, 0, 1, 3, player );
     }
     return false;
 }
@@ -332,13 +338,13 @@ bool try_king_move( s8 x0,s8 y0, s8 x1,s8 y1, CHESS_PIECE src, CHESS_PIECE dst )
     if( src.player == PLAYER_ONE ) {
         if( y0 == 7 && y1 == 7 &&  x0 == 4 && x1 == 6 ) {   
             return can_castle_kingside( src.player );
-        } else if( y0 == 7 && y1 == 7 &&  x0 == 4 && x1 == 1 ) {   
+        } else if( y0 == 7 && y1 == 7 &&  x0 == 4 && x1 == 2 ) {   
             return can_castle_queenside( src.player ); 
         }
     } else if ( src.player == PLAYER_TWO ) {
         if( y0 == 0 && y1 == 0 &&  x0 == 4 && x1 == 6 ) {   
             return can_castle_kingside( src.player );
-        } else if( y0 == 0 && y1 == 0 &&  x0 == 4 && x1 == 1 ) {   
+        } else if( y0 == 0 && y1 == 0 &&  x0 == 4 && x1 == 2 ) {   
             return can_castle_queenside( src.player ); 
         }
     }
@@ -457,6 +463,7 @@ bool is_square_attacked( CHESS_PIECE b[BOARD_SIZE][BOARD_SIZE], u8 x, u8 y, PLAY
         s8 atk_y = y + KING_MOVES[i][1];
         if (in_bounds(atk_x,atk_y) && b[(u8)atk_x][(u8)atk_y].type == KING && b[(u8)atk_x][(u8)atk_y].player == atkr) return true;
     }
+    //printf(">>>>>> ISA 8\n");
     return false;
 }
 
@@ -608,14 +615,14 @@ bool do_move ( s8 x0, s8 y0,  s8 x1, s8 y1 )
                 board[0][7].type = EMPTY;
                 board[0][7].player = NO_PLAYER;
                 board[3][7].type = ROOK;
-                board[3][7].player = PLAYER_TWO;
+                board[3][7].player = PLAYER_ONE;
             }    
         } else if (player == PLAYER_TWO ) {
             if( x1 == 6 ) { // king side
                 board[7][0].type = EMPTY;
                 board[7][0].player = NO_PLAYER;
                 board[5][0].type = ROOK;
-                board[5][0].player = PLAYER_ONE;
+                board[5][0].player = PLAYER_TWO;
             } else{ // queen siide.
                 board[0][0].type = EMPTY;
                 board[0][0].player = NO_PLAYER;
