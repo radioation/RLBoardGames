@@ -41,8 +41,8 @@ DO
   @INTCLR
   
   ' get number of Bytes Waiting in the receive buffer
-  NSTATUS CONN  ' NSTATUS followd by DPEEK($02EA)
   DO
+    NSTATUS CONN  ' NSTATUS followd by DPEEK($02EA)
     BW = DPEEK($02EA)
     IF BW > 0 THEN EXIT
   LOOP 
