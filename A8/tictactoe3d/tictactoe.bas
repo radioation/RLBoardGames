@@ -80,8 +80,11 @@ DIM FJ_BUFF(64) BYTE
 
 
 ' start main processing '''''''''''''''''''''''''''''''''''''''
+POKE 65,0 ' quiet
 
 @DRAWBOARD
+
+@GET_ADDR
 
 @JOIN_GAME
 
@@ -245,14 +248,20 @@ PROC INTCLR
 ENDPROC
 
 PROC GET_ADDR
-  INPUT "Enter URL: ", NEWURL$
-  FJ_URL$=NEWURL$
+  INPUT "Enter IP Address: "; ADDRESS$
+  IF LEN(ADDRESS$) > 1 
+    FJ_URL$="N:TCP://"
+    FJ_URL$ =+ ADDRESS$
+    FJ_URL$ =+ ":5364"
+  ELSE 
+    PRINT "Using default: ";FJ_URL$
+  ENDIF
 ENDPROC
 
 PROC JOIN_GAME
-  PRINT "JOINING GAME..."
+  PRINT "JOINING GAME... : "; FJ_URL$
   NOPEN FJ_CONN,FJ_MODE,FJ_TRANSL,FJ_URL$
   NSTATUS FJ_CONN
-  PRINT "CONNCTED ..."
+  PRINT "CONNCETED ..."
   @INTCLR ' is this needed?
 ENDPROC
