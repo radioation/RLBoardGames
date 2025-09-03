@@ -1,4 +1,3 @@
-
 ' SETUP MEMORY FOR CUSTOM CHARS
 ' MOVE MEMORY BY 4 PAGES
 NMEMTOP=PEEK(106)-4
@@ -120,10 +119,12 @@ data byte = 85,85,125,255,223,255,255,255,       ' $17 $97 : 86 : knight top 2 l
 data byte = 85,85,85,85,213,213,245,245,         ' $18 $98 : 86 : knight top 3 light
 data byte = 175,175,171,170,170,171,171,170,     ' $19 $99 : 84 : Knight bottom 1 dark
 data byte = 250,250,250,234,234,250,250,170,     ' $1A $9A : 85 : Knight bottom 3 dark
+
 data byte = 170,170,170,170,170,170,171,175,     ' $1B $9B : 86 : knight top 1 dark
-data byte = 170,170,190,255,239,255,255,255,     ' $1C $9C : 86 : knight top 2 dark
-data byte = 170,170,170,170,234,234,250,250,     ' $1D $9D : 86 : knight top 3 dark
-data byte = 0,24,48,126,48,24,0,0,                
+data byte = 170,170,190,255,239,255,255,255,     ' $1C $9C : 87 : knight top 2 dark
+data byte = 170,170,170,170,234,234,250,250,     ' $1D $9D : 88 : knight top 3 dark
+data byte = 170,170,170,170,170,170,171,175,     ' $1E $9E : 86 : knight top 1 dark
+'data byte = 0,24,48,126,48,24,0,0,                
 data byte = 0,24,12,126,12,24,0,0,
 data byte = 0,24,60,126,126,60,24,0,
 data byte = 0,0,60,6,62,102,62,0,
@@ -158,227 +159,311 @@ data byte = 0,126,120,124,110,102,6,0,
 data byte = 8,24,56,120,56,24,8,0,
 data byte = 16,24,28,30,28,24,16,0
 
-' COPY THE ROM CHARACTER SET TO RAM
-'MOVE CHROM, CHRAM, 1024
-
 ' COPY PIECES CHARACTERS TO RAM
-'START=NMEMTOP*256+(8*3)
-'MOVE &PIECES, START, 144 '18 PIECES = 18*8
 MOVE &PIECES, CHRAM, 1024
 
 ' MODIFY THE CHARACTER SET POINTER SO T
 POKE 756,NMEMTOP
 
 
-' pawn test
-pos.  1,1 : ? #6, chr$($21)
-pos.  2,1 : ? #6, chr$($24) ' pawn top light square
-pos.  3,1 : ? #6, chr$($21)
-pos.  1,2 : ? #6, chr$($21)
-pos.  2,2 : ? #6, chr$($23) ' pawn bottom light square
-pos.  3,2 : ? #6, chr$($21)
 
-pos.  4,1 : ? #6, chr$($22)
-pos.  5,1 : ? #6, chr$($26) ' pawn top dark square
-pos.  6,1 : ? #6, chr$($22)
-pos.  4,2 : ? #6, chr$($22)
-pos.  5,2 : ? #6, chr$($25) ' pawn bottom dark square
-pos.  6,2 : ? #6, chr$($22)
+' BOARD SETUP `````````````````````````````````````````````
+DATA CURSOR_X() = 82,94,106,118,130,142,154,166
+DATA CURSOR_Y() = 21,29,37,45,53,61,69,77
+DATA TILE_X() =  8,11,14,17,20,23,26,29
+DATA TILE_Y() = 1,3,5,7,9,11,13,15
 
-pos.  7,1 : ? #6, chr$($A1)
-pos.  8,1 : ? #6, chr$($A4) ' pawn top light square
-pos.  9,1 : ? #6, chr$($A1)
-pos.  7,2 : ? #6, chr$($A1)
-pos.  8,2 : ? #6, chr$($A3) ' pawn bottom light square
-pos.  9,2 : ? #6, chr$($A1)
-
-pos. 10,1 : ? #6, chr$($A2)
-pos. 11,1 : ? #6, chr$($A6) ' pawn top dark square
-pos. 12,1 : ? #6, chr$($A2)
-pos. 10,2 : ? #6, chr$($A2)
-pos. 11,2 : ? #6, chr$($A5) ' pawn bottom dark square
-pos. 12,2 : ? #6, chr$($A2)
-
-' Queen test
-pos.  1,3 : ? #6, chr$($2A)
-pos.  2,3 : ? #6, chr$($2B) ' queen top light square
-pos.  3,3 : ? #6, chr$($2C)
-pos.  1,4 : ? #6, chr$($27)
-pos.  2,4 : ? #6, chr$($28) ' queen bottom light square
-pos.  3,4 : ? #6, chr$($29)
-
-pos.  4,3 : ? #6, chr$($5B)
-pos.  5,3 : ? #6, chr$($5C) ' queen top dark square
-pos.  6,3 : ? #6, chr$($5D)
-pos.  4,4 : ? #6, chr$($2D)
-pos.  5,4 : ? #6, chr$($2E) ' queen bottom dark square
-pos.  6,4 : ? #6, chr$($2F)
-
-pos.  7,3 : ? #6, chr$($AA)
-pos.  8,3 : ? #6, chr$($AB) ' queen top light square
-pos.  9,3 : ? #6, chr$($AC)
-pos.  7,4 : ? #6, chr$($A7)
-pos.  8,4 : ? #6, chr$($A8) ' queen bottom light square
-pos.  9,4 : ? #6, chr$($A9)
-                          
-pos. 10,3 : ? #6, chr$($DB)
-pos. 11,3 : ? #6, chr$($DC) ' queen top dark square
-pos. 12,3 : ? #6, chr$($DD)
-pos. 10,4 : ? #6, chr$($AD)
-pos. 11,4 : ? #6, chr$($AE) ' queen bottom dark square
-pos. 12,4 : ? #6, chr$($AF)
-                         
-' King test
-pos.  1,5 : ? #6, chr$($5E)
-pos.  2,5 : ? #6, chr$($5F) ' king top light square
-pos.  3,5 : ? #6, chr$($00)
-pos.  1,6 : ? #6, chr$($27)
-pos.  2,6 : ? #6, chr$($28) ' king (queen|rook) bottom light square
-pos.  3,6 : ? #6, chr$($29)
-
-pos.  4,5 : ? #6, chr$($01)
-pos.  5,5 : ? #6, chr$($02) ' king top dark square
-pos.  6,5 : ? #6, chr$($03)
-pos.  4,6 : ? #6, chr$($2D)
-pos.  5,6 : ? #6, chr$($2E) ' king (queen|rook) bottom dark square
-pos.  6,6 : ? #6, chr$($2F)
-
-pos.  7,5 : ? #6, chr$($DE)
-pos.  8,5 : ? #6, chr$($DF) ' king top light square
-pos.  9,5 : ? #6, chr$($80)
-pos.  7,6 : ? #6, chr$($A7)
-pos.  8,6 : ? #6, chr$($A8) ' king (queen|rook) bottom light square
-pos.  9,6 : ? #6, chr$($A9)
-                         
-pos. 10,5 : ? #6, chr$($81)
-pos. 11,5 : ? #6, chr$($82) ' king top dark square
-pos. 12,5 : ? #6, chr$($83)
-pos. 10,6 : ? #6, chr$($AD)
-pos. 11,6 : ? #6, chr$($AE) ' king (queen|rook)q bottom dark square
-pos. 12,6 : ? #6, chr$($AF)
-                       
-' Rook test
-pos.  1,7 : ? #6, chr$($21)
-pos.  2,7 : ? #6, chr$($04) ' rook top light square
-pos.  3,7 : ? #6, chr$($05)
-pos.  1,8 : ? #6, chr$($27)
-pos.  2,8 : ? #6, chr$($28) ' rook (queen|rook) bottom light square
-pos.  3,8 : ? #6, chr$($29)
-
-pos.  4,7 : ? #6, chr$($22)
-pos.  5,7 : ? #6, chr$($06) ' rook top dark square
-pos.  6,7 : ? #6, chr$($07)
-pos.  4,8 : ? #6, chr$($2D)
-pos.  5,8 : ? #6, chr$($2E) ' rook (queen|rook) bottom dark square
-pos.  6,8 : ? #6, chr$($2F)
-
-pos.  7,7 : ? #6, chr$($21)
-pos.  8,7 : ? #6, chr$($84) ' rook top light square
-pos.  9,7 : ? #6, chr$($85)
-pos.  7,8 : ? #6, chr$($A7)
-pos.  8,8 : ? #6, chr$($A8) ' rook (queen|rook) bottom light square
-pos.  9,8 : ? #6, chr$($A9)
-                        
-pos. 10,7 : ? #6, chr$($22)
-pos. 11,7 : ? #6, chr$($86) ' rook top dark square
-pos. 12,7 : ? #6, chr$($87)
-pos. 10,8 : ? #6, chr$($AD)
-pos. 11,8 : ? #6, chr$($AE) ' rook (queen|rook)q bottom dark square
-pos. 12,8 : ? #6, chr$($AF)
-
-' Bishop test
-pos.  1,9 : ? #6, chr$($0B)
-pos.  2,9 : ? #6, chr$($0C) ' bishop top light square
-pos.  3,9 : ? #6, chr$($0D)
-pos.  1,10 : ? #6, chr$($08)
-pos.  2,10 : ? #6, chr$($09) ' bishop (bishop|knight) bottom light square
-pos.  3,10 : ? #6, chr$($0A)
-
-pos.  4,9 : ? #6, chr$($11)
-pos.  5,9 : ? #6, chr$($12) ' bishop top dark square
-pos.  6,9 : ? #6, chr$($13)
-pos.  4,10 : ? #6, chr$($0E)
-pos.  5,10 : ? #6, chr$($0F) ' bishop (bishop|knight) bottom dark square
-pos.  6,10 : ? #6, chr$($10)
-
-pos.  7,9 : ? #6, chr$($8B)
-pos.  8,9 : ? #6, chr$($8C) ' bishop top light square
-pos.  9,9 : ? #6, chr$($8D)
-pos.  7,10 : ? #6, chr$($88)
-pos.  8,10 : ? #6, chr$($89) ' bishop (bishop|knight) bottom light square
-pos.  9,10 : ? #6, chr$($8A)
-                          
-pos. 10,9 : ? #6, chr$($91)
-pos. 11,9 : ? #6, chr$($92) ' bishop top dark square
-pos. 12,9 : ? #6, chr$($93)
-pos. 10,10 : ? #6, chr$($8E)
-pos. 11,10 : ? #6, chr$($8F) ' bishop (bishop|knight)q bottom dark square
-pos. 12,10 : ? #6, chr$($90)
-
-' Knight test
-pos.  1,11 : ? #6, chr$($16)
-pos.  2,11 : ? #6, chr$($17) ' knight top light square
-pos.  3,11 : ? #6, chr$($18)
-pos.  1,12 : ? #6, chr$($14)
-pos.  2,12 : ? #6, chr$($09) ' knight (bishop|knight) bottom light square
-pos.  3,12 : ? #6, chr$($15)
-
-pos.  4,11 : ? #6, chr$($1B)
-pos.  5,11 : ? #6, chr$($1C) ' knight top dark square
-pos.  6,11 : ? #6, chr$($1D)
-pos.  4,12 : ? #6, chr$($19)
-pos.  5,12 : ? #6, chr$($0F) ' knight (bishop|knight) bottom dark square
-pos.  6,12 : ? #6, chr$($1A)
-
-pos.  7,11 : ? #6, chr$($16)
-pos.  8,11 : ? #6, chr$($17) ' knight top light square
-pos.  9,11 : ? #6, chr$($18)
-pos.  7,12 : ? #6, chr$($14)
-pos.  8,12 : ? #6, chr$($09) ' knight (bishop|knight) bottom light square
-pos.  9,12 : ? #6, chr$($15)
-                           
-pos. 10,11 : ? #6, chr$($1B)
-pos. 11,11 : ? #6, chr$($1C) ' knight top dark square
-pos. 12,11 : ? #6, chr$($1D)
-pos. 10,12 : ? #6, chr$($19)
-pos. 11,12 : ? #6, chr$($0F) ' knight (bishop|knight)q bottom dark square
-pos. 12,12 : ? #6, chr$($1A)
+cursor_col = 4
+cursor_row = 4
+select_col = -1
+select_row = -1
 
 
+DIM BOARD_DATA(64) BYTE ' 8x8 board
+MSET Adr( BOARD_DATA ), 64, 0 
 
+POKE 559, 0
+@SETUP_BOARD
+
+@DRAW_BOARD
+
+POKE 559, 34
 ' SETUP P/M Graphics
 PMGRAPHICS 2   ' DOUBLE LINE MODE
 p0addr = PMADR(0)  ' get player addresses
-p1addr = PMADR(1)
-p2addr = PMADR(2)
+p1addr = PMADR(1)  
+MSET p0addr, 128, 0 ' SET all bytes to 0
+MSET p1addr, 128, 0 '
+SETCOLOR -4, 0, 14
+SETCOLOR -4, 3, 14
+DATA PMCURSORDATA() BYTE= $FF,$FF,$FF,$FF,$FF, $FF
+DATA PMSELECTDATA() BYTE= $FF,$81,$81,$81,$81, $FF
+old_y = p0addr + CURSOR_Y(cursor_row)
 
-MSET p0addr, 128, 0 ' SET all bytes
-MSET p1addr, 128, 0 ' SET all bytes
-MSET p2addr, 128, 0 ' SET all bytes
-'MSET p0addr, 128, $ff ' SET all bytes
-'MSET p1addr, 128, $ff ' SET all bytes
-'MSET p2addr, 128, $ff ' SET all bytes
-'
-SETCOLOR -4, 1, 8
-SETCOLOR -3, 3, 8
-SETCOLOR -2, 5, 8
+@MOVEC
 
-DATA PMDATA() BYTE= $38,$44,$54,$44,$38
-
-POKE 53256, 3 ' PHAT PLAYERS
-POKE 53257, 3
-POKE 53258, 3
-
-
-
-
+' MAIN LOOP ```````````````````````````````````````````````
 DO 
-  PAUSE ' wait for blank
-  PMHPOS 0, 96
-  PMHPOS 1, 128
-  PMHPOS 2, 160
-  MOVE ADR(PMDATA), p0addr +60, 5
-  MOVE ADR(PMDATA), p1addr +60, 5
+  ' read user input
+  btn_pressed = STRIG(0)
+  if btn_pressed = 0
+    
+  endif
+  I = STICK(0)
+  if I = 15
+    sound 0,0,0,0
+  else
+    cursor_col = cursor_col + ((I=7) -(I=11))
+    if cursor_col > 7
+      cursor_col = 0
+    endif
+    if cursor_col < 0
+      cursor_col = 7
+    endif
+
+    cursor_row = cursor_row + ((I=13) -(I=14))
+    if cursor_row > 7
+      cursor_row = 0
+    endif
+    if cursor_row < 0
+      cursor_row = 7
+    endif
+    pause 10
+    @MOVEC
+  endif
 LOOP
+
+
+
+' PROCS ```````````````````````````````````````````````````
+PROC MOVEC
+  PAUSE   'WAIT FOR BLANK
+  MSET old_y, 6, 0  ' CLEAR 5 BYTES OF SPRITE
+  PMHPOS 0, CURSOR_X(cursor_col)
+  old_y = p0addr + CURSOR_Y(cursor_row)
+  MOVE ADR(PMCURSORDATA), old_y, 6
+ENDPROC
+
+
+PROC DRAW_BOARD
+  draw_light = 1
+  index = 0
+  FOR row = 0 to 7 
+    FOR col = 0 to 7
+      if BOARD_DATA(index) = 0 
+        if draw_light = 1
+          pos. TILE_X(col),   TILE_Y(row) : ? #6, chr$($21)
+          pos. TILE_X(col)+1, TILE_Y(row) : ? #6, chr$($21)
+          pos. TILE_X(col)+2, TILE_Y(row) : ? #6, chr$($21)
+          pos. TILE_X(col),   TILE_Y(row)+1 : ? #6, chr$($21)
+          pos. TILE_X(col)+1, TILE_Y(row)+1 : ? #6, chr$($21)
+          pos. TILE_X(col)+2, TILE_Y(row)+1 : ? #6, chr$($21)
+        else
+          pos. TILE_X(col),   TILE_Y(row) : ? #6, chr$($22)
+          pos. TILE_X(col)+1, TILE_Y(row) : ? #6, chr$($22)
+          pos. TILE_X(col)+2, TILE_Y(row) : ? #6, chr$($22)
+          pos. TILE_X(col),   TILE_Y(row)+1 : ? #6, chr$($22)
+          pos. TILE_X(col)+1, TILE_Y(row)+1 : ? #6, chr$($22)
+          pos. TILE_X(col)+2, TILE_Y(row)+1 : ? #6, chr$($22)
+        endif
+      else 
+        @DRAW_PIECE col, row, BOARD_DATA(index)
+      endif
+  
+      if draw_light = 1
+        draw_light = 0
+      else 
+        draw_light = 1
+      endif
+
+      index = index + 1
+    NEXT col
+
+    if draw_light = 1
+      draw_light = 0
+    else
+      draw_light = 1
+    endif
+
+  NEXT row
+ENDPROC
+
+
+PROC SETUP_BOARD 
+  MSET Adr(BOARD_DATA), 64, 0 
+  ' 
+  ' 1 - black pawn 
+  ' 2 - black knight 
+  ' 3 - black bishop 
+  ' 4 - black rook 
+  ' 5 - black queen
+  ' 6 - black king
+  '
+  ' 7 - white pawn 
+  ' 8 - white knight 
+  ' 9 - white bishop 
+  ' 10- white rook 
+  ' 11- white queen
+  ' 12- white king
+  '
+  BOARD_DATA(0) = 4
+  BOARD_DATA(1) = 2 
+  BOARD_DATA(2) = 3
+  BOARD_DATA(3) = 5
+  BOARD_DATA(4) = 6
+  BOARD_DATA(5) = 3
+  BOARD_DATA(6) = 2
+  BOARD_DATA(7) = 4
+
+  BOARD_DATA(8) =   1
+  BOARD_DATA(9) =   1 
+  BOARD_DATA(10) =  1
+  BOARD_DATA(11) =  1
+  BOARD_DATA(12) =  1
+  BOARD_DATA(13) =  1
+  BOARD_DATA(14) =  1
+  BOARD_DATA(15) =  1
+
+  BOARD_DATA(48) = 7
+  BOARD_DATA(49) = 7
+  BOARD_DATA(50) = 7
+  BOARD_DATA(51) = 7
+  BOARD_DATA(52) = 7
+  BOARD_DATA(53) = 7
+  BOARD_DATA(54) = 7
+  BOARD_DATA(55) = 7
+
+  BOARD_DATA(56) = 10
+  BOARD_DATA(57) = 8 
+  BOARD_DATA(58) = 9
+  BOARD_DATA(59) = 11
+  BOARD_DATA(60) = 12
+  BOARD_DATA(61) = 9
+  BOARD_DATA(62) = 8
+  BOARD_DATA(63) = 10
+
+ENDPROC
+
+
+PROC DRAW_PIECE board_x board_y type
+  x = TILE_X( board_x )
+  y = TILE_Y( board_y )
+  
+  'light_square = 0
+  'if index & 1
+  '  light_square = 1
+  'endif
+  color_adjust = 0
+  if type > 6 then color_adjust = $80
+
+  if type = 1 OR type = 7 ' black pawn
+    if draw_light 
+       t1 = ($21+color_adjust)
+       t2 = ($24+color_adjust) ' pawn top light square
+       t3 = ($21+color_adjust)
+       t4 = ($21+color_adjust)
+       t5 = ($23+color_adjust) ' pawn bottom light square
+       t6 = ($21+color_adjust)
+    else
+       t1 = ($22+color_adjust)
+       t2 = ($26+color_adjust) ' pawn top dark square
+       t3 = ($22+color_adjust)
+       t4 = ($22+color_adjust)
+       t5 = ($25+color_adjust) ' pawn bottom dark square
+       t6 = ($22+color_adjust)
+    endif
+  elif type = 2 OR type = 8   ' knight
+    if draw_light 
+      t1 = ($16+color_adjust)
+      t2 = ($17+color_adjust) 
+      t3 = ($18+color_adjust)
+      t4 = ($14+color_adjust)
+      t5 = ($09+color_adjust)
+      t6 = ($15+color_adjust)
+    else   
+      t1 = ($1E+color_adjust)
+      t2 = ($1C+color_adjust) 
+      t3 = ($1D+color_adjust)
+      t4 = ($19+color_adjust)
+      t5 = ($0F+color_adjust) 
+      t6 = ($1A+color_adjust)
+    endif
+  elif type = 3 OR type = 9   ' bish
+    if draw_light 
+      t1 = ($0B+color_adjust)
+      t2 = ($0C+color_adjust) ' bishop top light square
+      t3 = ($0D+color_adjust)
+      t4 = ($08+color_adjust)
+      t5 = ($09+color_adjust) ' bishop (bishop|knight) bottom light square
+      t6 = ($0A+color_adjust)
+    else  
+      t1 = ($11+color_adjust)
+      t2 = ($12+color_adjust) ' bishop top dark square
+      t3 = ($13+color_adjust)
+      t4 = ($0E+color_adjust)
+      t5 = ($0F+color_adjust) ' bishop (bishop|knight) bottom dark square
+      t6 = ($10+color_adjust)
+    endif
+  elif type = 4 OR type = 10   ' rook
+    if draw_light 
+      t1 = ($21+color_adjust)
+      t2 = ($04+color_adjust) ' rook top light square
+      t3 = ($05+color_adjust)
+      t4 = ($27+color_adjust)
+      t5 = ($28+color_adjust) ' rook (queen|rook) bottom light square
+      t6 = ($29+color_adjust)
+    else                    
+      t1 = ($22+color_adjust)
+      t2 = ($06+color_adjust) ' rook top dark square
+      t3 = ($07+color_adjust)
+      t4 = ($2D+color_adjust)
+      t5 = ($2E+color_adjust) ' rook (queen|rook) bottom dark square
+      t6 = ($2F+color_adjust)
+    endif
+  elif type = 5 OR type = 11   ' queen
+    if draw_light 
+      t1 = ($2A+color_adjust)
+      t2 = ($2B+color_adjust) ' queen top light square
+      t3 = ($2C+color_adjust)
+      t4 = ($27+color_adjust)
+      t5 = ($28+color_adjust) ' queen bottom light square
+      t6 = ($29+color_adjust)
+    else                    
+      t1 = ($5B+color_adjust)
+      t2 = ($5C+color_adjust) ' queen top dark square
+      t3 = ($5D+color_adjust)
+      t4 = ($2D+color_adjust)
+      t5 = ($2E+color_adjust) ' queen bottom dark square
+      t6 = ($2F+color_adjust)
+    endif
+  elif type = 6 OR type = 12   ' king
+    if draw_light 
+      t1 = ($5E+color_adjust)
+      t2 = ($5F+color_adjust) ' king top light square
+      t3 = ($00+color_adjust)
+      t4 = ($27+color_adjust)
+      t5 = ($28+color_adjust) ' king (queen|rook) bottom light square
+      t6 = ($29+color_adjust)
+    else                    
+      t1 = ($01+color_adjust)
+      t2 = ($02+color_adjust) ' king top dark square
+      t3 = ($03+color_adjust)
+      t4 = ($2D+color_adjust)
+      t5 = ($2E+color_adjust) ' king (queen|rook) bottom dark square
+      t6 = ($2F+color_adjust)
+    endif
+  endif
+  @place_tiles
+ENDPROC
+
+PROC place_tiles 
+     pos.  x  ,y   : ? #6, chr$( t1 )
+     pos.  x+1,y   : ? #6, chr$( t2 ) ' pawn top light square
+     pos.  x+2,y   : ? #6, chr$( t3 )
+     pos.  x  ,y+1 : ? #6, chr$( t4 )
+     pos.  x+1,y+1 : ? #6, chr$( t5 ) ' pawn bottom light square
+     pos.  x+2,y+1 : ? #6, chr$( t6 )
+ENDPROC
+
 
 
