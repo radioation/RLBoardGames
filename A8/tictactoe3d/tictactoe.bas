@@ -67,10 +67,10 @@ y = 0
 layer = 0
 OLDCY = 0
 DATA CURSOR_X() BYTE = 114,122,130,138,110,118,126,134,106,114,122,130,102,110,118,126
-DATA CURSOR_Y() BYTE = 42,50,58,74,82,90,98,114,122,130,138,154,162,170,178,186
+DATA CURSOR_Y() BYTE = 50,58,66,74,90,98,106,114,130,138,146,154,170,178,186,194
 
 DATA TILE_X() BYTE = 17,19,21,23,16,18,20,22,15,17,19,21,14,16,18,20
-DATA TILE_Y() BYTE = 1,2,3,5,6,7,8,10,11,12,13,15,16,17,18,19
+DATA TILE_Y() BYTE = 1,2,3,4, 6,7,8,9, 11,12,13,14, 16,17,18,19
 
 current_cursor_color = 1
 current_tick = 0
@@ -101,7 +101,6 @@ pause 30
 POS. 0,0 : ?#6, "IP: ";FJ_BUFF(97);".";FJ_BUFF(98);".";FJ_BUFF(99);".";FJ_BUFF(100) 
 
 POKE 87, 0  ' treat 4 ad 0
-
 
 'IF TPSCRN > 0
 '  TPSCRN = TPSCRN + 21 ' NEGATIVE NUBMER FOR TPSCRN SEEMS TO F THINGS UP.
@@ -147,13 +146,19 @@ DO
         btn_pressed = STRIG(0)
         if btn_pressed = 0
           current_piece = BOARD_DATA( x + y * 4 + layer * 16 )
-       
           IF current_piece = 0  
+            ' check for win
+
+            ' not won, just send it and switch players
             sound 0,124,2,10
-            POS. TILE_X( x + y * 4 ), TILE_Y( y + layer * 4 )
-            ?#6,"&"  
-            BOARD_DATA( x + y * 4 + layer * 16 ) = 2
-            current_player = 0
+            @update_board
+            '
+            if current_player = 1
+              current_player = 2
+            else
+              current_player = 1
+            endif 
+
             FJ_BUFF(0) = 129
             FJ_BUFF(1) = 3
             FJ_BUFF(2) = x
@@ -251,12 +256,13 @@ DO
       CX = CURSOR_X( x + y * 4 )
       
       @MOVEC
-      POS. TILE_X( x + y * 4 ), TILE_Y( y + layer * 4 )
-      if current_player = 0
-        ?#6,"'"  
+
+      @update_board
+      if current_player = 1
+        current_player = 2
+      else
         current_player = 1
-        BOARD_DATA( x + y * 4 + layer * 16 ) = 1
-      endif    
+      endif 
 
     ENDIF ' if FJ_BUFF(0) = 128
 
@@ -364,4 +370,15 @@ PROC JOIN_GAME
   'XIO 15,#1,12,2,"N:"       ' flush
   'SIO $71, FJ_CONN, 15, $00, 0, $1f, 0, FJ_MODE, FJ_TRANS
   @INTCLR
+ENDPROC
+
+PROC update_board
+  POS. TILE_X( x + y * 4 ), TILE_Y( y + layer * 4 )
+  BOARD_DATA( x + y * 4 + layer * 16 ) = current_player
+  if current_player = 1
+    ?#6,"'"  
+  else
+    ?#6,"&"  
+  endif
+
 ENDPROC
