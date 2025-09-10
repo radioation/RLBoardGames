@@ -93,7 +93,6 @@ DIM FJ_BUFF(2048) BYTE
 ' start main processing '''''''''''''''''''''''''''''''''''''''
 TPSCRN = PEEK(88) + PEEK(89) * 256  ' GETTING A NEGATIVE NUMBER
 POKE 65,0 ' quiet
-POKE 559, 0
 POKE 87,1
 'POS. 3,0 : ?#6, "3D TIC TAC TOE"
 '
@@ -103,7 +102,6 @@ POS. 0,0 : ?#6, "IP: ";FJ_BUFF(97);".";FJ_BUFF(98);".";FJ_BUFF(99);".";FJ_BUFF(1
 
 POKE 87, 0  ' treat 4 ad 0
 
-POKE 559, 34
 
 'IF TPSCRN > 0
 '  TPSCRN = TPSCRN + 21 ' NEGATIVE NUBMER FOR TPSCRN SEEMS TO F THINGS UP.
