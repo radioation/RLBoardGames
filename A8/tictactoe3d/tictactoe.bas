@@ -89,6 +89,20 @@ FJ_TRANS = 0  ' no translation
 FJ_URL$="N:TCP://10.25.50.67:55555"
 DIM FJ_BUFF(2048) BYTE
 
+' setup winline 
+' Offsets for row cells in layer
+DATA WINLINE_ROWS_IN_LAYER () BYTE = 0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15
+' Offsets for col cells in layer
+DATA WINLINE_COLS_IN_LAYER () BYTE  = 0,4,8,12, 1,5,9,13, 2,6,10,14, 3,7,11,15
+' offsets for diagonal cells in a layer
+DATA WINLINE_MULTILAYER() BYTE  = 0,5,10,15, 3,6,9,12,
+' Diagonal cells to cube corners
+DATA BYTE = 0,21,42,63, 3,22,41,60, 12,25,38,51, 15,26,37,48, 
+' Diagonal cells in col
+DATA BYTE = 0,20,40,60, 1,21,41,61, 2,22,42,62, 3,23,43,63, 12,24,36,48, 13,25,37,49, 14,26,38,50, 15,27,39,51, 
+' Diagonal cells in row
+DATA BYTE = 0,17,34,51, 4,21,38,55, 8,25,42,59, 12,29,46,63, 3,18,33,48, 7,22,37,52, 11,26,41,56, 15,30,45,60, 
+
 
 ' start main processing '''''''''''''''''''''''''''''''''''''''
 TPSCRN = PEEK(88) + PEEK(89) * 256  ' GETTING A NEGATIVE NUMBER
@@ -116,9 +130,11 @@ ORIG_SCTP = DPEEK(88)
 SCTP = DPEEK(88) + 20
 DPOKE 88, SCTP 
 
+
 @DRAWBOARD
 
 
+winner = 0
 who_am_i = 0
 @GET_ADDR
 
@@ -382,3 +398,25 @@ PROC update_board
   endif
 
 ENDPROC
+
+PROC check_win player
+
+  winner = 0
+  FOR I=0 TO 75
+    COUNT = 0
+    FOR J=0 TO 3
+      IDX = WINLINE(I*4 + J)
+      IF BOARD(IDX-1) = player 
+        COUNT = COUNT + 1
+      ENDIF
+    NEXT
+    IF COUNT = 4 THEN
+      winner = player 
+      RETURN
+    ENDIF
+  NEXT
+
+ENDPROC
+
+
+
