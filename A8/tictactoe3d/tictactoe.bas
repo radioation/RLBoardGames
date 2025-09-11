@@ -91,17 +91,21 @@ DIM FJ_BUFF(2048) BYTE
 
 ' setup winline 
 ' Offsets for row cells in layer
-DATA WINLINE_ROWS_IN_LAYER () BYTE = 0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15
+DATA WINLINE_IN_LAYER () BYTE = 0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,
 ' Offsets for col cells in layer
-DATA WINLINE_COLS_IN_LAYER () BYTE  = 0,4,8,12, 1,5,9,13, 2,6,10,14, 3,7,11,15
+DATA BYTE  = 0,4,8,12, 1,5,9,13, 2,6,10,14, 3,7,11,15,
 ' offsets for diagonal cells in a layer
-DATA WINLINE_MULTILAYER() BYTE  = 0,5,10,15, 3,6,9,12,
+DATA  BYTE  = 0,5,10,15, 3,6,9,12
+
+
 ' Diagonal cells to cube corners
-DATA BYTE = 0,21,42,63, 3,22,41,60, 12,25,38,51, 15,26,37,48, 
+DATA WINLINE_MULTILAYER() BYTE = 0,21,42,63, 3,22,41,60, 12,25,38,51, 15,26,37,48, 
 ' Diagonal cells in col
 DATA BYTE = 0,20,40,60, 1,21,41,61, 2,22,42,62, 3,23,43,63, 12,24,36,48, 13,25,37,49, 14,26,38,50, 15,27,39,51, 
 ' Diagonal cells in row
-DATA BYTE = 0,17,34,51, 4,21,38,55, 8,25,42,59, 12,29,46,63, 3,18,33,48, 7,22,37,52, 11,26,41,56, 15,30,45,60, 
+DATA BYTE = 0,17,34,51, 4,21,38,55, 8,25,42,59, 12,29,46,63, 3,18,33,48, 7,22,37,52, 11,26,41,56, 15,30,45,60
+
+
 
 
 ' start main processing '''''''''''''''''''''''''''''''''''''''
@@ -144,7 +148,20 @@ ELSE
   @JOIN_GAME
 ENDIF
 
+' show the cursor.
+CY = CURSOR_Y( y + layer * 4 )
+CX = CURSOR_X( x + y * 4 )
+@MOVEC
+
+
 current_player = 1
+
+
+banner_msg$ = "PLAYER "
+banner_msg$ =+ str$(current_player)
+@set_banner 
+
+
 game_won = 0
 DO
   ' color cycle the cursor
@@ -164,23 +181,42 @@ DO
           current_piece = BOARD_DATA( x + y * 4 + layer * 16 )
           IF current_piece = 0  
             ' check for win
-
-            ' not won, just send it and switch players
-            sound 0,124,2,10
             @update_board
-            '
-            if current_player = 1
-              current_player = 2
-            else
-              current_player = 1
-            endif 
+            @check_win current_player
+            if winner = 0 
+              ' not won, just send it and switch players
+              sound 0,124,2,10
+              '
+              if current_player = 1
+                current_player = 2
+              else
+                current_player = 1
+              endif 
+              banner_msg$ = "PLAYER "
+              banner_msg$ =+ str$(current_player)
+              @set_banner 
 
-            FJ_BUFF(0) = 129
-            FJ_BUFF(1) = 3
-            FJ_BUFF(2) = x
-            FJ_BUFF(3) = y
-            FJ_BUFF(4) = layer
-            NPUT FJ_CONN, &FJ_BUFF, 5
+              
+              FJ_BUFF(0) = 129
+              FJ_BUFF(1) = 3
+              FJ_BUFF(2) = x
+              FJ_BUFF(3) = y
+              FJ_BUFF(4) = layer
+              NPUT FJ_CONN, &FJ_BUFF, 5
+            else
+              game_won = 1
+              'POS.0,22 : PRINT  "Player ";current_player;" wins!"
+              banner_msg$ = "PLAYER "
+              banner_msg$ =+ str$(current_player)
+              banner_msg$ =+ " WINS!"
+              @set_banner 
+              FJ_BUFF(0) = 130
+              FJ_BUFF(1) = 3
+              FJ_BUFF(2) = x
+              FJ_BUFF(3) = y
+              FJ_BUFF(4) = layer
+              NPUT FJ_CONN, &FJ_BUFF, 5
+            endif            
           else
             sound 0,32,2,8
             pause 10
@@ -274,11 +310,17 @@ DO
       @MOVEC
 
       @update_board
+      if FJ_BUFF(0)= 130
+        game_won = 1
+      endif
       if current_player = 1
         current_player = 2
       else
         current_player = 1
       endif 
+      banner_msg$ = "PLAYER "
+      banner_msg$ =+ str$(current_player)
+      @set_banner 
 
     ENDIF ' if FJ_BUFF(0) = 128
 
@@ -334,7 +376,7 @@ PROC HOST_GAME
     NSTATUS FJ_CONN
     CONNECTED = PEEK($02EC)
     IF CONNECTED 
-      POS.0,22: PRINT "Client connected.      "
+      POS.0,22: PRINT "Client connected.                    "
       ' accept conection by sending an 'A' command ot the appropratie N unit
       SIO $71, FJ_CONN, $41, $00, 0, $1f, 0, FJ_MODE, FJ_TRANS
       EXIT
@@ -375,7 +417,7 @@ PROC JOIN_GAME
     NSTATUS FJ_CONN
     CONNECTED = PEEK($02EC)
     IF CONNECTED
-      POS.0,22: PRINT "Connected.              "
+      POS.0,22: PRINT "Connected.                           "
       EXIT
     ENDIF
   LOOP
@@ -402,21 +444,68 @@ ENDPROC
 PROC check_win player
 
   winner = 0
-  FOR I=0 TO 75
-    COUNT = 0
-    FOR J=0 TO 3
-      IDX = WINLINE(I*4 + J)
-      IF BOARD(IDX-1) = player 
-        COUNT = COUNT + 1
+
+  ' single layer checks
+  for CW_Z =0 to 48 STEP 16 
+    FOR I = 0 TO 36 STEP 4
+      CW_COUNT = 0 
+      FOR J=0 TO 3
+        CW_INDEX = WINLINE_IN_LAYER( I + J ) + CW_Z 
+        if BOARD_DATA(CW_INDEX)  = player
+           CW_COUNT = CW_COUNT + 1
+        endif
+      NEXT J
+      IF CW_COUNT = 4
+        winner = player
+        I = 28
+        CW_Z = 48
+        EXIT
       ENDIF
-    NEXT
-    IF COUNT = 4 THEN
-      winner = player 
-      RETURN
+    NEXT I
+  next CW_Z
+
+  if winner > 0 
+    exit
+  endif
+
+  ' straight downs.
+  for I =0 to 15
+    CW_COUNT = 0 
+    for CW_Z =0 to 48 STEP 16 
+      CW_INDEX =  I + CW_Z   
+      if BOARD_DATA(CW_INDEX)  = player
+         CW_COUNT = CW_COUNT + 1
+      endif
+    next CW_Z
+    if CW_COUNT = 4
+      winner = player
+      exit
     ENDIF
-  NEXT
+  NEXT I
+
+  ' diagnoals
+  for I =0 to 76 STEP 4
+    CW_COUNT = 0 
+    for J =0 to 4 
+      CW_INDEX = WINLINE_MULTILAYER( I + j )  
+      if BOARD_DATA(CW_INDEX)  = player
+         CW_COUNT = CW_COUNT + 1
+      endif
+    nextJ 
+    if CW_COUNT = 4
+      winner = player
+      exit
+    ENDIF
+  NEXT I
+
 
 ENDPROC
 
 
+PROC set_banner 
+  DPOKE 88, ORIG_SCTP 
+  POS. 0,0 : ?#6, "                   "
+  POS. 0,0 : ?#6, banner_msg$
+  DPOKE 88, SCTP 
+ENDPROC
 

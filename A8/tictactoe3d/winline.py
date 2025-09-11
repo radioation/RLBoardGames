@@ -5,7 +5,7 @@ def to_index(x, y, z):
 
 # single layer checks
 print("' Offsets for row cells in layer")
-print('DATA WINLINE_ROWS_IN_LAYER() BYTE = ', end="")
+print('DATA WINLINE_IN_LAYER() BYTE = ', end="")
 z = 0 # just compute one layer
 for y in range(SIZE):
     for x in range(SIZE):
@@ -14,7 +14,7 @@ for y in range(SIZE):
 
 
 print("\n' Offsets for col cells in layer")
-print('DATA WINLINE_COLS_IN_LAYER  = ', end="")
+print('DATA BYTE = ', end="")
 z = 0 # just compute one layer
 for x in range(SIZE):
     for y in range(SIZE):
@@ -23,7 +23,7 @@ for x in range(SIZE):
 
 
 print("\n' offsets for diagonal cells in a layer")
-print('DATA WINLINE_MULTILAYER() BYTE  = ', end="")
+print('DATA BYTE  = ', end="")
 z = 0
 for i in range(SIZE):
     print( f"{ to_index(i,i,z)},", end= "")
@@ -41,7 +41,7 @@ for i in range(SIZE):
 
 # corner to corner
 print("\n' Diagonal cells to cube corners")
-print('DATA BYTE = ', end="")
+print('DATA WINLINE_MULTILAYERBYTE = ', end="")
 for i in range(SIZE):
     print( f"{ to_index(i,i,i)},", end= "")
 print(" ", end="")
