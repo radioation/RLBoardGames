@@ -1,16 +1,20 @@
-# 
+#  Usage
+
 needs a UCI engine for single player
 
 ```bash
 pip3 install flask python-chess
 
 ENGINE_PATH = "/path/to/stockfish/stockfish-ubuntu-x86-64-avx2"
+
+```
+Run with 
+```bash
+python3 run.py
 ```
 
 
-
-
-# Trying the interface
+# Trying the interface 
 
 HTTP with CURL
 ```bash
@@ -35,4 +39,15 @@ P P P . . P P P
 R N B Q K B N R
 ```
 TCP with telnet
+
+
+# TODO
+* Add check for checkmate/stalemate
+* Add two player sessions
+* Add SQLite sessions
+* Add authentication and authorization for games
+* look into FujiNet lobby requirements and see if I can get added.
+
+
+
 
