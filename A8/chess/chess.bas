@@ -3,11 +3,36 @@
 NMEMTOP=PEEK(106)-4
 POKE 106,NMEMTOP
 
-
-GRAPHICS 12         ' ANTIC MODE 4
 CHROM=PEEK(756)*256 ' FIND LOCATION OF
-CHRAM=NMEMTOP*256 ' SET A LOCATION FOR
 
+'DLI SET d1 = 144 WSYNC INTO $D018,
+DLI SET d1 = 144 INTO $D018,
+DLI        = $8A INTO $D017
+GRAPHICS 12 + 16        ' ANTIC MODE 4
+
+dl = peek( 560) + peek( 561)* 256 + 4
+poke dl-1, $46
+poke dl+2, $06
+mset dl+3, 19, $04
+poke dl+22, $02 + 130
+poke dl+23, $02
+poke dl+24, $02
+poke dl+25, $41
+poke dl+26, peek(560)
+poke dl+27, peek(561)
+'POKE DPEEK(560) + 25, 130
+DLI d1
+
+
+'DATA DL() byte = 70,70,70,46, 00,00, 06,04,04,04,
+'DATA byte =  04,04,04,04,04,04,04,04,04,04,
+'DATA byte =  04,04,04,04,04,04,04,04,04,41,
+'DATA byte =  00,00
+'
+'dpoke Adr(DL) + 30, ADR(DL)
+' value = (hue * 16) + luminance.
+
+CHRAM=NMEMTOP*256 ' SET A LOCATION FOR
 
 'SET THE COLORS
 IF PEEK($D014) = 1
@@ -167,68 +192,176 @@ POKE 756,NMEMTOP
 
 
 
+
+
 ' BOARD SETUP `````````````````````````````````````````````
 DATA CURSOR_X() = 82,94,106,118,130,142,154,166
-DATA CURSOR_Y() = 21,29,37,45,53,61,69,77
+DATA CURSOR_Y() = 89,81,73,65,57,49,41,33
 DATA TILE_X() =  8,11,14,17,20,23,26,29
-DATA TILE_Y() = 1,3,5,7,9,11,13,15
+DATA TILE_Y() = 17,15,13,11,9,7,5,3
 
-cursor_col = 4
-cursor_row = 4
-select_col = -1
-select_row = -1
-
+'DATA FILE_X() =  97,98,99,100,101,102,103,104
+'DATA RANK_Y() =  49,50,51,52,53,54,55,56
+FILE_X = 97
+RANK_Y = 49
 
 DIM BOARD_DATA(64) BYTE ' 8x8 board
 MSET Adr( BOARD_DATA ), 64, 0 
 
 POKE 559, 0
+
+poke 87,1
+POS. 3,0 : ?#6, COLOR(128) "fujifish chess"
+POS. 0,1 : ?#6,  "PLAYER: ONE"
+poke 87,0
+
 @SETUP_BOARD
 
 @DRAW_BOARD
 
 POKE 559, 34
-' SETUP P/M Graphics
+
+
+' PM GRAPHICS SETUP ```````````````````````````````````````
 PMGRAPHICS 2   ' DOUBLE LINE MODE
 p0addr = PMADR(0)  ' get player addresses
 p1addr = PMADR(1)  
 MSET p0addr, 128, 0 ' SET all bytes to 0
 MSET p1addr, 128, 0 '
-SETCOLOR -4, 0, 14
 SETCOLOR -4, 3, 14
-DATA PMCURSORDATA() BYTE= $FF,$FF,$FF,$FF,$FF, $FF
-DATA PMSELECTDATA() BYTE= $FF,$81,$81,$81,$81, $FF
-old_y = p0addr + CURSOR_Y(cursor_row)
+SETCOLOR -3, 4, 12
+DATA PMCURSORDATA() BYTE= $FF,$81,$81,$81,$81, $FF
+DATA PMSELECTDATA() BYTE= $C3,$81,$00,$00,$81, $C3
+cursor_array_col = 4
+cursor_array_row = 3
+select_array_col = -1
+select_array_row = -1
+old_y = p0addr + CURSOR_Y(cursor_array_row)
+old_sel_y = p1addr
 
 @MOVEC
+
+
+' NETWORK SETUP ```````````````````````````````````````````
+'POS. 0,20 : ?#6,"enter host:"
+POS. 0,21
+INPUT "Enter Host:";GAMEHOST$
+
+FJ_CONN = 2 ' unit 2
+FJ_POST_MODE = 13 ' HTTP POST
+FJ_GET_MODE = 12  ' HTTP GET https://fujinet.online/2025/02/23/developers-when-doing-http-get-use-mode-12/
+FJ_TRANSL = 2 '  
+FJ_BASE_URL$="N:HTTP://"
+if LEN(GAMEHOST$) > 8
+  FJ_BASE_URL$=+ GAMEHOST$
+  ? "USING: ";GAMEHOST$
+else
+  POS.0,21
+  FJ_BASE_URL$="N:HTTP://10.25.50.61:5555/"
+  ? "USING default"
+endif
+' FJ_URL2$="N:HTTP://10.25.50.61:5555/newgame"$9B
+' FJ_URL2$="N:HTTP://10.25.50.61:5555/move"$9B
+' FJ_URL2$="N:HTTP://10.25.50.61:5555/board"$9B
+
+DIM FJ_IN_BUFF(128) BYTE  
+DIM FJ_OUT_BUFF(128) BYTE  
+DIM GAME_ID(9) BYTE
+
+'quietus
+POKE 65,0
+FJ_OUT_BUFF(0) = 102
+FJ_OUT_BUFF(1) = 117
+FJ_OUT_BUFF(2) = 106
+FJ_OUT_BUFF(3) = 105
+
+' start a game
+@doPost &"newgame", Adr(FJ_OUT_BUFF), 4
+
+MOVE Adr(FJ_IN_BUFF), Adr(FJ_OUT_BUFF), 8
+IF FJ_IN_BUFF(0) > 0 
+  FJ_OUT_BUFF(8) = 10  ' \n
+  GAME_ID(0) = 8
+  MOVE Adr(FJ_IN_BUFF), Adr(GAME_ID)+1, 8
+ELSE
+  POS. 0,22 : PRINT "Unable to connect"
+ENDIF
+current_player = 0
+who_am_i = 0
 
 ' MAIN LOOP ```````````````````````````````````````````````
 DO 
   ' read user input
   btn_pressed = STRIG(0)
   if btn_pressed = 0
-    
+    if select_array_col < 0
+      ' nothing selected at the moment. make sure we're on our piece
+      current_piece = BOARD_DATA( cursor_array_col + cursor_array_row * 8 )
+      if ( current_player = 0 and current_piece > 6  and current_piece < 13 ) or ( current_player = 1 and current_piece > 0  and current_piece < 7 )
+        select_array_col = cursor_array_col
+        select_array_row = cursor_array_row
+        sound 0,104,10,4
+        pause 1
+        sound 0,0,0,0
+      else
+        sound 0,32,2,4
+        pause 1
+        sound 0,0,0,0
+      endif
+      pause 9
+    else
+      '  submit possible move.
+      FJ_OUT_BUFF(9) = FILE_X + select_array_col 
+      FJ_OUT_BUFF(10) = RANK_Y + select_array_row 
+      FJ_OUT_BUFF(11) = FILE_X + cursor_array_col
+      FJ_OUT_BUFF(12) = RANK_Y + cursor_array_row
+      FJ_OUT_BUFF(13) = 10
+      @doPost &"move", ADR( FJ_OUT_BUFF ), 14
+      IF FJ_IN_BUFF(0) > 0 
+        if FJ_IN_BUFF(0) >= FILE_X and FJ_IN_BUFF(0) < FILE_X + 8
+          'TODO PROMOTION MOVE
+          ' real move returned. do the moves
+          @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row
+
+          POS. 0,21 : PRINT "Valid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
+          @uci_move FJ_IN_BUFF(0)-FILE_X, FJ_IN_BUFF(1)-RANK_Y, FJ_IN_BUFF(2)-FILE_X, FJ_IN_BUFF(3) - RANK_Y
+        else
+          POS. 0,21 : PRINT "Invalid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
+        endif
+      ELSE
+        POS. 0,21 : PRINT "Lost connection            "
+      ENDIF
+      select_array_col = -1
+      select_array_row = -1
+      MSET old_sel_y, 6, 0  
+      
+      pause 10
+    endif
   endif
   I = STICK(0)
   if I = 15
     sound 0,0,0,0
   else
-    cursor_col = cursor_col + ((I=7) -(I=11))
-    if cursor_col > 7
-      cursor_col = 0
+    cursor_array_col = cursor_array_col + ((I=7) -(I=11))
+    if cursor_array_col > 7
+      cursor_array_col = 0
     endif
-    if cursor_col < 0
-      cursor_col = 7
+    if cursor_array_col < 0
+      cursor_array_col = 7
     endif
 
-    cursor_row = cursor_row + ((I=13) -(I=14))
-    if cursor_row > 7
-      cursor_row = 0
+    cursor_array_row = cursor_array_row + ((I=14) -(I=13))
+    if cursor_array_row > 7
+      cursor_array_row = 0
     endif
-    if cursor_row < 0
-      cursor_row = 7
+    if cursor_array_row < 0
+      cursor_array_row = 7
     endif
-    pause 10
+    POS. 0,21 : PRINT "X: ";cursor_array_col;" Y: ";cursor_array_row
+    sound 0,180,2,4
+    pause 1
+    sound 0,0,0,0
+    pause 9
     @MOVEC
   endif
 LOOP
@@ -238,20 +371,27 @@ LOOP
 ' PROCS ```````````````````````````````````````````````````
 PROC MOVEC
   PAUSE   'WAIT FOR BLANK
-  MSET old_y, 6, 0  ' CLEAR 5 BYTES OF SPRITE
-  PMHPOS 0, CURSOR_X(cursor_col)
-  old_y = p0addr + CURSOR_Y(cursor_row)
+  MSET old_y, 6, 0  ' CLEAR old 
+  PMHPOS 0, CURSOR_X(cursor_array_col)
+  old_y = p0addr + CURSOR_Y(cursor_array_row)
   MOVE ADR(PMCURSORDATA), old_y, 6
+  if select_array_col >= 0 
+     PMHPOS 1, CURSOR_X(select_array_col)
+     old_sel_y = p1addr + CURSOR_Y( select_array_row )
+     MOVE ADR(PMSELECTDATA), old_sel_y, 6
+  else  
+     MSET old_sel_y, 6, 0  
+  endif
 ENDPROC
 
 
 PROC DRAW_BOARD
-  draw_light = 1
+  poke 87,0
   index = 0
   FOR row = 0 to 7 
     FOR col = 0 to 7
       if BOARD_DATA(index) = 0 
-        if draw_light = 1
+        if  row & 1 EXOR col & 1
           pos. TILE_X(col),   TILE_Y(row) : ? #6, chr$($21)
           pos. TILE_X(col)+1, TILE_Y(row) : ? #6, chr$($21)
           pos. TILE_X(col)+2, TILE_Y(row) : ? #6, chr$($21)
@@ -270,20 +410,10 @@ PROC DRAW_BOARD
         @DRAW_PIECE col, row, BOARD_DATA(index)
       endif
   
-      if draw_light = 1
-        draw_light = 0
-      else 
-        draw_light = 1
-      endif
 
       index = index + 1
     NEXT col
 
-    if draw_light = 1
-      draw_light = 0
-    else
-      draw_light = 1
-    endif
 
   NEXT row
 ENDPROC
@@ -306,46 +436,128 @@ PROC SETUP_BOARD
   ' 11- white queen
   ' 12- white king
   '
-  BOARD_DATA(0) = 4
-  BOARD_DATA(1) = 2 
-  BOARD_DATA(2) = 3
-  BOARD_DATA(3) = 5
-  BOARD_DATA(4) = 6
-  BOARD_DATA(5) = 3
-  BOARD_DATA(6) = 2
-  BOARD_DATA(7) = 4
 
-  BOARD_DATA(8) =   1
-  BOARD_DATA(9) =   1 
-  BOARD_DATA(10) =  1
-  BOARD_DATA(11) =  1
-  BOARD_DATA(12) =  1
-  BOARD_DATA(13) =  1
-  BOARD_DATA(14) =  1
-  BOARD_DATA(15) =  1
+  BOARD_DATA(0) = 10
+  BOARD_DATA(1) = 8   
+  BOARD_DATA(2) = 9
+  BOARD_DATA(3) = 11
+  BOARD_DATA(4) = 12
+  BOARD_DATA(5) = 9
+  BOARD_DATA(6) = 8
+  BOARD_DATA(7) = 10
 
-  BOARD_DATA(48) = 7
-  BOARD_DATA(49) = 7
-  BOARD_DATA(50) = 7
-  BOARD_DATA(51) = 7
-  BOARD_DATA(52) = 7
-  BOARD_DATA(53) = 7
-  BOARD_DATA(54) = 7
-  BOARD_DATA(55) = 7
+  BOARD_DATA(8) =   7 
+  BOARD_DATA(9) =   7  
+  BOARD_DATA(10) =  7 
+  BOARD_DATA(11) =  7 
+  BOARD_DATA(12) =  7 
+  BOARD_DATA(13) =  7 
+  BOARD_DATA(14) =  7 
+  BOARD_DATA(15) =  7 
 
-  BOARD_DATA(56) = 10
-  BOARD_DATA(57) = 8 
-  BOARD_DATA(58) = 9
-  BOARD_DATA(59) = 11
-  BOARD_DATA(60) = 12
-  BOARD_DATA(61) = 9
-  BOARD_DATA(62) = 8
-  BOARD_DATA(63) = 10
+  BOARD_DATA(48) = 1
+  BOARD_DATA(49) = 1
+  BOARD_DATA(50) = 1
+  BOARD_DATA(51) = 1
+  BOARD_DATA(52) = 1
+  BOARD_DATA(53) = 1
+  BOARD_DATA(54) = 1
+  BOARD_DATA(55) = 1
+
+  BOARD_DATA(56) = 4 
+  BOARD_DATA(57) = 2 
+  BOARD_DATA(58) = 3 
+  BOARD_DATA(59) = 5 
+  BOARD_DATA(60) = 6 
+  BOARD_DATA(61) = 3 
+  BOARD_DATA(62) = 2 
+  BOARD_DATA(63) = 4 
 
 ENDPROC
 
+PROC uci_move bx1 by1 bx2 by2
+  ' get type at start
+  x = TILE_X( bx1 )
+  y = TILE_Y( by1 )
+  current_piece = BOARD_DATA( bx1 + by1 * 8 )
+  BOARD_DATA( bx1 + by1 * 8 ) = 0
+  BOARD_DATA( bx2 + by2 * 8 ) = current_piece 
+  @DRAW_TILE  bx1, by1
+  @DRAW_PIECE bx2, by2, current_piece
+ 
+  ' castles to check  
+  ' white
+  ' e1g1 -  4,0,6,0
+  ' e1c1 -  4,0,2,0 
+  ' black
+  ' e8g8 -  4,7,6,7
+  ' e8c8 -  4,7,2,7 
+  if bx1 = 4 and by1 = 0 and bx2 = 6 and by2 = 0
+    ' move rook from right
+    BOARD_DATA( 7 ) = 0
+    BOARD_DATA( 5 ) = 10
+    x = TILE_X( 7 )
+    y = TILE_Y( 0 )
+    @DRAW_TILE 7, 0
+    @DRAW_PIECE 5, 0, 10
+
+  elif bx1 = 4 and by1 = 0 and bx2 = 2 and by2 = 0
+    ' move rook from left
+    BOARD_DATA( 0 ) = 0
+    BOARD_DATA( 3 ) = 10
+    x = TILE_X( 0 )
+    y = TILE_Y( 0 )
+    @DRAW_TILE 0, 0
+    @DRAW_PIECE 3, 0, 10
+  elif bx1 = 4 and by1 = 7 and bx2 = 6 and by2 = 7
+    ' move rook from right
+    BOARD_DATA( 63 ) = 0
+    BOARD_DATA( 61 ) = 4
+    x = TILE_X( 7 )
+    y = TILE_Y( 7 )
+    @DRAW_TILE 7, 7
+    @DRAW_PIECE 5, 7, 4
+
+  elif bx1 = 4 and by1 = 7 and bx2 = 2 and by2 = 7
+    ' move rook from left
+    BOARD_DATA( 56 ) = 0
+    BOARD_DATA( 59 ) = 4
+    x = TILE_X( 0 )
+    y = TILE_Y( 7 )
+    @DRAW_TILE 0, 7
+    @DRAW_PIECE 3, 7, 4
+
+  endif
+
+  'TODO PROMOTION MOVE
+
+ENDPROC
+
+PROC DRAW_TILE tx ty
+  if tx & 1 EXOR ty & 1
+    pos. x,   y : ? #6, chr$($21)
+    pos. x+1, y : ? #6, chr$($21)
+    pos. x+2, y : ? #6, chr$($21)
+    pos. x+2, y : ? #6, chr$($21) ' double up because of weird invers behavior
+    pos. x,   y+1 : ? #6, chr$($21)
+    pos. x+1, y+1 : ? #6, chr$($21)
+    pos. x+2, y+1 : ? #6, chr$($21)
+    pos. x+2, y+1 : ? #6, chr$($21) ' double up because of weird invers behavior
+  else
+    pos. x,   y : ? #6, chr$($22)
+    pos. x+1, y : ? #6, chr$($22)
+    pos. x+2, y : ? #6, chr$($22)
+    pos. x+2, y : ? #6, chr$($22) ' double up because of weird invers behavior
+    pos. x,   y+1 : ? #6, chr$($22)
+    pos. x+1, y+1 : ? #6, chr$($22)
+    pos. x+2, y+1 : ? #6, chr$($22)
+    pos. x+2, y+1 : ? #6, chr$($22) ' double up because of weird invers behavior
+  endif
+
+ENDPROC
 
 PROC DRAW_PIECE board_x board_y type
+  poke 87,0
   x = TILE_X( board_x )
   y = TILE_Y( board_y )
   
@@ -355,6 +567,8 @@ PROC DRAW_PIECE board_x board_y type
   'endif
   color_adjust = 0
   if type > 6 then color_adjust = $80
+
+  draw_light = board_x & 1 EXOR board_y & 1
 
   if type = 1 OR type = 7 ' black pawn
     if draw_light 
@@ -460,10 +674,97 @@ PROC place_tiles
      pos.  x  ,y   : ? #6, chr$( t1 )
      pos.  x+1,y   : ? #6, chr$( t2 ) ' pawn top light square
      pos.  x+2,y   : ? #6, chr$( t3 )
+     pos.  x+2,y   : ? #6, chr$( t3 ) ' double up because of weird invers behavior
      pos.  x  ,y+1 : ? #6, chr$( t4 )
      pos.  x+1,y+1 : ? #6, chr$( t5 ) ' pawn bottom light square
      pos.  x+2,y+1 : ? #6, chr$( t6 )
+     pos.  x+2,y+1 : ? #6, chr$( t6 ) ' double up because of weird invers behavior
 ENDPROC
 
+
+PROC doPost endpoint buffer buffer_len
+  url$ = FJ_BASE_URL$
+  url$ =+ $(endpoint)
+  url$ =+ ""$9B
+
+  POS. 0,21 : PRINT "Try to connect: " ' ;FJ_BASE_URL$
+  NOPEN FJ_CONN, FJ_POST_MODE, FJ_TRANSL, url$
+  IF SERR() <> 1
+    ' doesn't actually seem ot detect a problem connecting.
+    POS. 0,21 : PRINT "Unable to open connection"
+    Exit
+  ENDIF
+  POS. 0,21 : PRINT "Connected           "
+
+  ' create post data
+  SIO $71, FJ_CONN, $4D, $00, 0, $1F, 0, FJ_POST_MODE, 4
+  NPUT FJ_CONN, buffer, buffer_len
+  ' get response body
+  SIO $71, FJ_CONN, $4D, $00, 0, $1F, 0, FJ_POST_MODE, 0
+  TRIES = 0
+  DO
+    NSTATUS FJ_CONN  ' NSTATUS followd by DPEEK($02EA)
+    BW = DPEEK($02EA)
+    IF BW > 0 THEN EXIT
+    pause 1
+    TRIES = TRIES + 1
+    IF TRIES > 100 THEN EXIT
+  LOOP 
+  IF BW = 0
+    MSET ADR( FJ_IN_BUFF ), 64, 0
+    EXIT
+  ENDIF
+  ' loop the read
+  WHILE BW
+    IF BW > 8192 OR BW < 000
+      LN = 8192
+    ELSE
+      LN = BW
+    ENDIF
+    
+    NGET FJ_CONN,&FJ_IN_BUFF, LN
+    BW = BW - LN
+  WEND
+  NCLOSE FJ_CONN
+ENDPROC
+
+
+PROC doGet endpoint param
+  url$ = FJ_BASE_URL$
+  url$ =+ $(endpoint)
+  url$ =+ "?"
+  url$ =+ $(param)
+  url$ =+ ""$9B
+  
+  NOPEN FJ_CONN, FJ_GET_MODE, FJ_TRANSL, URL$
+  NSTATUS FJ_CONN
+  IF SERR() <> 1
+    PRINT "Unable to get connection"
+  ENDIF
+  ' get response body
+  SIO $71, FJ_CONN, $4D, $00, 0, $1F, 0, FJ_GET_MODE, 0
+  DO
+    NSTATUS FJ_CONN  ' NSTATUS followd by DPEEK($02EA)
+    BW = DPEEK($02EA)
+    IF BW > 0 THEN EXIT
+  LOOP 
+  ' loop the read
+  WHILE BW
+    IF BW > 8192 OR BW < 000
+      LN = 8192
+    ELSE
+      LN = BW
+    ENDIF
+    
+    NGET FJ_CONN,&FJ_IN_BUFF, LN
+    BW = BW - LN
+  WEND
+  NCLOSE FJ_CONN
+ENDPROC
+
+
+PROC INTCLR
+  POKE $D302, PEEK($D302) & 127  ' $D302 - PIA control
+ENDPROC
 
 
