@@ -7,6 +7,42 @@
 #define SND_MOVE 64
 #define SND_BUZZ 63
 
+#define BOARD_SIZE 8
+
+
+// Enum to represent piece types
+typedef enum {
+    EMPTY = 0,
+    KING = 3, 
+    QUEEN = 6, 
+    ROOK = 9, 
+    BISHOP = 12, 
+    KNIGHT = 15, 
+    PAWN = 18 
+} PIECE_TYPE;
+
+typedef enum {
+    NO_PLAYER = 0,
+    PLAYER_ONE = 1,
+    PLAYER_TWO = 2
+} PLAYER;
+
+// Structure to represent a chess piece
+typedef struct {
+    PIECE_TYPE type;   // Type of the piece
+    PLAYER player;     // which player  
+} CHESS_PIECE;
+
+// structure for loggin two checkers
+typedef struct {
+    int count;
+    int x[2];
+    int y[2];
+    bool is_biroqu[2]; // is a bishop, rook, or queen
+} CHECKERS;
+
+
+
 int text_cursor_x, text_cursor_y;
 u8 buttons, buttons_prev;
 
@@ -17,11 +53,20 @@ bool online = false;
 u8 whoAmI = NO_PLAYER;
 
 // Chess Piece data
-extern CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
+CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
 int piecesTileIndex = -1;
 const s8 boardStartCol = 8;
 const s8 boardStartRow = 2;
 const s8 boardStep = 3;
+
+void clear_board() {
+    for( u8 x=0; x < BOARD_SIZE; x++ ) {
+        for( u8 y=0; y < BOARD_SIZE; y++ ){
+            board[x][y].type = EMPTY;
+            board[x][y].player = NO_PLAYER;
+        }
+    }
+}
 
 void setup_pieces() {
     // clear the board
@@ -77,7 +122,7 @@ void draw_pieces(){
 
 
 void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow ){
-    if( do_move( startCol, startRow, endCol, endRow ) ) {
+    //if( do_move( startCol, startRow, endCol, endRow ) ) {
         //board[endCol][endRow] = board[startCol][startRow];
         //board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         draw_pieces();
@@ -90,7 +135,7 @@ void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow ){
                 boardStep,  // Width
                 boardStep,  // Height
                 CPU);
-    }
+    //}
 }
 
 // Sprite data structures
@@ -205,7 +250,7 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
         }
     } else {
         // TODO
-        if( valid ) {
+        if( true ) {
             move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row );
             return true;
         } else {
@@ -216,11 +261,16 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
 }
 
 
-void host_game() {
-    // Allow client to join
-    NET_allowConnections();
-    VDP_drawText("           Waiting       ", 0, 5);
+void start_game() {
 
+    // reach out to server 
+
+
+    // send command
+   
+
+ 
+/*
     // loop while waiting for a peer.
     u8 offset = 0;
     while( 1 ) {
@@ -241,6 +291,7 @@ void host_game() {
             return;
         }
     }
+*/
 
 }
 
@@ -260,7 +311,7 @@ void setWhoAmI() {
     buttons = 0;
     buttons_prev = 0;
     VDP_clearTextArea( 0, 0,  40, 13  );
-    VDP_drawText("          (A) - Host Game", 0, 5);
+    VDP_drawText("          (A) - Start Game", 0, 5);
     VDP_drawText("          (C) - Join Game", 0, 7);
     NET_resetAdapter();
     while(1) // loop forever
@@ -272,7 +323,7 @@ void setWhoAmI() {
             text_cursor_y = 5;
             whoAmI = PLAYER_ONE;
             // start listening
-            host_game();
+            start_game();
             break;
         }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
             VDP_clearTextArea( 0, 5,  40, 3 );
