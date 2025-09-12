@@ -1,3 +1,4 @@
+import os
 import uuid
 import chess
 import chess.engine
@@ -5,7 +6,7 @@ import chess.engine
 
 class ChessGame:
     def __init__(self):
-        self.gid = str(uuid.uuid4())[:8]
+        self.id = str(uuid.uuid4())[:8]
         self.board = chess.Board()
         self.moves = []
 
@@ -14,18 +15,18 @@ class ChessGame:
              mv = chess.Move.from_uci(uci)
         except ValueError:
             return "illegal move"
-        if mv not in board.legal_moves:
+        if mv not in self.board.legal_moves:
             return "illegal move"
-        board.push(mv)
+        self.board.push(mv)
         # get reply from stockfish.
         with chess.engine.SimpleEngine.popen_uci(os.environ['ENGINE_PATH']) as eng:
-            res = eng.play(board, chess.engine.Limit(time=movetime_ms/1000.0))
+            res = eng.play(self.board, chess.engine.Limit(time=movetime_ms/1000.0))
             if res.move is None:
                 # No legal engine reply (mate/stalemate)
                 return "none"
             best = res.move.uci()
             print("BEST: " +best)
-            board.push(res.move)
+            self.board.push(res.move)
             return best
  
     def state_line(self):
@@ -34,10 +35,10 @@ class ChessGame:
 
 GAMES = {}
 
-def new_game() -> Game:
-    g = Game()
+def new_game() -> ChessGame:
+    g = ChessGame()
     GAMES[g.id] = g
     return g
 
-def get_game(gid: str) -> Game | None:
+def get_game(gid: str) -> ChessGame | None:
     return GAMES.get(gid)

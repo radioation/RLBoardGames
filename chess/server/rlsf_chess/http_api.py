@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, Response
 
-from chess_game import new_game, get_game
+from rlsf_chess.chess_game import new_game, get_game
 
 #######################################################
 #
@@ -49,7 +49,7 @@ def move():
     if game is None:
         return Response("illegal move\n", mimetype="text/plain", status=404)
 
-    return Response( game.apply_move( uci_move ) + "\n", mimetype="text/plain", status=400)
+    return Response( game.do_move( uci_move, movetime_ms ) + "\n", mimetype="text/plain", status=400)
 
 
 
@@ -61,7 +61,4 @@ def board():
 
     return Response(str(game.board) + "\n", mimetype="text/plain")
 
-if __name__ == "__main__":
-    # Run it:  python3 chess_server.py
-    app.run(host="0.0.0.0", port=5555)
 
