@@ -1,7 +1,6 @@
 #include <genesis.h>
 #include "resources.h"
 #include "network.h" 
-#include "logic.h"
 
 #define INPUT_WAIT_COUNT 10
 
@@ -195,10 +194,8 @@ void cursor_clear_selected( CURSOR* cursor ) {
 }
 
 bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
-    KLog_S1(" cursor sel x ", cursor->sel_col );
     if( cursor->sel_col < 0 ) {
         // no piece selected yet, check if player owns the current piece.
-        KLog_S4(" col ", cursor->col, " row ", cursor->row, " player ",  (s8) brd[(u8)cursor->col][(u8)cursor->row].player, " p ", (s8)player ); 
         if( brd[(u8)cursor->col][(u8)cursor->row].player == player ) { 
             cursor->sel_col = cursor->col;
             cursor->sel_row = cursor->row;
@@ -207,10 +204,8 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
             SPR_setVisibility( cursor->selected_spr, VISIBLE );
         }
     } else {
-        // A piece is currently selected, check if cursor position is valid )
-        //TODO -- (add valid move check, for now just look for empty squares)
-        // if( brd[(u8)cursor->col][(u8)cursor->row].type == EMPTY ) { 
-        if( is_valid_move( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row ) ){
+        // TODO
+        if( valid ) {
             move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row );
             return true;
         } else {
@@ -575,6 +570,7 @@ int main(bool hard) {
                     inputWait = INPUT_WAIT_COUNT;
                     if( didMove ) {
                         cursor_clear_selected(&cursor); 
+                /*
                         if( is_checkmate(currentPlayer ) ) {
                             if( currentPlayer == PLAYER_ONE ) {
                                 VDP_drawText("PLAYER TWO WINS", 13, 1);
@@ -584,6 +580,7 @@ int main(bool hard) {
                         }else if( is_stalemate(currentPlayer ) ) {
                                 VDP_drawText("STALE MATE", 15, 1);
                         } else {
+*/
                             if( currentPlayer == PLAYER_ONE ) {
                                 currentPlayer = PLAYER_TWO;
                                 VDP_drawText("TWO", 20, 1);
@@ -591,7 +588,7 @@ int main(bool hard) {
                                 currentPlayer = PLAYER_ONE;
                                 VDP_drawText("ONE", 20, 1);
                             }
-                        }
+                    //    }
                     }
                 } else if( joypad & BUTTON_C ) {
                     cursor_clear_selected( &cursor );
