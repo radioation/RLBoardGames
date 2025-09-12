@@ -40,6 +40,33 @@ R N B Q K B N R
 ```
 TCP with telnet
 
+```bash
+$ telnet localhost 55558
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+HELO TCP
+N:
+ACK 3310d05e
+M:3310d053:e2e4
+ERR 'NoneType' object has no attribute 'do_move'
+M:3310d05e:e2e4
+e7e5
+M:3310d05e:d1d3
+illegal move
+M:3310d05e:d2d3
+g8f6
+B:3310d05e
+r n b q k b . r
+p p p p . p p p
+. . . . . n . .
+. . . . p . . .
+. . . . P . . .
+. . . P . . . .
+P P P . . P P P
+R N B Q K B N R
+Connection closed by foreign host.
+```
 
 # TODO
 * Add check for checkmate/stalemate
