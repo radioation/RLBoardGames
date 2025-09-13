@@ -48,9 +48,46 @@ u8 buttons, buttons_prev;
 
 ////////////////////////////////////////////////////////////////////////////
 // network stuff
-char server[16] = "000.000.000.000";
+char server[16] = "010.025.050.061";
+char request[64];
+char response[128];
+char game_id[16];
 bool online = false;
 u8 whoAmI = NO_PLAYER;
+
+void read_bytes_n(u8* data, u8 length ) {
+    s16 bytePos = 0;
+    while( bytePos < length ) {
+        // read data
+        if( NET_RXReady() ) {
+            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
+            bytePos++;
+        } else {
+            waitMs(5);
+        }
+    }
+}
+
+s16 read_line(u8* data, u8 data_len ){
+    s16 bytePos = 0;
+    while( bytePos < data_len ) {
+        // read data
+        if( NET_RXReady() ) {
+            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
+            if( data[bytePos] == 0x0A ) {
+                data[bytePos] = 0;
+                return bytePos;
+            }
+            bytePos++;
+        } else {
+            waitMs(5);
+        }
+    } 
+    return bytePos;
+
+}
+
+
 
 // Chess Piece data
 CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
@@ -264,34 +301,44 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
 void start_game() {
 
     // reach out to server 
-
-
-    // send command
-   
-
- 
-/*
-    // loop while waiting for a peer.
-    u8 offset = 0;
-    while( 1 ) {
-        // Data available?
-        while( !NET_RXReady() ){
-            // writing some sort of text here?
-            VDP_drawText(" .     ", 21+offset, 5);
-            offset +=1;
-            if( offset > 3 ) offset = 0;
-            waitMs(20);
-
-        }
-        // look for 'C'
-        u8 ret = NET_readByte();
-        if( ret == 'C' ) {
-            // clear text before losing out
-            VDP_drawText("          Connected!     ", 0, 5);
-            return;
-        }
+    VDP_drawText("   Connect to server    ", 0, 5);
+    text_cursor_y = 5;
+    // blocks whilewaiting for network to be ready.
+    char fullserver[21];
+    memset(fullserver,0, sizeof(fullserver));
+    sprintf( fullserver, "%s:55558", server);
+    NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+            VDP_drawText("READ LINE", 0, 0 );
+    s16 count = read_line( response, sizeof(response) );
+    response[4] = 0;
+     VDP_drawText(response, 0, 1 );
+    if( strcmp( response, "HELO" ) != 0 ) {
+        // TODO: we need to handle this error somehow. think about it
+        VDP_drawText("NOT HELO?", 0, 2 );
+        return;
     }
-*/
+    // request a new game.
+    //memset(request, 0, sizeof(request) );
+    //sprintf( request, "%03d", part );
+    VDP_drawText("REQUEST NEW", 0, 3 );
+    NET_sendMessage( "N:\n" );
+    VDP_drawText("READ LINE", 0, 4 );
+    count = read_line( response, sizeof(response) );
+     VDP_drawText(response, 0, 4 );
+    memset( game_id, 0, sizeof( game_id ) );
+    if ( count >= 3 ) {
+        // if starts with ACK, save the rest into game_id
+        if( response[0] == 'A' && response[1] == 'C' && response[2] == 'K' ) {
+            // get game id
+            strncpy(  game_id, response + 4, 8 );
+            VDP_drawText(game_id, 0, 0 );
+
+        } else {
+            // TODO: handle error somehow.
+        }
+    } 
+
+
 
 }
 
@@ -303,7 +350,22 @@ bool join_game() {
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
     sprintf( fullserver, "%s:5364", server);
-    return NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    read_line( response, 64 );
+    if( strcmp( response, "HELO" ) != 0 ) {
+        // we need to handle this error somehow. think about it
+        return;
+    }
+    memset(request,0, sizeof(request));
+    sprintf( request, "J:%s", game_id);
+    NET_sendMessage( request );
+
+}
+
+void do_move() {
+}
+
+void get_board() {
 }
 
 
@@ -350,20 +412,6 @@ void cursor_send_data( CURSOR* cursor, u8 type  ) {
     NET_sendByte( cursor->sel_row );
 }
 
-
-
-void read_bytes_n(u8* data, u8 length ) {
-    s16 bytePos = 0;
-    while( bytePos < length ) {
-        // read data
-        if( NET_RXReady() ) {
-            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
-            bytePos++;
-        } else {
-            waitMs(5);
-        }
-    }
-}
 
 
 
@@ -435,7 +483,7 @@ int main(bool hard) {
         VDP_drawText( "Got Address", 13 ,12 );
         VDP_drawText( server, 13 , 13 );
 
-         getIPFromUser(server);
+        // getIPFromUser(server);
 
 
      // clear out last input and wait a sec.
