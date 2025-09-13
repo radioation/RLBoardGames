@@ -1,7 +1,7 @@
 # tcp_protocol.py
 import socketserver, threading
 from rlsf_chess.chess_game import new_game, get_game
-
+import re
 
 
 class TcpChessHandler(socketserver.StreamRequestHandler):
@@ -35,14 +35,15 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 gid, uci_move = parts[1], parts[2]
                 game = get_game(gid)
                 movetime_ts = 300
-                res = game.do_move( uci_move, movetime_ts)
+                res = "ACK " + game.do_move( uci_move, movetime_ts)
                 return res  
             elif line.startswith("B:"):
                 gid = line.split(":",1)[1]
                 game = get_game(gid)
                 sboard = str(game.board)
                 print( sboard )
-                strboard = sboard.replace(" ", "")
+                
+                strboard = "ACK " + re.sub(r"[\n\t\s]*", "", sboard)
                 print( strboard )
 
                 return strboard

@@ -1,7 +1,10 @@
 # run_both.py
 import threading, socketserver
+import atexit
 from rlsf_chess.http_api import app
 from rlsf_chess.tcp_api import TcpChessHandler
+
+
 
 def start_tcp():
     server = socketserver.ThreadingTCPServer(("0.0.0.0", 55558), TcpChessHandler)
