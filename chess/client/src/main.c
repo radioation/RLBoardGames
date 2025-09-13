@@ -52,7 +52,7 @@ char server[16] = "010.025.050.061";
 char request[64];
 char response[128];
 char game_id[16];
-bool online = false;
+bool singlePlayer = false;
 u8 whoAmI = NO_PLAYER;
 
 void read_bytes_n(u8* data, u8 length ) {
@@ -157,54 +157,63 @@ void draw_pieces(){
     }
 }
 
+void clear_space( s8 startCol, s8 startRow ) {
+    VDP_setTileMapEx( BG_A, pieces_img.tilemap, TILE_ATTR_FULL(PAL1, TRUE, FALSE, FALSE, piecesTileIndex),    
+            boardStartCol + startCol * boardStep,  // PLANE X Dest in tiles
+            boardStartRow + startRow * boardStep,  // PLANE Y Dest in tiles
+            EMPTY,  // REGION X start
+            0,  // REGION Y start
+            boardStep,  // Width
+            boardStep,  // Height
+            CPU);
+
+}
 
 void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow ){
     //if( do_move( startCol, startRow, endCol, endRow ) ) {
-        board[endCol][endRow] = board[startCol][startRow];
-        board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+    PLAYER p = board[startCol][startRow].player;
+    board[endCol][endRow] = board[startCol][startRow];
+    board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
 
-        // check for special cases
-        /*
-          ' castles to check
-          ' white
-          ' e1g1 -  4,7,6,7
-          ' e1c1 -  4,7,2,7
-          ' black
-          ' e8g8 -  4,0,6,0
-          ' e8c8 -  4,0,2,0
-         */
-        PLAYER p = board[startCol][startRow].player;
-        if ( startCol == 4 && startRow ==0 && endCol == 6 && endRow == 0 ) {
-            // move black rook from right
-            board[4][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
-            board[6][0] = (CHESS_PIECE){ROOK, p}; 
+    // check for special cases
+    /*
+       ' castles to check
+       ' white
+       ' e1g1 -  4,7,6,7
+       ' e1c1 -  4,7,2,7
+       ' black
+       ' e8g8 -  4,0,6,0
+       ' e8c8 -  4,0,2,0
+     */
+    
+    if ( startCol == 4 && startRow ==0 && endCol == 6 && endRow == 0 ) {
+        // move black rook from right
+        board[7][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        clear_space( 7, 0 );
+        board[5][0] = (CHESS_PIECE){ROOK, p}; 
 
-        } else if ( startCol == 4 && startRow ==0 && endCol == 2 && endRow == 0 ) {
-            // move rook from left
-            board[4][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
-            board[2][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
-        } else if ( startCol == 4 && startRow ==7 && endCol == 6 && endRow == 7 ) {
-            // move rook from right
-            board[4][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
-            board[6][7] = (CHESS_PIECE){ROOK, p}; 
-        } else if ( startCol == 4 && startRow ==7 && endCol == 2 && endRow == 7 ) {
-            // move rook from left
-            board[4][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
-            board[2][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
-        }
-        // if pawn, 
+    } else if ( startCol == 4 && startRow ==0 && endCol == 2 && endRow == 0 ) {
+        // move rook from left
+        board[0][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        clear_space( 0, 0 );
+        board[3][0] = (CHESS_PIECE){ROOK, p}; 
+    } else if ( startCol == 4 && startRow ==7 && endCol == 6 && endRow == 7 ) {
+        // move rook from right
+        board[7][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        clear_space( 7, 7 );
+        board[5][7] = (CHESS_PIECE){ROOK, p}; 
+    } else if ( startCol == 4 && startRow ==7 && endCol == 2 && endRow == 7 ) {
+        // move rook from left
+        board[0][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        clear_space( 0, 7 );
+        board[3][7] = (CHESS_PIECE){ROOK, p}; 
+    }
+    // if pawn, 
 
-        draw_pieces();
+    draw_pieces();
+    clear_space( startCol, startRow );
 
-        VDP_setTileMapEx( BG_A, pieces_img.tilemap, TILE_ATTR_FULL(PAL1, TRUE, FALSE, FALSE, piecesTileIndex),    
-                boardStartCol + startCol * boardStep,  // PLANE X Dest in tiles
-                boardStartRow + startRow * boardStep,  // PLANE Y Dest in tiles
-                EMPTY,  // REGION X start
-                0,  // REGION Y start
-                boardStep,  // Width
-                boardStep,  // Height
-                CPU);
-        //}
+    //}
 }
 
 // Sprite data structures
@@ -579,7 +588,7 @@ int main(bool hard) {
                 }
             }
         }
-        online = true;
+        singlePlayer = true;
 
 
     }
@@ -596,7 +605,6 @@ int main(bool hard) {
             }
             SYS_doVBlankProcess();
         }
-        online = false;
         whoAmI = 1; 
     }
     VDP_clearPlane( BG_A, TRUE);
@@ -635,7 +643,7 @@ int main(bool hard) {
     VDP_drawText("PLAYER ONE MOVE", 13, 1);
     while(TRUE)
     {
-        if( online ) {
+        if( singlePlayer ) {
             if( currentPlayer == whoAmI  ){
                 // read joypad to mover cursor
                 u16 joypad  = JOY_readJoypad( JOY_1 );
