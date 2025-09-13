@@ -40,7 +40,12 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
             elif line.startswith("B:"):
                 gid = line.split(":",1)[1]
                 game = get_game(gid)
-                return str(game.board).strip(' ')
+                sboard = str(game.board)
+                print( sboard )
+                strboard = sboard.replace(" ", "")
+                print( strboard )
+
+                return strboard
             else:
                 return "ERR unknown"
         except Exception as e:
