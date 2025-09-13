@@ -1,17 +1,22 @@
 # tcp_protocol.py
 import socketserver, threading
 from rlsf_chess.chess_game import new_game, get_game
-
+import re
 
 
 class TcpChessHandler(socketserver.StreamRequestHandler):
     def handle(self):
-        self.wfile.write(b"HELO TCP\n")
+        print("connected")
+        self.wfile.write(b"HELO\n")
         for line in self.rfile:
+            print("pre-strip: ", end="" )
+            print(line)
             line = line.decode("utf-8").strip()
+            print("POST-strip: " + line)
             if not line:
                 continue
             response = self.dispatch(line)
+            print(response)
             self.wfile.write((response + "\n").encode("utf-8"))
 
     def dispatch(self, line: str) -> str:
@@ -30,12 +35,18 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 gid, uci_move = parts[1], parts[2]
                 game = get_game(gid)
                 movetime_ts = 300
-                res = game.do_move( uci_move, movetime_ts)
+                res = "ACK " + game.do_move( uci_move, movetime_ts)
                 return res  
             elif line.startswith("B:"):
                 gid = line.split(":",1)[1]
                 game = get_game(gid)
-                return str(game.board)
+                sboard = str(game.board)
+                print( sboard )
+                
+                strboard = "ACK " + re.sub(r"[\n\t\s]*", "", sboard)
+                print( strboard )
+
+                return strboard
             else:
                 return "ERR unknown"
         except Exception as e:
