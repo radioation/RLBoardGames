@@ -6,12 +6,17 @@ from rlsf_chess.chess_game import new_game, get_game
 
 class TcpChessHandler(socketserver.StreamRequestHandler):
     def handle(self):
-        self.wfile.write(b"HELO TCP\n")
+        print("connected")
+        self.wfile.write(b"HELO\n")
         for line in self.rfile:
+            print("pre-strip: ", end="" )
+            print(line)
             line = line.decode("utf-8").strip()
+            print("POST-strip: " + line)
             if not line:
                 continue
             response = self.dispatch(line)
+            print(response)
             self.wfile.write((response + "\n").encode("utf-8"))
 
     def dispatch(self, line: str) -> str:
@@ -35,7 +40,7 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
             elif line.startswith("B:"):
                 gid = line.split(":",1)[1]
                 game = get_game(gid)
-                return str(game.board)
+                return str(game.board).strip(' ')
             else:
                 return "ERR unknown"
         except Exception as e:
