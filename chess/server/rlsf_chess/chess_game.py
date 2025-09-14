@@ -20,9 +20,9 @@ class ChessGame:
 
 
     def do_move( self, pid, uci, movetime_ms ):
-        if self.curr_player == 1 and pid != self.player_1_id
+        if self.curr_player == 1 and pid != self.player_1_id:
             return "illegal move"
-        if self.curr_player == 2 and pid != self.player_2_id
+        if self.curr_player == 2 and pid != self.player_2_id:
             return "illegal move"
             
         try:
