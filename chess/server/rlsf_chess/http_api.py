@@ -66,22 +66,25 @@ def http_move():
         return Response("invalid format\n", mimetype="text/plain", status=400)
    
     gid, pid,  uci_move = lines[0], lines[1], lines[2].lower()
-    if not gid.isalnum() or len(gid) > 8:
-        return Response("invalid format\n", mimetype="text/plain", status=400)
-    if not pid.isalnum() or len(gid) > 8:
-        return Response("invalid format\n", mimetype="text/plain", status=400)
-    if not uci_move.isalnum() or len(uci_move) > 5:
-        return Response("invalid format\n", mimetype="text/plain", status=400)
+    if not gid.isalnum() or ( gid.isalnum() and  len(gid) != 8 ):
+        return Response("invalid format - g\n", mimetype="text/plain", status=400)
+    if not pid.isalnum() or ( pid.isalnum() and  len(pid) != 8 ):
+        return Response("invalid format - p\n", mimetype="text/plain", status=400)
+    if not uci_move.isalnum() or len(uci_move) > 5 or len(uci_move) < 4:
+        return Response("invalid format - m\n", mimetype="text/plain", status=400)
 
     movetime_ms = 300
-    if len(lines) >= 4 and lines[3].isdigit():
-        movetime_ms = int(lines[3])
+    if len(lines) >= 4 :
+        if lines[3].isdigit():
+            movetime_ms = int(lines[3])
+        else:
+            return Response("invalid format - t\n", mimetype="text/plain", status=400)
 
     game = get_game(gid)
     if game is None:
-        return Response("illegal move\n", mimetype="text/plain", status=404)
+        return Response("invalid game\n", mimetype="text/plain", status=404)
 
-    return Response( game.do_move( uci_move, movetime_ms ) + "\n", mimetype="text/plain", status=400)
+    return Response( game.do_move( pid, uci_move, movetime_ms ) + "\n", mimetype="text/plain", status=200)
 
 
 
