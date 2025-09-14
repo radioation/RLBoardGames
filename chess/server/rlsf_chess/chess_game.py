@@ -17,13 +17,15 @@ class ChessGame:
         self.player_1_id = str(uuid.uuid4())[:8]
         self.player_2_id = str(uuid.uuid4())[:8]
         self.curr_player = 1
+        if self.mode == 'D' and player_1_side == 'B':
+            self.curr_player = 2
 
 
     def do_move( self, pid, uci, movetime_ms ):
         if self.curr_player == 1 and pid != self.player_1_id:
-            return "illegal move"
+            return "illegal move: player 1 turn"
         if self.curr_player == 2 and pid != self.player_2_id:
-            return "illegal move"
+            return "illegal move: player 2 turn"
             
         try:
              mv = chess.Move.from_uci(uci)
@@ -39,8 +41,10 @@ class ChessGame:
                 # No legal engine reply (mate/stalemate)
                 return "none"
             best = res.move.uci()
+            self.curr_player = 2 if self.curr_player == 1 else 1
             print("BEST: " +best)
-            self.board.push(res.move)
+            if self.mode == 'S':
+                self.board.push(res.move)
             return best
  
     def state_line(self):
