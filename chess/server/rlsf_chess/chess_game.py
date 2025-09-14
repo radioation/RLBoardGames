@@ -3,14 +3,28 @@ import uuid
 import chess
 import chess.engine
 
+import threading
+
 
 class ChessGame:
-    def __init__(self):
+    def __init__(self, mode, player_1_side):
         self.id = str(uuid.uuid4())[:8]
-        self.board = chess.Board()
-        self.moves = []
+        self.board = chess.Board()      
+        self.moves = []                 # list of UCI moves
+        self.mode = mode                # single player 'S' or double player 'D'
+        self.player_1_side = player_1_side  # for single player, which side is the player
+                                        # that created the game: 'W', 'B'
+        self.player_1_id = str(uuid.uuid4())[:8]
+        self.player_2_id = str(uuid.uuid4())[:8]
+        self.curr_player = 1
 
-    def do_move( self, uci, movetime_ms ):
+
+    def do_move( self, pid, uci, movetime_ms ):
+        if self.curr_player == 1 and pid != self.player_1_id
+            return "illegal move"
+        if self.curr_player == 2 and pid != self.player_2_id
+            return "illegal move"
+            
         try:
              mv = chess.Move.from_uci(uci)
         except ValueError:
@@ -34,9 +48,10 @@ class ChessGame:
 
 
 GAMES = {}
+GAMES_LOCK = threading.Lock()
 
-def new_game() -> ChessGame:
-    g = ChessGame()
+def new_game(mode,side) -> ChessGame:
+    g = ChessGame(mode,side)
     GAMES[g.id] = g
     return g
 

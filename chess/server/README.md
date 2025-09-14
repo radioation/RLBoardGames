@@ -18,6 +18,9 @@ python3 run.py
 
 HTTP with CURL
 ```bash
+SESS=$(curl -s -X POST localhost:55557/newgame)
+SESS=$(curl -s -X POST localhost:55557/newgame -d $'D\n' )
+SESS=$(url -X POST "http://localhost:55557/newgame" -d $'D\nB\n')
 
 curl -X POST "http://localhost:55557/move" -d "${SESS}"$'\ne2e4\n'
 e7e5
