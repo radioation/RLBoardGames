@@ -27,7 +27,7 @@ def http_newgame():
             if lines[1] == 'B':
                 player_1_side = 'B'
             if len(lines) > 2:
-                level = lines[2] 
+                level = int(lines[2] )
     g = new_game(mode, player_1_side, level )
     print( f"new game: {g.id} mode: {g.mode} side: {g.player_1_side}")
     print( f"   p1: {g.player_1_id} p2: {g.player_2_id}")

@@ -72,7 +72,8 @@ class ChessGame:
                 return "none"
 
             best = res.move.uci()
-            self.curr_player = 2 if self.curr_player == 1 else 1
+            if self.mode == 'D':
+                self.curr_player = 2 if self.curr_player == 1 else 1
             print("BEST: " +best)
             if self.mode == 'S':
                 self.board.push(res.move)
@@ -98,8 +99,8 @@ class ChessGame:
 GAMES = {}
 GAMES_LOCK = threading.Lock()
 
-def new_game(mode,side) -> ChessGame:
-    g = ChessGame(mode,side)
+def new_game(mode,side,level) -> ChessGame:
+    g = ChessGame(mode,side,level)
     GAMES[g.id] = g
     return g
 

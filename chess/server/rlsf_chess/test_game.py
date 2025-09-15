@@ -140,8 +140,35 @@ def test_player_1B_turns():
     assert resp.isalnum() is True
 
 
+def test_fools_mate():
+    g = ChessGame('D', 'W')
+    # current player should be 1
+    p1 = g.player_1_id
+    p2 = g.player_2_id
+    resp = g.do_move( p1, "f2f3", 300)
+    assert g.curr_player == 2
 
+    resp = g.do_move( p2, "e7e5", 300)
+    assert g.curr_player == 1
 
+    resp = g.do_move( p1, "g2g4", 300)
+    assert g.curr_player == 2
 
+    resp = g.do_move( p2, "d8h4", 300)
+    assert resp == 'checkmate'
+
+def test_single_player():
+    g = ChessGame('S', 'W', 1)
+    # current player should be 1
+    p1 = g.player_1_id
+    resp = g.do_move( p1, "e2e4", 300)
+    assert g.curr_player == 1
+
+    resp = g.do_move( p1, "e1e4", 300)
+    assert g.curr_player == 1
+    assert resp == 'illegal move'
+
+    resp = g.do_move( p1, "d2d3", 300)
+    assert g.curr_player == 1
 
 

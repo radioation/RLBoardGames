@@ -34,14 +34,18 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                     level = len[3].strip()
 
                 g = new_game(mode, player_1_side, level )
-                return f"ACK {g.id}:{g.player_1_id}"
+                return f"ACK {g.id}:{g.player_1_id}\n"
             elif line.startswith("J:"):
-                gid = line.split(":",1)[1]
-                return "NAK "
-                #side, tok = join_game(gid)
-                #return f"JOINOK {side} {tok}"
+                parts = line.split(":")
+                if len(parts) < 2:
+                    return "ERR invalid\n"
+                gid = parts[1]
+                game = get_game(gid)
+                if game is None: 
+                    return "ERR invalid game id\n"
+                return f"ACK {game.player2_id}\n"
             elif line.startswith("M:"):
-                parts = line.split(":",2)
+                parts = line.split(":")
                 if len(parts) < 3: return "ERR:bad format"
                 gid, uci_move = parts[1], parts[2]
                 game = get_game(gid)

@@ -18,28 +18,33 @@ python3 run.py
 
 HTTP with CURL
 ```bash
-SESS=$(curl -s -X POST localhost:55557/newgame)
-SESS=$(curl -s -X POST localhost:55557/newgame -d $'D\n' )
-SESS=$(url -X POST "http://localhost:55557/newgame" -d $'D\nB\n')
+curl -s -X POST localhost:55557/newgame
+curl -s -X POST localhost:55557/newgame -d $'D\n' 
+curl -X POST "http://localhost:55557/newgame" -d $'D\nB\n'
+curl -X POST "http://localhost:55557/newgame" -d $'D\nB\n1\n'
+curl -X POST "http://localhost:55557/newgame" -d $'S\nW\n1\n'
 
-curl -X POST "http://localhost:55557/move" -d "${SESS}"$'\ne2e4\n'
-e7e5
 
-curl -X POST "http://localhost:55557/move" -d "${SESS}"$'\ne1e4\n'
+ggallard@fedora:~/dev/atari_fastbasic$ curl -X POST "http://localhost:55557/newgame" -d $'S\nW\n1\n'
+fd77aff0:e3061270
+ggallard@fedora:~/dev/atari_fastbasic$ curl -X POST "http://localhost:55557/move" -d $'fd77aff0\ne3061270\ne2e4\n'
+e7e6
+ggallard@fedora:~/dev/atari_fastbasic$ curl -X POST "http://localhost:55557/move" -d $'fd77aff0\ne3061270\ne1e4\n'
 illegal move
-
-curl -X POST "http://localhost:55557/move" -d "${SESS}"$'\nd2d3\n'
-g8f6
-
-curl -X GET "http://localhost:55557/board?gid=${SESS}"
-r n b q k b . r
-p p p p . p p p
-. . . . . n . .
+ggallard@fedora:~/dev/atari_fastbasic$ curl -X POST "http://localhost:55557/move" -d $'fd77aff0\ne3061270\nd2d3\n'
+d7d5
+ggallard@fedora:~/dev/atari_fastbasic$ curl -X GET "http://localhost:55557/board?gid=fd77aff0"
+r n b q k b n r
+p p p . . p p p
 . . . . p . . .
+. . . p . . . .
 . . . . P . . .
 . . . P . . . .
 P P P . . P P P
 R N B Q K B N R
+ggallard@fedora:~/dev/atari_fastbasic$
+
+
 ```
 TCP with telnet
 
