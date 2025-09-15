@@ -247,16 +247,16 @@ old_sel_y = p1addr
 POS. 0,21
 INPUT "Enter Host:";GAMEHOST$
 
-MODE$ = 'S"
-SIDE$ = 'W"
-LEVEL$= '5'
+MODE$ = "S"
+SIDE$ = "W"
+LEVEL$= "5"
 GAMEID$ = ""
 POS. 0,21
 INPUT "(S)tart or (J)oin Game?:";ANS$
-if ANS$ = 'S'
+if ANS$ = "S"
   POS. 0,21: INPUT "(O)ne or (T)wo Players?:";ANS$
-  IF ANS$ = 'T'
-    MODE$ = 'D'
+  IF ANS$ = "T"
+    MODE$ = "D"
   ELSE
     POS. 0,21: INPUT "Skill Level (1-10)?:";LEVEL$
   ENDIF
@@ -272,36 +272,44 @@ FJ_TRANSL = 2 '
 FJ_BASE_URL$="N:HTTP://"
 if LEN(GAMEHOST$) > 8
   FJ_BASE_URL$=+ GAMEHOST$
+  FJ_BASE_URL$=+ ":55557"
   ? "USING: ";GAMEHOST$
 else
   POS.0,21
-  FJ_BASE_URL$="N:HTTP://10.25.50.61:5555/"
+  FJ_BASE_URL$="N:HTTP://10.25.50.61:55557/"
   ? "USING default"
 endif
-' FJ_URL2$="N:HTTP://10.25.50.61:5555/newgame"$9B
-' FJ_URL2$="N:HTTP://10.25.50.61:5555/move"$9B
-' FJ_URL2$="N:HTTP://10.25.50.61:5555/board"$9B
+' FJ_URL2$="N:HTTP://10.25.50.61:55557/newgame"$9B
+' FJ_URL2$="N:HTTP://10.25.50.61:55557/move"$9B
+' FJ_URL2$="N:HTTP://10.25.50.61:55557/board"$9B
 
 DIM FJ_IN_BUFF(128) BYTE  
 DIM FJ_OUT_BUFF(128) BYTE  
 DIM GAME_ID(9) BYTE
+DIM PLAYER_ID(9) BYTE
 
 'quietus
 POKE 65,0
 
 if LEN(GAMEID$) < 8
   ' start a game
-  FJ_OUT_BUFF(0) = 102
-  FJ_OUT_BUFF(1) = 117
-  FJ_OUT_BUFF(2) = 106
-  FJ_OUT_BUFF(3) = 105
+  FJ_OUT_BUFF(0) = ASC(MODE$)
+  FJ_OUT_BUFF(1) = 10
+  FJ_OUT_BUFF(2) = ASC(SIDE$)
+  FJ_OUT_BUFF(3) = 10
+  FJ_OUT_BUFF(4) = ASC(LEVEL$)
+  FJ_OUT_BUFF(5) = 10
 
-  @doPost &"newgame", Adr(FJ_OUT_BUFF), 4
-  MOVE Adr(FJ_IN_BUFF), Adr(FJ_OUT_BUFF), 8
+  @doPost &"newgame", Adr(FJ_OUT_BUFF), 6
+
+  MOVE Adr(FJ_IN_BUFF), Adr(FJ_OUT_BUFF), 17 
   IF FJ_IN_BUFF(0) > 0 
     FJ_OUT_BUFF(8) = 10  ' \n
+    FJ_OUT_BUFF(17) = 10  ' \n
     GAME_ID(0) = 8
     MOVE Adr(FJ_IN_BUFF), Adr(GAME_ID)+1, 8
+    PLAYER_ID(0) = 8
+    MOVE Adr(FJ_IN_BUFF)+9, Adr(PLAYER_ID)+1, 8
   ELSE
     POS. 0,22 : PRINT "Unable to connect"
   ENDIF
@@ -335,12 +343,12 @@ DO
       pause 9
     else
       '  submit possible move.
-      FJ_OUT_BUFF(9) = FILE_X + select_array_col 
-      FJ_OUT_BUFF(10) = RANK_Y + select_array_row 
-      FJ_OUT_BUFF(11) = FILE_X + cursor_array_col
-      FJ_OUT_BUFF(12) = RANK_Y + cursor_array_row
-      FJ_OUT_BUFF(13) = 10
-      @doPost &"move", ADR( FJ_OUT_BUFF ), 14
+      FJ_OUT_BUFF(18) = FILE_X + select_array_col 
+      FJ_OUT_BUFF(19) = RANK_Y + select_array_row 
+      FJ_OUT_BUFF(20) = FILE_X + cursor_array_col
+      FJ_OUT_BUFF(21) = RANK_Y + cursor_array_row
+      FJ_OUT_BUFF(22) = 10
+      @doPost &"move", ADR( FJ_OUT_BUFF ), 23
       IF FJ_IN_BUFF(0) > 0 
         if FJ_IN_BUFF(0) >= FILE_X and FJ_IN_BUFF(0) < FILE_X + 8
           'TODO PROMOTION MOVE
