@@ -53,10 +53,19 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                     return "ERR invalid mode\n"
             elif line.startswith("M:"):
                 parts = line.split(":")
-                if len(parts) < 4: return "ERR:bad format"
+                if len(parts) < 4: return "ERR invalid format\n"
 
                 gid, pid, uci_move = parts[1], parts[2], parts[3]
+                if not gid.isalnum() or ( gid.isalnum() and  len(gid) != 8 ):
+                    return "ERR invalid format - g\n"
+                if not pid.isalnum() or ( pid.isalnum() and  len(pid) != 8 ):
+                    return "ERR invalid format - p\n"
+                if not uci_move.isalnum() or len(uci_move) > 5 or len(uci_move) < 4:
+                    return "ERR invalid format - m\n"
+
                 game = get_game(gid)
+                if game is None:
+                    return "ERR invalid game\n"
                 movetime_ts = 300
                 res = "ACK " + game.do_move( pid, uci_move, movetime_ts)
                 return res  

@@ -81,5 +81,41 @@ def test_joingame(tcp_server):
     assert pid.isalnum() == True
 
 
+def test_move(tcp_server):
+    host, port = tcp_server
+    greet, resp = send_cmd(port, "N:S:W\n")
+    assert greet.startswith("HELO")
+    ids = resp.split()[1]
+    gameid = ids[:8]
+    playid = ids[9:-1]
+
+    greet, resp = send_cmd(port, "M:------:W-\n")
+    assert resp == 'ERR invalid format'
+
+    greet, resp = send_cmd(port, "M:------:W:a\n")
+    assert resp == 'ERR invalid format - g'
+
+    greet, resp = send_cmd(port, "M:asdf1234:W:a\n")
+    assert resp == 'ERR invalid format - p'
+
+    greet, resp = send_cmd(port, "M:asdf1234:1234asdf:a\n")
+    assert resp == 'ERR invalid format - m'
+
+    greet, resp = send_cmd(port, "M:asdf1234:1234asdf:123456\n")
+    assert resp == 'ERR invalid format - m'
+
+    greet, resp = send_cmd(port, "M:asdf1234:1234asdf:e2e4\n")
+    assert resp == 'ERR invalid game'
+
+    greet, resp = send_cmd(port, "N:S:W\n")
+    assert greet.startswith("HELO")
+    ids = resp.split()[1]
+    gameid = ids[:8]
+    playid = ids[9:]
+    greet, resp = send_cmd(port, f"M:{gameid}:{playid}:e2e4\n")
+    assert resp.startswith("ACK ")
+    pid = resp.split()[1]
+    assert pid.isalnum() == True
+
 
 
