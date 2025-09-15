@@ -78,7 +78,10 @@ class ChessGame:
             if self.mode == 'S':
                 self.board.push(res.move)
             return best
- 
+
+    def settings_str(self):
+        return f"mode:{self.mode} p1side:{self.player_1_side} level:{self.skill_level} curr_player:{self.curr_player}\n"
+
     def state_line(self):
         return f"TURN {'w' if self.board.turn else 'b'} MVNO {len(self.moves)} LAST {self.moves[-1] if self.moves else '-'}"
 
@@ -106,3 +109,5 @@ def new_game(mode,side,level) -> ChessGame:
 
 def get_game(gid: str) -> ChessGame | None:
     return GAMES.get(gid)
+
+

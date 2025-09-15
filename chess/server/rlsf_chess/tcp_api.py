@@ -27,13 +27,14 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 level = 3
                 parts = line.split(":")
                 if len(parts) > 1 :
-                    mode = len[1].strip()
+                    mode = parts[1].strip()
                 if len(parts) > 2 :
-                    mode = len[2].strip()
+                    player_1_side = parts[2].strip()
                 if len(parts) > 3 :
-                    level = len[3].strip()
+                    level = int(parts[3].strip())
 
                 g = new_game(mode, player_1_side, level )
+
                 return f"ACK {g.id}:{g.player_1_id}\n"
             elif line.startswith("J:"):
                 parts = line.split(":")
@@ -46,11 +47,12 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 return f"ACK {game.player2_id}\n"
             elif line.startswith("M:"):
                 parts = line.split(":")
-                if len(parts) < 3: return "ERR:bad format"
-                gid, uci_move = parts[1], parts[2]
+                if len(parts) < 4: return "ERR:bad format"
+
+                gid, pid, uci_move = parts[1], parts[2], parts[3]
                 game = get_game(gid)
                 movetime_ts = 300
-                res = "ACK " + game.do_move( uci_move, movetime_ts)
+                res = "ACK " + game.do_move( pid, uci_move, movetime_ts)
                 return res  
             elif line.startswith("B:"):
                 gid = line.split(":",1)[1]
@@ -62,6 +64,12 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 print( strboard )
 
                 return strboard
+            elif line.startswith("S:"):
+                gid = line.split(":")[1]
+                print( gid )
+                game = get_game(gid)
+                ret = "ACK " +  game.settings_str() + game.state_line()
+                return ret
             else:
                 return "ERR unknown"
         except Exception as e:
