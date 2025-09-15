@@ -112,7 +112,7 @@ def test_player_1W_turns():
     assert len(g.board.move_stack) == 2 # two valid moves
     assert resp.isalnum() is True
 
-def test_player_1B_turns():
+def test_player_2B_turns():
     g = ChessGame('D', 'B')
     # current player should be 1
     assert g.curr_player == 2

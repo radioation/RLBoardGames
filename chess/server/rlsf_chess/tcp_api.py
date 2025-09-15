@@ -79,11 +79,16 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 print( strboard )
 
                 return strboard
+            elif line.startswith("T:"):
+                gid = line.split(":")[1]
+                game = get_game(gid)
+                ret = "ACK " +  game.settings_str()
+                return ret
+
             elif line.startswith("S:"):
                 gid = line.split(":")[1]
-                print( gid )
                 game = get_game(gid)
-                ret = "ACK " +  game.settings_str() + game.state_line()
+                ret = "ACK " +  game.state_line()
                 return ret
             else:
                 return "ERR unknown"

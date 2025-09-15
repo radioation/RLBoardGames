@@ -86,10 +86,10 @@ class ChessGame:
             return best
 
     def settings_str(self):
-        return f"mode:{self.mode} p1side:{self.player_1_side} level:{self.skill_level} curr_player:{self.curr_player}\n"
+        return f"mode {self.mode}:p1side {self.player_1_side}:level {self.skill_level}:curr_player {self.curr_player}\n"
 
     def state_line(self):
-        return f"TURN {'w' if self.board.turn else 'b'} MVNO {len(self.moves)} LAST {self.moves[-1] if self.moves else '-'}"
+        return f"TURN {'w' if self.board.turn else 'b'}:MVNO {len(self.board.move_stack)}:LAST {self.board.move_stack[-1] if self.board.move_stack else '-'}"
 
     #def skill_to_engine_config(level: int) -> dict:
     #    # Map skill level 1-10 to Stockfish config.

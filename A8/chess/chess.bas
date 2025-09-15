@@ -247,6 +247,24 @@ old_sel_y = p1addr
 POS. 0,21
 INPUT "Enter Host:";GAMEHOST$
 
+MODE$ = 'S"
+SIDE$ = 'W"
+LEVEL$= '5'
+GAMEID$ = ""
+POS. 0,21
+INPUT "(S)tart or (J)oin Game?:";ANS$
+if ANS$ = 'S'
+  POS. 0,21: INPUT "(O)ne or (T)wo Players?:";ANS$
+  IF ANS$ = 'T'
+    MODE$ = 'D'
+  ELSE
+    POS. 0,21: INPUT "Skill Level (1-10)?:";LEVEL$
+  ENDIF
+ELSE
+  POS. 0,21: INPUT "Enter Host:";GAMEHOST$
+  POS. 0,21: INPUT "Enter GameID:";GAMEID$
+ENDIF
+
 FJ_CONN = 2 ' unit 2
 FJ_POST_MODE = 13 ' HTTP POST
 FJ_GET_MODE = 12  ' HTTP GET https://fujinet.online/2025/02/23/developers-when-doing-http-get-use-mode-12/
@@ -270,24 +288,30 @@ DIM GAME_ID(9) BYTE
 
 'quietus
 POKE 65,0
-FJ_OUT_BUFF(0) = 102
-FJ_OUT_BUFF(1) = 117
-FJ_OUT_BUFF(2) = 106
-FJ_OUT_BUFF(3) = 105
 
-' start a game
-@doPost &"newgame", Adr(FJ_OUT_BUFF), 4
+if LEN(GAMEID$) < 8
+  ' start a game
+  FJ_OUT_BUFF(0) = 102
+  FJ_OUT_BUFF(1) = 117
+  FJ_OUT_BUFF(2) = 106
+  FJ_OUT_BUFF(3) = 105
 
-MOVE Adr(FJ_IN_BUFF), Adr(FJ_OUT_BUFF), 8
-IF FJ_IN_BUFF(0) > 0 
-  FJ_OUT_BUFF(8) = 10  ' \n
-  GAME_ID(0) = 8
-  MOVE Adr(FJ_IN_BUFF), Adr(GAME_ID)+1, 8
+  @doPost &"newgame", Adr(FJ_OUT_BUFF), 4
+  MOVE Adr(FJ_IN_BUFF), Adr(FJ_OUT_BUFF), 8
+  IF FJ_IN_BUFF(0) > 0 
+    FJ_OUT_BUFF(8) = 10  ' \n
+    GAME_ID(0) = 8
+    MOVE Adr(FJ_IN_BUFF), Adr(GAME_ID)+1, 8
+  ELSE
+    POS. 0,22 : PRINT "Unable to connect"
+  ENDIF
+  current_player = 0
+  who_am_i = 0
 ELSE
-  POS. 0,22 : PRINT "Unable to connect"
+  ' JOIN a game
+
 ENDIF
-current_player = 0
-who_am_i = 0
+
 
 ' MAIN LOOP ```````````````````````````````````````````````
 DO 
