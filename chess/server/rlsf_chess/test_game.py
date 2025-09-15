@@ -65,7 +65,10 @@ def test_new_game_double_black_init():
     assert g.mode == 'D'
     assert g.player_1_side == 'B'
     assert g.curr_player == 2
-
+    assert g.player_2_id == 'NA'   
+    p2id = g.join_game()
+    assert p2id == g.player_2_id
+    assert p2id != "NA"
  
 def test_legal_move():
     g = ChessGame('S', 'W')
@@ -87,11 +90,26 @@ def test_illegal_move():
     assert len(g.board.move_stack) == 0 
 
 
-def test_player_1W_turns():
+def test_player_2W_turns():
     g = ChessGame('D', 'W')
     # current player should be 1
     p1 = g.player_1_id
     p2 = g.player_2_id
+    # player one tries to move before game is ready
+    resp = g.do_move( p1, "e2e4", 300)
+    assert resp == 'illegal move: game not started'
+    assert g.curr_player == 1
+    assert len(g.board.move_stack) == 0  # no valid moves yet, 0
+
+
+    # player two tries to move first
+    resp = g.do_move( p2, "e2e4", 300)
+    assert resp == 'illegal move: game not started'
+    assert g.curr_player == 1
+    assert len(g.board.move_stack) == 0  # no valid moves yet, 0
+    p2 = g.join_game()
+    assert p2 == g.player_2_id
+    assert p2 != "NA"
     resp = g.do_move( p2, "e2e4", 300)
     assert resp == 'illegal move: player 1 turn'
     assert g.curr_player == 1
@@ -117,7 +135,7 @@ def test_player_2B_turns():
     # current player should be 1
     assert g.curr_player == 2
     p1 = g.player_1_id
-    p2 = g.player_2_id
+    p2 = g.join_game()
 
 
     resp = g.do_move( p1, "e2e4", 300)
@@ -145,6 +163,9 @@ def test_fools_mate():
     # current player should be 1
     p1 = g.player_1_id
     p2 = g.player_2_id
+    assert p2 == 'NA'
+    p2 = g.join_game()
+    assert p2 != 'NA'
     resp = g.do_move( p1, "f2f3", 300)
     assert g.curr_player == 2
 

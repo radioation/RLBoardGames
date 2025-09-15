@@ -15,13 +15,9 @@ class ChessGame:
         self.player_1_side = player_1_side  # for single player, which side is the player
                                         # that created the game: 'W', 'B'
         self.player_1_id = str(uuid.uuid4())[:8]
-        self.curr_player = 1
-
         self.player_2_id = "NA"
-        if self.mode == 'D':
-            self.player_2_id = str(uuid.uuid4())[:8]
-
-        if self.mode == 'D' and player_1_side == 'B':
+        self.curr_player = 1
+        if self.mode == 'D' and  player_1_side == 'B':
             self.curr_player = 2
 
         # Map skill level 1-10 to Stockfish config.
@@ -36,12 +32,20 @@ class ChessGame:
             self.engine_config ={"UCI_LimitStrength": True, "UCI_Elo": target_elo}
 
 
-
-
+    def join_game( self ):
+        if self.mode == 'D': 
+            self.player_2_id = str(uuid.uuid4())[:8]
+        return self.player_2_id
 
     def do_move( self, pid, uci, movetime_ms ):
+        # single player mode, player 2 should NEVER be able to move
         if self.mode == 'S' and pid == self.player_2_id:
             return "illegal move: player 1 turn"
+
+        # single player mode before p2 joins, don't allow
+        if self.mode == 'D' and self.player_2_id == 'NA':
+            return "illegal move: game not started"
+        
         if self.curr_player == 1 and pid != self.player_1_id:
             return "illegal move: player 1 turn"
         if self.curr_player == 2 and pid != self.player_2_id:
@@ -90,17 +94,6 @@ class ChessGame:
 
     def state_line(self):
         return f"TURN {'w' if self.board.turn else 'b'}:MVNO {len(self.board.move_stack)}:LAST {self.board.move_stack[-1] if self.board.move_stack else '-'}"
-
-    #def skill_to_engine_config(level: int) -> dict:
-    #    # Map skill level 1-10 to Stockfish config.
-    #    level = max(1, min(10, level))
-    #    if level == 10:
-    #        # Full strength
-    #        return {"UCI_LimitStrength": False}
-    #    else:
-    #        # Linear mapping 1..9 -> 800..2200 Elo
-    #        target_elo = 800 + (level-1) * ((2200-800)//9)
-    #        return {"UCI_LimitStrength": True, "UCI_Elo": target_elo}
 
 
 
