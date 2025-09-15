@@ -124,6 +124,11 @@ def test_state():
     ids = resp.data.decode("utf-8")
     gameid =  ids[:8]
     playid = ids[9:-1]
+    client2 = app.test_client()
+    resp = client2.post("/joingame", data=f"{gameid}\n")
+    assert resp.status_code == 200
+    play2id = resp.data.decode("utf-8").strip()
+    assert len(play2id) == 8
 
     # status 
     resp = client.get(f"/status?gid={gameid}")
@@ -152,11 +157,6 @@ def test_state():
     assert resp.status_code == 200
 
 
-    client2 = app.test_client()
-    resp = client2.post("/joingame", data=f"{gameid}\n")
-    assert resp.status_code == 200
-    play2id = resp.data.decode("utf-8").strip()
-    assert len(play2id) == 8
 
     resp = client2.post("/move", data=f"{gameid}\n{playid}\ne7e6\n")
     assert resp.data.decode('utf-8') == 'illegal move: player 2 turn\n'

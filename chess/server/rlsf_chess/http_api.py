@@ -45,6 +45,7 @@ def http_joingame():
             return Response("invalid gid\n", mimetype="text/plain", status=404)
         else:
             if game.mode == 'D':
+                game.join_game()
                 return Response( game.player_2_id + "\n" , mimetype="text/plain", status=200)
             else:
                 return Response("invalid mode\n", mimetype="text/plain", status=400)

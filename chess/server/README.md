@@ -44,6 +44,7 @@ P P P . . P P P
 R N B Q K B N R
 ggallard@fedora:~/dev/atari_fastbasic$
 
+ curl -X GET "http://localhost:55557/status?gid=6918d8bc"
 
 ```
 TCP with telnet
@@ -67,6 +68,7 @@ M:e78c2852:b6dc3dda:d2d3
 ACK d7d5
 S:e78c2852
 ACK mode:S p1side:W level:1 curr_player:1
+
 TURN w MVNO 0 LAST -
 M:e78c2852:b6dc3dda:d1d3
 ACK illegal move

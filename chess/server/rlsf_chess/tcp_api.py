@@ -38,7 +38,6 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 return f"ACK {g.id}:{g.player_1_id}\n"
             elif line.startswith("J:"):
                 parts = line.split(":")
-                print( "AAAAAAA " + str( len(parts ) ) )
                 if len(parts) < 2:
                     return "ERR invalid\n"
                 gid = parts[1]
@@ -48,6 +47,7 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 if game is None: 
                     return "ERR invalid game id\n"
                 if game.mode == 'D':
+                    game.join_game()
                     return f"ACK {game.player_2_id}\n"
                 else:
                     return "ERR invalid mode\n"

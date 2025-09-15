@@ -126,6 +126,11 @@ def test_status(tcp_server):
     gameid = ids[:8]
     playid = ids[9:]
 
+    greet, resp = send_cmd(port, f'J:{gameid}\n')
+    assert resp.startswith("ACK ")
+    play2id = resp.split(' ')[1].strip()
+    assert len(play2id) == 8
+
     # status
     greet, resp = send_cmd(port, f"S:{gameid}\n")
     assert resp == 'ACK TURN w:MVNO 0:LAST -'
@@ -148,10 +153,6 @@ def test_status(tcp_server):
     assert resp == 'ACK TURN b:MVNO 1:LAST e2e4'
 
 
-    greet, resp = send_cmd(port, f'J:{gameid}\n')
-    assert resp.startswith("ACK ")
-    play2id = resp.split(' ')[1].strip()
-    assert len(play2id) == 8
 
     greet, resp = send_cmd(port, f'M:{gameid}:{playid}:e7e6\n')
     assert resp == "ACK illegal move: player 2 turn"
