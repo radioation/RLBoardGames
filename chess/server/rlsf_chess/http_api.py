@@ -44,9 +44,14 @@ def http_joingame():
         if game is None:
             return Response("invalid gid\n", mimetype="text/plain", status=404)
         else:
-            return Response( game.player_2_id + "\n" )
+            if game.mode == 'D':
+                return Response( game.player_2_id + "\n" , mimetype="text/plain", status=200)
+            else:
+                return Response("invalid mode\n", mimetype="text/plain", status=400)
     else:
         return Response("invalid\n", mimetype="text/plain", status=400)
+
+
 @app.post("/move")
 def http_move():
     """

@@ -25,6 +25,7 @@ def test_newgame_SW10():
     assert resp.status_code == 200
     assert len(resp.data) == 18   # plus 
     ids = resp.data.decode("utf-8")
+
     assert ids[8] == ":"
     assert ids[:8].isalnum() == True
     assert ids[9:-1].isalnum() == True
@@ -40,14 +41,26 @@ def test_joingame():
     playid = ids[9:-1]
 
     resp = client.post("/joingame")
+    assert resp.data.decode('utf-8') == 'invalid\n'
     assert resp.status_code == 400
 
 
     resp = client.post("/joingame", data="AAAAAAAA\n")
+    assert resp.data.decode('utf-8') == 'invalid gid\n'
     assert resp.status_code == 404
 
     resp = client.post("/joingame", data=f"{gameid}\n")
+    assert resp.data.decode('utf-8') == 'invalid mode\n'
+    assert resp.status_code == 400
+
+    resp = client.post("/newgame", data="D\nW\n")
+    ids = resp.data.decode("utf-8")
+    gameid =  ids[:8]
+    
+    resp = client.post("/joingame", data=f"{gameid}\n")
+    assert resp.data.decode('utf-8').strip().isalnum() == True
     assert resp.status_code == 200
+
 
     
 def test_move():

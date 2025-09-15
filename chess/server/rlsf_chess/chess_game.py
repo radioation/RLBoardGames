@@ -15,8 +15,12 @@ class ChessGame:
         self.player_1_side = player_1_side  # for single player, which side is the player
                                         # that created the game: 'W', 'B'
         self.player_1_id = str(uuid.uuid4())[:8]
-        self.player_2_id = str(uuid.uuid4())[:8]
         self.curr_player = 1
+
+        self.player_2_id = "NA"
+        if self.mode == 'D':
+            self.player_2_id = str(uuid.uuid4())[:8]
+
         if self.mode == 'D' and player_1_side == 'B':
             self.curr_player = 2
 
@@ -36,6 +40,8 @@ class ChessGame:
 
 
     def do_move( self, pid, uci, movetime_ms ):
+        if self.mode == 'S' and pid == self.player_2_id:
+            return "illegal move: player 1 turn"
         if self.curr_player == 1 and pid != self.player_1_id:
             return "illegal move: player 1 turn"
         if self.curr_player == 2 and pid != self.player_2_id:
