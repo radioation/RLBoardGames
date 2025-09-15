@@ -61,13 +61,24 @@ def test_joingame(tcp_server):
     gameid = ids[:8]
     playid = ids[9:-1]
 
+    greet, resp = send_cmd(port, "J:\n")
+    assert resp == 'ERR invalid'
+
     greet, resp = send_cmd(port, "J:AAAAAAAA\n")
     assert resp == 'ERR invalid game id'
 
     greet, resp = send_cmd(port, f"J:{gameid}\n")
-    assert resp == 'ERR invalid game id'
+    assert resp == 'ERR invalid mode'
 
+    greet, resp = send_cmd(port, "N:D:W\n")
+    assert greet.startswith("HELO")
+    ids = resp.split()[1]
+    gameid = ids[:8]
 
+    greet, resp = send_cmd(port, f"J:{gameid}\n")
+    assert resp.startswith("ACK ")
+    pid = resp.split()[1]
+    assert pid.isalnum() == True
 
 
 
