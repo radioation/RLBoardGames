@@ -22,8 +22,19 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
     def dispatch(self, line: str) -> str:
         try:
             if line.startswith("N:"):
-                g = new_game()
-                return f"ACK {g.id}"
+                mode = 'S'
+                player_1_side = 'W'
+                level = 3
+                parts = line.split(":")
+                if len(parts) > 1 :
+                    mode = len[1].strip()
+                if len(parts) > 2 :
+                    mode = len[2].strip()
+                if len(parts) > 3 :
+                    level = len[3].strip()
+
+                g = new_game(mode, player_1_side, level )
+                return f"ACK {g.id}:{g.player_1_id}"
             elif line.startswith("J:"):
                 gid = line.split(":",1)[1]
                 return "NAK "

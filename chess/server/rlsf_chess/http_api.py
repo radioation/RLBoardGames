@@ -15,8 +15,10 @@ def http_newgame():
     print ("BODY: " + body)
     mode = 'S'
     player_1_side = 'W'
+    level = 3
     lines = [ln.strip() for ln in body.splitlines() if ln.strip() != ""]
     print(len(lines))
+    
     if len(lines) > 0:
         # first line shoudl be mode.
         if lines[0] == 'D':
@@ -24,8 +26,9 @@ def http_newgame():
         if len(lines) > 1:
             if lines[1] == 'B':
                 player_1_side = 'B'
- 
-    g = new_game(mode, player_1_side)
+            if len(lines) > 2:
+                level = lines[2] 
+    g = new_game(mode, player_1_side, level )
     print( f"new game: {g.id} mode: {g.mode} side: {g.player_1_side}")
     print( f"   p1: {g.player_1_id} p2: {g.player_2_id}")
     return Response(g.id + ":" + g.player_1_id + "\n", mimetype="text/plain")
