@@ -188,7 +188,7 @@ def test_mate(tcp_server):
     greet, resp = send_cmd(port, f'M:{gameid}:{play2id}:d8h4\n')
     assert resp == 'ACK checkmate'
     greet, resp = send_cmd(port, f"S:{gameid}\n")
-    assert resp == 'ACK OVER 0-1 Termination.CHECKMATE:TURN w:LAST d8h4:MVNO 4'
+    assert resp == 'ACK OVER 0-1 1:TURN w:LAST d8h4:MVNO 4'
 
 
 

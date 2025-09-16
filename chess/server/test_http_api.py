@@ -203,7 +203,7 @@ def test_mate():
 
     # status 
     resp = client.get(f"/status?gid={gameid}")
-    assert resp.data.decode('utf-8') == 'OVER 0-1 Termination.CHECKMATE:TURN w:LAST d8h4:MVNO 4\n'
+    assert resp.data.decode('utf-8') == 'OVER 0-1 1:TURN w:LAST d8h4:MVNO 4\n'
     assert resp.status_code == 200
 
 
