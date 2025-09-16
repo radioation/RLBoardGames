@@ -211,8 +211,8 @@ MSET Adr( BOARD_DATA ), 64, 0
 POKE 559, 0
 
 poke 87,1
-POS. 3,0 : ?#6, COLOR(128) "fujifish chess"
-POS. 0,1 : ?#6,  "PLAYER: ONE"
+'POS. 3,0 : ?#6, COLOR(128) "fujifish chess"
+POS. 0,1 : ?#6,  "PLAYER: "
 poke 87,0
 
 @SETUP_BOARD
@@ -261,7 +261,6 @@ if ANS$ = "S"
     POS. 0,21: INPUT "Skill Level (1-10)?:";LEVEL$
   ENDIF
 ELSE
-  POS. 0,21: INPUT "Enter Host:";GAMEHOST$
   POS. 0,21: INPUT "Enter GameID:";GAMEID$
 ENDIF
 
@@ -272,7 +271,7 @@ FJ_TRANSL = 2 '
 FJ_BASE_URL$="N:HTTP://"
 if LEN(GAMEHOST$) > 8
   FJ_BASE_URL$=+ GAMEHOST$
-  FJ_BASE_URL$=+ ":55557"
+  FJ_BASE_URL$=+ ":55557/"
   ? "USING: ";GAMEHOST$
 else
   POS.0,21
@@ -310,91 +309,155 @@ if LEN(GAMEID$) < 8
     MOVE Adr(FJ_IN_BUFF), Adr(GAME_ID)+1, 8
     PLAYER_ID(0) = 8
     MOVE Adr(FJ_IN_BUFF)+9, Adr(PLAYER_ID)+1, 8
+
+    poke 87,1
+    POS. 4,0 : ?#6, $( ADR( GAME_ID ) )
+    poke 87,0
+
   ELSE
     POS. 0,22 : PRINT "Unable to connect"
   ENDIF
-  current_player = 0
-  who_am_i = 0
+  who_am_i = 1
+  
 ELSE
   ' JOIN a game
+  MOVE Adr(GAMEID$)+1, Adr(FJ_OUT_BUFF), 8
+  FJ_OUT_BUFF(8) = 10
+  @doPost &"joingame", Adr(FJ_OUT_BUFF), 9
 
+  IF FJ_IN_BUFF(0) > 0 
+    MOVE Adr(FJ_IN_BUFF), Adr(FJ_OUT_BUFF)+9, 8 
+    FJ_OUT_BUFF(17) = 10  ' \n
+    MOVE Adr(GAMEID$)+1, Adr(GAME_ID)+1, 8
+    GAME_ID(0) = 8
+    PLAYER_ID(0) = 8
+    MOVE Adr(FJ_IN_BUFF), Adr(PLAYER_ID)+1, 8
+  ELSE
+    POS. 0,22 : PRINT "Unable to connect"
+  ENDIF
+  who_am_i = 2
+   
 ENDIF
+
+current_player = 0
 
 
 ' MAIN LOOP ```````````````````````````````````````````````
+tick = 0
 DO 
-  ' read user input
-  btn_pressed = STRIG(0)
-  if btn_pressed = 0
-    if select_array_col < 0
-      ' nothing selected at the moment. make sure we're on our piece
-      current_piece = BOARD_DATA( cursor_array_col + cursor_array_row * 8 )
-      if ( current_player = 0 and current_piece > 6  and current_piece < 13 ) or ( current_player = 1 and current_piece > 0  and current_piece < 7 )
-        select_array_col = cursor_array_col
-        select_array_row = cursor_array_row
-        sound 0,104,10,4
-        pause 1
-        sound 0,0,0,0
-      else
-        sound 0,32,2,4
-        pause 1
-        sound 0,0,0,0
-      endif
-      pause 9
-    else
-      '  submit possible move.
-      FJ_OUT_BUFF(18) = FILE_X + select_array_col 
-      FJ_OUT_BUFF(19) = RANK_Y + select_array_row 
-      FJ_OUT_BUFF(20) = FILE_X + cursor_array_col
-      FJ_OUT_BUFF(21) = RANK_Y + cursor_array_row
-      FJ_OUT_BUFF(22) = 10
-      @doPost &"move", ADR( FJ_OUT_BUFF ), 23
-      IF FJ_IN_BUFF(0) > 0 
-        if FJ_IN_BUFF(0) >= FILE_X and FJ_IN_BUFF(0) < FILE_X + 8
-          'TODO PROMOTION MOVE
-          ' real move returned. do the moves
-          @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row
+  ' can we move?
+  '
+  if current_player <> who_am_i
+    query$ = "gid="
+    query$ =+ $( ADR( GAME_ID ) )
+    FJ_IN_BUFF(0) = 0
+    @doGet &"status", &(query$)
 
-          POS. 0,21 : PRINT "Valid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
-          @uci_move FJ_IN_BUFF(0)-FILE_X, FJ_IN_BUFF(1)-RANK_Y, FJ_IN_BUFF(2)-FILE_X, FJ_IN_BUFF(3) - RANK_Y
-        else
-          POS. 0,21 : PRINT "Invalid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
-        endif
-      ELSE
-        POS. 0,21 : PRINT "Lost connection            "
-      ENDIF
-      select_array_col = -1
-      select_array_row = -1
-      MSET old_sel_y, 6, 0  
-      
-      pause 10
+    IF FJ_IN_BUFF(0) > 0 
+      if FJ_IN_BUFF(5) = 119 ' w
+        current_player = 1
+      elif FJ_IN_BUFF(0) = 98 ' b
+        current_player = 2
+      else   
+        current_player = 0   ' all other conditions 
+      endif 
+    ENDIF 
+    poke 87,1
+    if current_player = 1
+      POS. 0,1 : ?#6,  "PLAYER: ONE"
+    elif current_player = 2
+      POS. 0,1 : ?#6,  "PLAYER: TWO"
+    else
+      POS. 0,1 : ?#6,  "PLAYER:    "
+    endif
+    poke 87,0
+    if current_player <> who_am_i
+      pause 600 ' wait a bit before we check again.
     endif
   endif
-  I = STICK(0)
-  if I = 15
-    sound 0,0,0,0
-  else
-    cursor_array_col = cursor_array_col + ((I=7) -(I=11))
-    if cursor_array_col > 7
-      cursor_array_col = 0
-    endif
-    if cursor_array_col < 0
-      cursor_array_col = 7
-    endif
 
-    cursor_array_row = cursor_array_row + ((I=14) -(I=13))
-    if cursor_array_row > 7
-      cursor_array_row = 0
+  if current_player = who_am_i 
+    ' read user input
+    btn_pressed = STRIG(0)
+    if btn_pressed = 0
+      if select_array_col < 0
+        ' nothing selected at the moment. make sure we're on our piece
+        current_piece = BOARD_DATA( cursor_array_col + cursor_array_row * 8 )
+        if ( who_am_i = 1  and current_piece > 6  and current_piece < 13 ) or ( who_am_i = 2 and current_piece > 0  and current_piece < 7 )
+          select_array_col = cursor_array_col
+          select_array_row = cursor_array_row
+          sound 0,104,10,4
+          pause 1
+          sound 0,0,0,0
+        else
+          sound 0,32,2,4
+          pause 1
+          sound 0,0,0,0
+        endif
+        pause 9
+      else
+        '  submit possible move.
+        FJ_OUT_BUFF(18) = FILE_X + select_array_col 
+        FJ_OUT_BUFF(19) = RANK_Y + select_array_row 
+        FJ_OUT_BUFF(20) = FILE_X + cursor_array_col
+        FJ_OUT_BUFF(21) = RANK_Y + cursor_array_row
+        FJ_OUT_BUFF(22) = 10
+        @doPost &"move", ADR( FJ_OUT_BUFF ), 23
+        IF FJ_IN_BUFF(0) > 0 
+          if FJ_IN_BUFF(0) >= FILE_X and FJ_IN_BUFF(0) < FILE_X + 8
+            'TODO PROMOTION MOVE
+            ' real move returned. do the moves
+            @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row
+ 
+            POS. 0,21 : PRINT "Valid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
+            @uci_move FJ_IN_BUFF(0)-FILE_X, FJ_IN_BUFF(1)-RANK_Y, FJ_IN_BUFF(2)-FILE_X, FJ_IN_BUFF(3) - RANK_Y
+            if current_player = 1
+              current_player = 2
+            else
+              current_player = 1
+            endif
+          else
+            POS. 0,21 : PRINT "Invalid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
+          endif
+        ELSE
+          POS. 0,21 : PRINT "Lost connection            "
+        ENDIF
+        select_array_col = -1
+        select_array_row = -1
+        MSET old_sel_y, 6, 0  
+        
+        pause 10
+      endif
     endif
-    if cursor_array_row < 0
-      cursor_array_row = 7
+    I = STICK(0)
+    if I = 15
+      sound 0,0,0,0
+    else
+      cursor_array_col = cursor_array_col + ((I=7) -(I=11))
+      if cursor_array_col > 7
+        cursor_array_col = 0
+      endif
+      if cursor_array_col < 0
+        cursor_array_col = 7
+      endif
+ 
+      cursor_array_row = cursor_array_row + ((I=14) -(I=13))
+      if cursor_array_row > 7
+        cursor_array_row = 0
+      endif
+      if cursor_array_row < 0
+        cursor_array_row = 7
+      endif
+      POS. 0,21 : PRINT "X: ";cursor_array_col;" Y: ";cursor_array_row
+      sound 0,180,2,4
+      pause 1
+      sound 0,0,0,0
+      pause 9
+      @MOVEC
     endif
-    POS. 0,21 : PRINT "X: ";cursor_array_col;" Y: ";cursor_array_row
-    sound 0,180,2,4
-    pause 1
-    sound 0,0,0,0
-    pause 9
-    @MOVEC
+  else
+    MSET old_y, 6, 0  ' CLEAR old 
+    MSET old_sel_y, 6, 0  
   endif
 LOOP
 
@@ -719,14 +782,14 @@ PROC doPost endpoint buffer buffer_len
   url$ =+ $(endpoint)
   url$ =+ ""$9B
 
-  POS. 0,21 : PRINT "Try to connect: " ' ;FJ_BASE_URL$
+  POS. 0,21 : PRINT "Try: ";url$
   NOPEN FJ_CONN, FJ_POST_MODE, FJ_TRANSL, url$
   IF SERR() <> 1
     ' doesn't actually seem ot detect a problem connecting.
-    POS. 0,21 : PRINT "Unable to open connection"
+    'POS. 0,21 : PRINT "Unable to open connection"
     Exit
   ENDIF
-  POS. 0,21 : PRINT "Connected           "
+  'POS. 0,21 : PRINT "Connected           "
 
   ' create post data
   SIO $71, FJ_CONN, $4D, $00, 0, $1F, 0, FJ_POST_MODE, 4
