@@ -18,11 +18,26 @@ python3 run.py
 
 HTTP with CURL
 ```bash
-curl -s -X POST localhost:55557/newgame
-curl -s -X POST localhost:55557/newgame -d $'D\n' 
-curl -X POST "http://localhost:55557/newgame" -d $'D\nB\n'
-curl -X POST "http://localhost:55557/newgame" -d $'D\nB\n1\n'
-curl -X POST "http://localhost:55557/newgame" -d $'S\nW\n1\n'
+
+$  curl -X POST "http://localhost:55557/newgame" -d $'D\nW\n1\n'
+9f8765a0:d2c9f9ba
+$  curl -X POST "http://localhost:55557/joingame" -d $'9f8765a0\n'
+3c8c6a97
+$ curl -X POST "http://localhost:55557/move" -d $'9f8765a0\n3c8c6a97\ne2ef\n'
+illegal move: player 1 turn
+$ curl -X POST "http://localhost:55557/move" -d $'9f8765a0\nd2c9f9ba\ne2ef\n'
+illegal move
+$ curl -X POST "http://localhost:55557/move" -d $'9f8765a0\nd2c9f9ba\ne2e4\n'
+c7c5
+$ curl -X POST "http://localhost:55557/move" -d $'9f8765a0\nd2c9f9ba\ne7e5\n'
+illegal move: player 2 turn
+$ curl -X POST "http://localhost:55557/move" -d $'9f8765a0\n3c8c6a97\ne7e5\n'
+d2d4
+$ curl -X GET "http://localhost:55557/status?gid=9f8765a0"
+TURN w:MVNO 2:LAST e7e5
+$
+
+
 
 
 $ curl -X POST "http://localhost:55557/newgame" -d $'S\nW\n1\n'

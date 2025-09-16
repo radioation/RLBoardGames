@@ -93,6 +93,9 @@ class ChessGame:
         return f"mode {self.mode}:p1side {self.player_1_side}:level {self.skill_level}:curr_player {self.curr_player}\n"
 
     def state_line(self):
+        if self.mode == 'D' and self.player_2_id == "NA":
+            return f"TURN -:MVNO 0:LAST -"
+
         return f"TURN {'w' if self.board.turn else 'b'}:MVNO {len(self.board.move_stack)}:LAST {self.board.move_stack[-1] if self.board.move_stack else '-'}"
 
 
