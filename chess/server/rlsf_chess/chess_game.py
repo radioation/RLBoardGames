@@ -8,13 +8,13 @@ import threading
 
 class ChessGame:
     def __init__(self, mode = 'S', player_1_side = 'W', level = 3):
-        self.id = str(uuid.uuid4())[:8]
+        self.id = str(uuid.uuid4())[:8].upper()
         self.board = chess.Board()      
         self.moves = []                 # list of UCI moves
         self.mode = mode                # single player 'S' or double player 'D'
         self.player_1_side = player_1_side  # for single player, which side is the player
                                         # that created the game: 'W', 'B'
-        self.player_1_id = str(uuid.uuid4())[:8]
+        self.player_1_id = str(uuid.uuid4())[:8].upper()
         self.player_2_id = "NA"
         self.curr_player = 1
         if self.mode == 'D' and  player_1_side == 'B':
@@ -34,7 +34,7 @@ class ChessGame:
 
     def join_game( self ):
         if self.mode == 'D': 
-            self.player_2_id = str(uuid.uuid4())[:8]
+            self.player_2_id = str(uuid.uuid4())[:8].upper()
         return self.player_2_id
 
     def do_move( self, pid, uci, movetime_ms ):
@@ -94,9 +94,9 @@ class ChessGame:
 
     def state_line(self):
         if self.mode == 'D' and self.player_2_id == "NA":
-            return f"TURN -:MVNO 0:LAST -"
+            return f"TURN -:LAST -----:MVNO 0"
 
-        return f"TURN {'w' if self.board.turn else 'b'}:MVNO {len(self.board.move_stack)}:LAST {self.board.move_stack[-1] if self.board.move_stack else '-'}"
+        return f"TURN {'w' if self.board.turn else 'b'}:LAST {self.board.move_stack[-1] if self.board.move_stack else '-----'}:MVNO {len(self.board.move_stack)}"
 
 
 

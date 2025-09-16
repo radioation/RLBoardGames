@@ -20,7 +20,7 @@ def test_newgame_SW():
     # check status
     gameid =  ids[:8]
     resp = client.get(f"/status?gid={gameid}")
-    assert resp.data.decode('utf-8') == 'TURN w:MVNO 0:LAST -\n'
+    assert resp.data.decode('utf-8') == 'TURN w:LAST -----:MVNO 0\n'
     assert resp.status_code == 200
 
 
@@ -132,7 +132,7 @@ def test_state():
 
     # status 
     resp = client.get(f"/status?gid={gameid}")
-    assert resp.data.decode('utf-8') == 'TURN w:MVNO 0:LAST -\n'
+    assert resp.data.decode('utf-8') == 'TURN w:LAST -----:MVNO 0\n'
     assert resp.status_code == 200
 
     resp = client.post("/move", data=f"{gameid}\n{playid}\ne2e4\n")
@@ -140,7 +140,7 @@ def test_state():
 
     # status 
     resp = client.get(f"/status?gid={gameid}")
-    assert resp.data.decode('utf-8') == 'TURN b:MVNO 1:LAST e2e4\n'
+    assert resp.data.decode('utf-8') == 'TURN b:LAST e2e4:MVNO 1\n'
     assert resp.status_code == 200
 
     resp = client.post("/move", data=f"{gameid}\n{playid}\ne2e4\n")
@@ -153,7 +153,7 @@ def test_state():
 
     # status 
     resp = client.get(f"/status?gid={gameid}")
-    assert resp.data.decode('utf-8') == 'TURN b:MVNO 1:LAST e2e4\n'
+    assert resp.data.decode('utf-8') == 'TURN b:LAST e2e4:MVNO 1\n'
     assert resp.status_code == 200
 
 
@@ -163,14 +163,14 @@ def test_state():
     assert resp.status_code == 200
     # status 
     resp = client.get(f"/status?gid={gameid}")
-    assert resp.data.decode('utf-8') == 'TURN b:MVNO 1:LAST e2e4\n'
+    assert resp.data.decode('utf-8') == 'TURN b:LAST e2e4:MVNO 1\n'
     assert resp.status_code == 200
 
     resp = client2.post("/move", data=f"{gameid}\n{play2id}\ne7e6\n")
     assert resp.status_code == 200
     # status 
     resp = client.get(f"/status?gid={gameid}")
-    assert resp.data.decode('utf-8') == 'TURN w:MVNO 2:LAST e7e6\n'
+    assert resp.data.decode('utf-8') == 'TURN w:LAST e7e6:MVNO 2\n'
     assert resp.status_code == 200
 
 

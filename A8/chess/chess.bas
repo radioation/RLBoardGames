@@ -356,7 +356,7 @@ DO
     IF FJ_IN_BUFF(0) > 0 
       if FJ_IN_BUFF(5) = 119 ' w
         current_player = 1
-      elif FJ_IN_BUFF(0) = 98 ' b
+      elif FJ_IN_BUFF(5) = 98 ' b
         current_player = 2
       else   
         current_player = 0   ' all other conditions 
@@ -372,7 +372,13 @@ DO
     endif
     poke 87,0
     if current_player <> who_am_i
+      MSET old_y, 6, 0  ' CLEAR old 
+      MSET old_sel_y, 6, 0  
       pause 600 ' wait a bit before we check again.
+    else
+      ' me again, update from last move.
+      
+      @MOVEC
     endif
   endif
 
@@ -403,18 +409,27 @@ DO
         FJ_OUT_BUFF(21) = RANK_Y + cursor_array_row
         FJ_OUT_BUFF(22) = 10
         @doPost &"move", ADR( FJ_OUT_BUFF ), 23
+
         IF FJ_IN_BUFF(0) > 0 
           if FJ_IN_BUFF(0) >= FILE_X and FJ_IN_BUFF(0) < FILE_X + 8
             'TODO PROMOTION MOVE
             ' real move returned. do the moves
             @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row
  
-            POS. 0,21 : PRINT "Valid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
-            @uci_move FJ_IN_BUFF(0)-FILE_X, FJ_IN_BUFF(1)-RANK_Y, FJ_IN_BUFF(2)-FILE_X, FJ_IN_BUFF(3) - RANK_Y
-            if current_player = 1
-              current_player = 2
-            else
-              current_player = 1
+            if MODE$ = "S"
+              ' compute returns the move.
+              'POS. 0,21 : PRINT "Valid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
+              @uci_move FJ_IN_BUFF(0)-FILE_X, FJ_IN_BUFF(1)-RANK_Y, FJ_IN_BUFF(2)-FILE_X, FJ_IN_BUFF(3) - RANK_Y
+            elif MODE$ = "D"
+              poke 87,1
+              if current_player = 1
+                current_player = 2
+                POS. 0,1 : ?#6,  "PLAYER: TWO"
+              else
+                current_player = 1
+                POS. 0,1 : ?#6,  "PLAYER: ONE"
+              endif
+              poke 87,0
             endif
           else
             POS. 0,21 : PRINT "Invalid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
@@ -455,9 +470,6 @@ DO
       pause 9
       @MOVEC
     endif
-  else
-    MSET old_y, 6, 0  ' CLEAR old 
-    MSET old_sel_y, 6, 0  
   endif
 LOOP
 
