@@ -95,8 +95,10 @@ class ChessGame:
     def state_line(self):
         if self.mode == 'D' and self.player_2_id == "NA":
             return f"TURN -:LAST -----:MVNO 0"
-
-        return f"TURN {'w' if self.board.turn else 'b'}:LAST {self.board.move_stack[-1] if self.board.move_stack else '-----'}:MVNO {len(self.board.move_stack)}"
+        if self.board.outcome() == None:
+            return f"TURN {'w' if self.board.turn else 'b'}:LAST {self.board.move_stack[-1] if self.board.move_stack else '-----'}:MVNO {len(self.board.move_stack)}"
+        return f"OVER {self.board.outcome().result()} {self.board.outcome().termination}:TURN {'w' if self.board.turn else 'b'}:LAST {self.board.move_stack[-1] if self.board.move_stack else '-----'}:MVNO {len(self.board.move_stack)}"
+         
 
 
 

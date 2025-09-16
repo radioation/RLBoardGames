@@ -175,4 +175,36 @@ def test_state():
 
 
 
+def test_mate():
+    client = app.test_client()
+    # create a newgame
+    resp = client.post("/newgame", data="D\nW\n")
+    ids = resp.data.decode("utf-8")
+    gameid =  ids[:8]
+    playid = ids[9:-1]
+    client2 = app.test_client()
+    resp = client2.post("/joingame", data=f"{gameid}\n")
+    assert resp.status_code == 200
+    play2id = resp.data.decode("utf-8").strip()
+    assert len(play2id) == 8
+
+    resp = client.post("/move", data=f"{gameid}\n{playid}\nf2f3\n")
+    assert resp.status_code == 200
+
+    resp = client2.post("/move", data=f"{gameid}\n{play2id}\ne7e5\n")
+    assert resp.status_code == 200
+
+    resp = client.post("/move", data=f"{gameid}\n{playid}\ng2g4\n")
+    assert resp.status_code == 200
+
+    resp = client2.post("/move", data=f"{gameid}\n{play2id}\nd8h4\n")
+    assert resp.data.decode('utf-8') == 'checkmate\n'
+    assert resp.status_code == 200
+
+    # status 
+    resp = client.get(f"/status?gid={gameid}")
+    assert resp.data.decode('utf-8') == 'OVER 0-1 Termination.CHECKMATE:TURN w:LAST d8h4:MVNO 4\n'
+    assert resp.status_code == 200
+
+
 

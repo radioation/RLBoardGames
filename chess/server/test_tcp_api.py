@@ -168,3 +168,27 @@ def test_status(tcp_server):
     assert resp == 'ACK TURN w:LAST e7e6:MVNO 2'
 
 
+def test_mate(tcp_server):
+    host, port = tcp_server
+    greet, resp = send_cmd(port, "N:D:W\n")
+    assert greet.startswith("HELO")
+    ids = resp.split()[1].strip()
+    gameid = ids[:8]
+    playid = ids[9:]
+
+    greet, resp = send_cmd(port, f'J:{gameid}\n')
+    assert resp.startswith("ACK ")
+    play2id = resp.split(' ')[1].strip()
+    assert len(play2id) == 8
+
+
+    greet, resp = send_cmd(port, f'M:{gameid}:{playid}:f2f3\n')
+    greet, resp = send_cmd(port, f'M:{gameid}:{play2id}:e7e5\n')
+    greet, resp = send_cmd(port, f'M:{gameid}:{playid}:g2g4\n')
+    greet, resp = send_cmd(port, f'M:{gameid}:{play2id}:d8h4\n')
+    assert resp == 'ACK checkmate'
+    greet, resp = send_cmd(port, f"S:{gameid}\n")
+    assert resp == 'ACK OVER 0-1 Termination.CHECKMATE:TURN w:LAST d8h4:MVNO 4'
+
+
+
