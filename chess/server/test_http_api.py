@@ -189,12 +189,15 @@ def test_mate():
     assert len(play2id) == 8
 
     resp = client.post("/move", data=f"{gameid}\n{playid}\nf2f3\n")
+    assert resp.data.decode('utf-8') == 'legal move'
     assert resp.status_code == 200
 
     resp = client2.post("/move", data=f"{gameid}\n{play2id}\ne7e5\n")
+    assert resp.data.decode('utf-8') == 'legal move'
     assert resp.status_code == 200
 
     resp = client.post("/move", data=f"{gameid}\n{playid}\ng2g4\n")
+    assert resp.data.decode('utf-8') == 'legal move'
     assert resp.status_code == 200
 
     resp = client2.post("/move", data=f"{gameid}\n{play2id}\nd8h4\n")
