@@ -111,7 +111,7 @@ def test_move():
     resp = client.post("/newgame", data="S\nW\n")
     ids = resp.data.decode("utf-8")
     gameid =  ids[:8]
-    playid = ids[9:-1]
+    playid = ids[9:]
 
     resp = client.post("/move", data=f"{gameid}\n{playid}\ne2e4\n")
     assert resp.status_code == 200
@@ -144,12 +144,12 @@ def test_state():
     assert resp.status_code == 200
 
     resp = client.post("/move", data=f"{gameid}\n{playid}\ne2e4\n")
-    assert resp.data.decode('utf-8') == 'illegal move: player 2 turn\n'
-    assert resp.status_code == 200
+    assert resp.data.decode('utf-8') == 'player 2 turn'
+    assert resp.status_code == 400
 
     resp = client.post("/move", data=f"{gameid}\n{playid}\ne7e6\n")
-    assert resp.data.decode('utf-8') == 'illegal move: player 2 turn\n'
-    assert resp.status_code == 200
+    assert resp.data.decode('utf-8') == 'player 2 turn'
+    assert resp.status_code == 400
 
     # status 
     resp = client.get(f"/status?gid={gameid}")
@@ -159,8 +159,8 @@ def test_state():
 
 
     resp = client2.post("/move", data=f"{gameid}\n{playid}\ne7e6\n")
-    assert resp.data.decode('utf-8') == 'illegal move: player 2 turn\n'
-    assert resp.status_code == 200
+    assert resp.data.decode('utf-8') == 'player 2 turn'
+    assert resp.status_code == 400
     # status 
     resp = client.get(f"/status?gid={gameid}")
     assert resp.data.decode('utf-8') == 'TURN b:LAST e2e4:MVNO 1\n'
@@ -198,7 +198,7 @@ def test_mate():
     assert resp.status_code == 200
 
     resp = client2.post("/move", data=f"{gameid}\n{play2id}\nd8h4\n")
-    assert resp.data.decode('utf-8') == 'checkmate\n'
+    assert resp.data.decode('utf-8') == 'Check Mate'
     assert resp.status_code == 200
 
     # status 

@@ -93,7 +93,14 @@ def http_move():
     if game is None:
         return Response("invalid game\n", mimetype="text/plain", status=404)
 
-    return Response( game.do_move( pid, uci_move, movetime_ms ) + "\n", mimetype="text/plain", status=200)
+    move_result = game.do_move( pid, uci_move, movetime_ms)
+    if move_result['valid'] == True:
+        #if 'engine_move' in move_result:
+        #    return Response( move_result['engine_move'], mimetype="text/plain", status = 200)
+        #else:
+        return Response( move_result['message'], mimetype="text/plain", status = 200)
+    else:
+        return Response(move_result['message'], mimetype="text/plain", status=400)
 
 
 

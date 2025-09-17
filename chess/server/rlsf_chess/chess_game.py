@@ -97,7 +97,7 @@ class ChessGame:
             if self.mode == 'S':
                 self.board.push(res.move)
             
-            return ( { "valid": True, "message":"legal move.", "engine_move":best } )
+            return ( { "valid": True, "message":"legal move", "engine_move":best } )
 
     def settings_str(self):
         return f"mode {self.mode}:p1side {self.player_1_side}:level {self.skill_level}:curr_player {self.curr_player}\n"

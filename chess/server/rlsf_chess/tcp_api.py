@@ -70,10 +70,10 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 move_result = game.do_move( pid, uci_move, movetime_ts)
                 print( move_result )
                 if move_result['valid'] == True:
-                    if 'engine_move' in move_result:
-                        res = "ACK " + move_result['engine_move']
-                    else:
-                        res = "ACK " + move_result['message']
+                    #if 'engine_move' in move_result:
+                    #    res = "ACK " + move_result['engine_move']
+                    #else:
+                    res = "ACK " + move_result['message']
                 else:
                     res = "ERR " + move_result['message']
                 return res  
