@@ -343,11 +343,8 @@ current_player = 0
 
 
 ' MAIN LOOP ```````````````````````````````````````````````
-tick = 0
 DO 
   ' can we move?
-  '
-
   if current_player = who_am_i 
     ' We're the current player, so read user input
 
@@ -355,6 +352,7 @@ DO
     btn_pressed = STRIG(0)
     if btn_pressed = 0
       if select_array_col < 0
+
         ' no pieces are selected at the moment. Make sure we're on our piece
         current_piece = BOARD_DATA( cursor_array_col + cursor_array_row * 8 )
         if ( who_am_i = 1  and current_piece > 6  and current_piece < 13 ) or ( who_am_i = 2 and current_piece > 0  and current_piece < 7 )
@@ -370,8 +368,10 @@ DO
           sound 0,0,0,0
         endif
         pause 9
-      else
-        ' Had a piece selected,  submit possible move. Server will let us know if it's invalid
+
+      else  ' if select_array_col < 0
+
+        ' Had a piece selected,  submit possible move. Server will let us know if it's valid
         FJ_OUT_BUFF(18) = FILE_X + select_array_col 
         FJ_OUT_BUFF(19) = RANK_Y + select_array_row 
         FJ_OUT_BUFF(20) = FILE_X + cursor_array_col
@@ -379,18 +379,17 @@ DO
         FJ_OUT_BUFF(22) = 10
         @doPost &"move", ADR( FJ_OUT_BUFF ), 23
 
+
         IF FJ_IN_BUFF(0) > 0 
-          ' is the value a valid move?
-          if FJ_IN_BUFF(0) >= FILE_X and FJ_IN_BUFF(0) < FILE_X + 8
-            'TODO PROMOTION MOVE
-            ' real move returned. do the moves
+          ' is the value a legal  move?
+          if FJ_IN_BUFF(0) = 108 and FJ_IN_BUFF(1) = 101 and FJ_IN_BUFF(2) = 103 and FJ_IN_BUFF(3) = 97 and FJ_IN_BUFF(4) = 108
+            ' 'legal' move returned. Do the local move.
             @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row
  
-            if MODE$ = "S"  ' single player returns opponent move
-              ' compute returns the move.
-              'POS. 0,21 : PRINT "Valid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
-              @uci_move FJ_IN_BUFF(0)-FILE_X, FJ_IN_BUFF(1)-RANK_Y, FJ_IN_BUFF(2)-FILE_X, FJ_IN_BUFF(3) - RANK_Y
-            if MODE$ = "D"  ' two player returns lichess move, but I should stop doing this.
+            if MODE$ = "S"  
+              current_player = 2
+              POS. 0,1 : ?#6,  "WAITING    "
+            elif MODE$ = "D"  ' two player returns lichess move, but I should stop doing this.
               poke 87,1
               if current_player = 1
                 current_player = 2
@@ -402,19 +401,22 @@ DO
               poke 87,0
             endif
           else
-            POS. 0,21 : PRINT "Invalid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
+            POS. 0,21 : PRINT "Invalid move            "
           endif
         ELSE
+
           POS. 0,21 : PRINT "Lost connection            "
+
         ENDIF ' FU_IN_BUFF(0) > 0'
 
         ' clear selected piece.
         select_array_col = -1
         select_array_row = -1
         MSET old_sel_y, 6, 0  
-        
+
         pause 10
-      endif
+
+      endif  ' if select_array_col < 0
     endif ' if btn_pressed = 0
 
     ' check for movement
@@ -470,6 +472,8 @@ DO
       endif 
 
       ' parse move 
+      ' compute returns the move.
+      @uci_move FJ_IN_BUFF(12)-FILE_X, FJ_IN_BUFF(13)-RANK_Y, FJ_IN_BUFF(14)-FILE_X, FJ_IN_BUFF(15) - RANK_Y
 
       poke 87,1
       if current_player = 1
