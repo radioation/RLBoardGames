@@ -24,7 +24,7 @@ def test_new_game_init():
 
     assert g.board.is_valid() is True
     assert g.board.is_game_over() is False
-    assert g.moves == []
+    assert g.engine_moves == []
 
     assert g.skill_level == 3
     assert g.engine_config == {"UCI_LimitStrength": True, "UCI_Elo" : 1735 } 
@@ -49,7 +49,7 @@ def test_new_game_w_settings_init():
 
     assert g.board.is_valid() is True
     assert g.board.is_game_over() is False
-    assert g.moves == []
+    assert g.engine_moves == []
 
     assert g.skill_level == 10 
     assert g.engine_config == {"UCI_LimitStrength": False }
@@ -75,20 +75,19 @@ def test_legal_move():
     # current player should be 1
     p = g.player_1_id
     resp = g.do_move( p, "e2e4", 300)
-    assert resp != 'none'
-    assert resp != 'illegal move'
-    assert len(resp) == 4
-    assert resp.isalnum() is True
     assert len(g.board.move_stack) == 2 # two moves because chess engine is applied in single player mode.
+    assert len(resp) == 3
+    assert resp['valid'] == True
+    assert resp['message'] == "legal move"
+    assert resp['engine_move'].isalnum() == True
 
 def test_illegal_move():
     g = ChessGame('S', 'W')
     # current player should be 1
     p = g.player_1_id
     resp = g.do_move( p, "e2e5", 300)
-    assert resp == 'illegal move'
     assert len(g.board.move_stack) == 0 
-
+    { "valid": False, "message":"illegal move" }
 
 def test_player_2W_turns():
     g = ChessGame('D', 'W')
@@ -97,21 +96,21 @@ def test_player_2W_turns():
     p2 = g.player_2_id
     # player one tries to move before game is ready
     resp = g.do_move( p1, "e2e4", 300)
-    assert resp == 'illegal move: game not started'
+    assert resp ==  { "valid": False, "message":"game not started" } 
     assert g.curr_player == 1
     assert len(g.board.move_stack) == 0  # no valid moves yet, 0
 
 
     # player two tries to move first
     resp = g.do_move( p2, "e2e4", 300)
-    assert resp == 'illegal move: game not started'
+    assert resp ==  { "valid": False, "message":"game not started" } 
     assert g.curr_player == 1
     assert len(g.board.move_stack) == 0  # no valid moves yet, 0
     p2 = g.join_game()
     assert p2 == g.player_2_id
     assert p2 != "NA"
     resp = g.do_move( p2, "e2e4", 300)
-    assert resp == 'illegal move: player 1 turn'
+    assert resp ==  { "valid": False, "message":"player 1 turn" } 
     assert g.curr_player == 1
     assert len(g.board.move_stack) == 0  # no valid moves yet, 0
 
@@ -120,15 +119,15 @@ def test_player_2W_turns():
     assert len(g.board.move_stack) == 1 # one valid move and chess engine is NOT applied in doubles mode.
 
     resp = g.do_move( p1, "e7e5", 300)
-    assert resp == 'illegal move: player 2 turn'
+    assert resp ==  { "valid": False, "message":"player 2 turn" } 
     assert len(g.board.move_stack) == 1 # one valid move
 
     resp = g.do_move( p2, "e7e5", 300)
-    assert resp != 'none'
-    assert resp != 'illegal move'
-    assert len(resp) == 4
     assert len(g.board.move_stack) == 2 # two valid moves
-    assert resp.isalnum() is True
+    assert len(resp) == 3
+    assert resp['valid'] == True
+    assert resp['message'] == "legal move"
+    assert resp['engine_move'].isalnum() == True
 
 def test_player_2B_turns():
     g = ChessGame('D', 'B')
@@ -139,7 +138,7 @@ def test_player_2B_turns():
 
 
     resp = g.do_move( p1, "e2e4", 300)
-    assert resp == 'illegal move: player 2 turn'
+    assert resp ==  { "valid": False, "message":"player 2 turn" } 
     assert len(g.board.move_stack) == 0  # no valid moves yet, 0
 
     resp = g.do_move( p2, "e2e4", 300)
@@ -147,15 +146,15 @@ def test_player_2B_turns():
     assert len(g.board.move_stack) == 1 # one valid move and chess engine is NOT applied in doubles mode.
 
     resp = g.do_move( p2, "e7e5", 300)
-    assert resp == 'illegal move: player 1 turn'
+    assert resp ==  { "valid": False, "message":"player 1 turn" } 
     assert len(g.board.move_stack) == 1 # one valid move
 
     resp = g.do_move( p1, "e7e5", 300)
-    assert resp != 'none'
-    assert resp != 'illegal move'
-    assert len(resp) == 4
+    assert len(resp) == 3
     assert len(g.board.move_stack) == 2 # two valid moves
-    assert resp.isalnum() is True
+    assert resp['valid'] == True
+    assert resp['message'] == "legal move"
+    assert resp['engine_move'].isalnum() == True
 
 
 def test_fools_mate():
@@ -176,7 +175,7 @@ def test_fools_mate():
     assert g.curr_player == 2
 
     resp = g.do_move( p2, "d8h4", 300)
-    assert resp == 'checkmate'
+    assert resp == {  "valid": True, "message":"Check Mate" }
 
 def test_single_player():
     g = ChessGame('S', 'W', 1)
@@ -187,7 +186,7 @@ def test_single_player():
 
     resp = g.do_move( p1, "e1e4", 300)
     assert g.curr_player == 1
-    assert resp == 'illegal move'
+    assert resp == {'message': 'illegal move', 'valid': False }
 
     resp = g.do_move( p1, "d2d3", 300)
     assert g.curr_player == 1
