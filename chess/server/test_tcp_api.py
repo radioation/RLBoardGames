@@ -137,16 +137,17 @@ def test_status(tcp_server):
 
     greet, resp = send_cmd(port, f'M:{gameid}:{playid}:e2e4\n')
     assert resp.startswith("ACK ")
+    
 
     # status
     greet, resp = send_cmd(port, f"S:{gameid}\n")
     assert resp == 'ACK TURN b:LAST e2e4:MVNO 1'
 
     greet, resp = send_cmd(port, f'M:{gameid}:{playid}:e2e4\n')
-    assert resp == "ACK illegal move: player 2 turn"
+    assert resp == "ERR player 2 turn"
 
     greet, resp = send_cmd(port, f'M:{gameid}:{playid}:e7e6\n')
-    assert resp == "ACK illegal move: player 2 turn"
+    assert resp == "ERR player 2 turn"
 
     # status
     greet, resp = send_cmd(port, f"S:{gameid}\n")
@@ -155,7 +156,7 @@ def test_status(tcp_server):
 
 
     greet, resp = send_cmd(port, f'M:{gameid}:{playid}:e7e6\n')
-    assert resp == "ACK illegal move: player 2 turn"
+    assert resp == "ERR player 2 turn"
     # status
     greet, resp = send_cmd(port, f"S:{gameid}\n")
     assert resp == 'ACK TURN b:LAST e2e4:MVNO 1'
@@ -186,7 +187,7 @@ def test_mate(tcp_server):
     greet, resp = send_cmd(port, f'M:{gameid}:{play2id}:e7e5\n')
     greet, resp = send_cmd(port, f'M:{gameid}:{playid}:g2g4\n')
     greet, resp = send_cmd(port, f'M:{gameid}:{play2id}:d8h4\n')
-    assert resp == 'ACK checkmate'
+    assert resp == 'ACK Check Mate'
     greet, resp = send_cmd(port, f"S:{gameid}\n")
     assert resp == 'ACK OVER 0-1 1:TURN w:LAST d8h4:MVNO 4'
 

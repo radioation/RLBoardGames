@@ -67,7 +67,15 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 if game is None:
                     return "ERR invalid game\n"
                 movetime_ts = 300
-                res = "ACK " + game.do_move( pid, uci_move, movetime_ts)
+                move_result = game.do_move( pid, uci_move, movetime_ts)
+                print( move_result )
+                if move_result['valid'] == True:
+                    if 'engine_move' in move_result:
+                        res = "ACK " + move_result['engine_move']
+                    else:
+                        res = "ACK " + move_result['message']
+                else:
+                    res = "ERR " + move_result['message']
                 return res  
             elif line.startswith("B:"):
                 gid = line.split(":",1)[1]
