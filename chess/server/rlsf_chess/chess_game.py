@@ -10,7 +10,7 @@ class ChessGame:
     def __init__(self, mode = 'S', player_1_side = 'W', level = 3):
         self.id = str(uuid.uuid4())[:8].upper()
         self.board = chess.Board()      
-        self.moves = []                 # list of UCI moves
+        self.engine_moves = []          # list of chess engine moves
         self.mode = mode                # single player 'S' or double player 'D'
         self.player_1_side = player_1_side  # for single player, which side is the player
                                         # that created the game: 'W', 'B'
@@ -40,54 +40,64 @@ class ChessGame:
     def do_move( self, pid, uci, movetime_ms ):
         # single player mode, player 2 should NEVER be able to move
         if self.mode == 'S' and pid == self.player_2_id:
-            return "illegal move: player 1 turn"
+            return ( { "valid": False, message:"player 1 turn" } )
 
         # single player mode before p2 joins, don't allow
         if self.mode == 'D' and self.player_2_id == 'NA':
-            return "illegal move: game not started"
+            return ( { "valid": False, message:"game not started" } )
         
         if self.curr_player == 1 and pid != self.player_1_id:
-            return "illegal move: player 1 turn"
+            return ( { "valid": False, message:"player 1 turn" } )
         if self.curr_player == 2 and pid != self.player_2_id:
-            return "illegal move: player 2 turn"
+            return ( { "valid": False, message:"player 2 turn" } )
             
         try:
              mv = chess.Move.from_uci(uci)
         except ValueError:
-            return "illegal move"
+            return ( { "valid": False, message:"illegal move" } )
+
         if mv not in self.board.legal_moves:
-            return "illegal move"
+            return ( { "valid": False, message:"illegal move" } )
+
+        # if we're here, save the move
         self.board.push(mv)
     
         if self.board.is_checkmate():
-            return "checkmate"
+            return ( { "valid": True, message:"Check Mate" } )
         if self.board.is_stalemate():
-            return "stalemate"
+            return ( { "valid": True, message:"Stale Mate" } )
         if self.board.is_insufficient_material():
-            return "draw"
+            return ( { "valid": True, message:"Draw" } )
 
             
         # get reply from stockfish.
         with chess.engine.SimpleEngine.popen_uci(os.environ['ENGINE_PATH']) as eng:
-            eng.configure( self.engine_config )
+            if self.mode == 'S':
+                # potentially make dumb moves for single player.
+                eng.configure( self.engine_config )
+
             res = eng.play(self.board, chess.engine.Limit(time=movetime_ms/1000.0))
             if res.move is None:
                 # No legal engine reply (mate/stalemate)
                 if self.board.is_checkmate():
-                    return "checkmate"
+                    return ( { "valid": True, message:"Check Mate" } )
                 if self.board.is_stalemate():
-                    return "stalemate"
+                    return ( { "valid": True, message:"Stale Mate" } )
                 if self.board.is_insufficient_material():
-                    return "draw"
-                return "none"
+                    return ( { "valid": True, message:"Draw" } )
+                return ( { "valid": False, message:"None" } )
 
+            # compute best move
             best = res.move.uci()
+            print("BEST: " +best)
+
             if self.mode == 'D':
                 self.curr_player = 2 if self.curr_player == 1 else 1
-            print("BEST: " +best)
+                self.engine_moves.push(res.move)
             if self.mode == 'S':
                 self.board.push(res.move)
-            return best
+            
+            return ( { "valid": True, message:"legal move" } )
 
     def settings_str(self):
         return f"mode {self.mode}:p1side {self.player_1_side}:level {self.skill_level}:curr_player {self.curr_player}\n"

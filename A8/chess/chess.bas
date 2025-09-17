@@ -347,49 +347,18 @@ tick = 0
 DO 
   ' can we move?
   '
-  if current_player <> who_am_i
-    query$ = "gid="
-    query$ =+ $( ADR( GAME_ID ) )
-    FJ_IN_BUFF(0) = 0
-    @doGet &"status", &(query$)
-
-    IF FJ_IN_BUFF(0) > 0 
-      if FJ_IN_BUFF(5) = 119 ' w
-        current_player = 1
-      elif FJ_IN_BUFF(5) = 98 ' b
-        current_player = 2
-      else   
-        current_player = 0   ' all other conditions 
-      endif 
-    ENDIF 
-    poke 87,1
-    if current_player = 1
-      POS. 0,1 : ?#6,  "PLAYER: ONE"
-    elif current_player = 2
-      POS. 0,1 : ?#6,  "PLAYER: TWO"
-    else
-      POS. 0,1 : ?#6,  "PLAYER:    "
-    endif
-    poke 87,0
-    if current_player <> who_am_i
-      MSET old_y, 6, 0  ' CLEAR old 
-      MSET old_sel_y, 6, 0  
-      pause 600 ' wait a bit before we check again.
-    else
-      ' me again, update from last move.
-      
-      @MOVEC
-    endif
-  endif
 
   if current_player = who_am_i 
-    ' read user input
+    ' We're the current player, so read user input
+
+    ' check button press
     btn_pressed = STRIG(0)
     if btn_pressed = 0
       if select_array_col < 0
-        ' nothing selected at the moment. make sure we're on our piece
+        ' no pieces are selected at the moment. Make sure we're on our piece
         current_piece = BOARD_DATA( cursor_array_col + cursor_array_row * 8 )
         if ( who_am_i = 1  and current_piece > 6  and current_piece < 13 ) or ( who_am_i = 2 and current_piece > 0  and current_piece < 7 )
+          ' our piece, select it
           select_array_col = cursor_array_col
           select_array_row = cursor_array_row
           sound 0,104,10,4
@@ -402,7 +371,7 @@ DO
         endif
         pause 9
       else
-        '  submit possible move.
+        ' Had a piece selected,  submit possible move. Server will let us know if it's invalid
         FJ_OUT_BUFF(18) = FILE_X + select_array_col 
         FJ_OUT_BUFF(19) = RANK_Y + select_array_row 
         FJ_OUT_BUFF(20) = FILE_X + cursor_array_col
@@ -411,16 +380,17 @@ DO
         @doPost &"move", ADR( FJ_OUT_BUFF ), 23
 
         IF FJ_IN_BUFF(0) > 0 
+          ' is the value a valid move?
           if FJ_IN_BUFF(0) >= FILE_X and FJ_IN_BUFF(0) < FILE_X + 8
             'TODO PROMOTION MOVE
             ' real move returned. do the moves
             @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row
  
-            if MODE$ = "S"
+            if MODE$ = "S"  ' single player returns opponent move
               ' compute returns the move.
               'POS. 0,21 : PRINT "Valid move Response: ";chr$(FJ_IN_BUFF(0));" ";chr$(FJ_IN_BUFF(1));" ";chr$(FJ_IN_BUFF(2));" ";chr$(FJ_IN_BUFF(3));"      "
               @uci_move FJ_IN_BUFF(0)-FILE_X, FJ_IN_BUFF(1)-RANK_Y, FJ_IN_BUFF(2)-FILE_X, FJ_IN_BUFF(3) - RANK_Y
-            elif MODE$ = "D"
+            if MODE$ = "D"  ' two player returns lichess move, but I should stop doing this.
               poke 87,1
               if current_player = 1
                 current_player = 2
@@ -436,18 +406,23 @@ DO
           endif
         ELSE
           POS. 0,21 : PRINT "Lost connection            "
-        ENDIF
+        ENDIF ' FU_IN_BUFF(0) > 0'
+
+        ' clear selected piece.
         select_array_col = -1
         select_array_row = -1
         MSET old_sel_y, 6, 0  
         
         pause 10
       endif
-    endif
+    endif ' if btn_pressed = 0
+
+    ' check for movement
     I = STICK(0)
     if I = 15
-      sound 0,0,0,0
+      sound 0,0,0,0 ' no motion, cancel any sound from previous movement
     else
+      ' compute the next position
       cursor_array_col = cursor_array_col + ((I=7) -(I=11))
       if cursor_array_col > 7
         cursor_array_col = 0
@@ -463,14 +438,79 @@ DO
       if cursor_array_row < 0
         cursor_array_row = 7
       endif
-      POS. 0,21 : PRINT "X: ";cursor_array_col;" Y: ";cursor_array_row
+
+      ' POS. 0,21 : PRINT "X: ";cursor_array_col;" Y: ";cursor_array_row
       sound 0,180,2,4
       pause 1
       sound 0,0,0,0
       pause 9
       @MOVEC
     endif
-  endif
+  else  ' if current_player = who_am_i 
+
+    ' we're not current player,  POLL status 
+    query$ = "gid="
+    query$ =+ $( ADR( GAME_ID ) )
+    FJ_IN_BUFF(0) = 0
+    @doGet &"status", &(query$)
+
+
+    ' check return value starts with (T)urn 84 or (O)ver 79.  If Over check for win condition 3
+    IF FJ_IN_BUFF(0) = 84 
+      ' 'T'
+      '              111111111122225
+      '    0123456789012345678901234
+      '    TURN w:LAST e7e6:MVNO 2
+      if FJ_IN_BUFF(5) = 119 ' w
+        current_player = 1
+      elif FJ_IN_BUFF(5) = 98 ' b
+        current_player = 2
+      else   
+        current_player = 0   ' all other conditions 
+      endif 
+
+      ' parse move 
+
+      poke 87,1
+      if current_player = 1
+        POS. 0,1 : ?#6,  "PLAYER: ONE"
+      elif current_player = 2
+        POS. 0,1 : ?#6,  "PLAYER: TWO"
+      else
+        POS. 0,1 : ?#6,  "PLAYER:    "
+      endif
+      poke 87,0
+  
+    elif FJ_IN_BUFF(0) = 79
+      ' 'O'
+      '    0123456789
+      '    OVER 0-1 1:TURN w:LAST d8h4:MVNO 4
+      '
+      '    1-0, 0-1,  1/2-1/2   (so we can check position 7 for 0,1,2 (who won)
+      '
+      '    position 9 - 1 = checkmate, 2 = stalemate, 3 - insufficient material, 4- seventyfive moves, 5 - repetition, 6 fifty moves, 6 reps, 8 variant wih, 9 variant loss 10 variant draw
+      if FJ_IN_BUFF(7) = 49  '0
+        ' white wins
+      elif FJ_IN_BUFF(7) = 49  '1
+        ' black wins
+      elif FJ_IN_BUFF(7) = 49  '2
+        ' draw
+      endif
+    ENDIF 
+
+
+ 
+    if current_player <> who_am_i
+      ' hide cursors if it's not our turn.
+      MSET old_y, 6, 0  ' CLEAR old 
+      MSET old_sel_y, 6, 0  
+      pause 300 ' wait a bit before we check again.
+    else
+      ' Hello Me, it's me again.  show the cursor
+      @MOVEC
+    endif
+  
+  endif ' if current_player = who_am_i 
 LOOP
 
 
