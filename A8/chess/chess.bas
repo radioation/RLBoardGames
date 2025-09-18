@@ -251,19 +251,17 @@ MODE$ = "S"
 SIDE$ = "W"
 LEVEL$= "5"
 GAMEID$ = ""
-POS. 0,21
-INPUT "Start or Join Game?:";ANS$
+POS. 0,21: INPUT "Start or Join Game?:";ANS$
+POS. 0,21: PRINT "                    "
 if ANS$ = "S"
-  POS. 0,21: PRINT "                "
   POS. 0,21: INPUT "1 or 2 Players?:";ANS$
+  POS. 0,21: PRINT "                    "
   IF ANS$ = "2"
     MODE$ = "D"
   ELSE
-    POS. 0,21: INPUT "                ";ANS$
     POS. 0,21: INPUT "Skill Level 1-10:";LEVEL$
   ENDIF
 ELSE
-  POS. 0,21: PRINT "                "
   POS. 0,21: INPUT "Enter GameID:";GAMEID$
 ENDIF
 
@@ -498,16 +496,18 @@ DO
       '    1-0, 0-1,  1/2-1/2   (so we can check position 7 for 0,1,2 (who won)
       '
       '    position 9 - 1 = checkmate, 2 = stalemate, 3 - insufficient material, 4- seventyfive moves, 5 - repetition, 6 fifty moves, 6 reps, 8 variant wih, 9 variant loss 10 variant draw
-      if FJ_IN_BUFF(7) = 49  '0
+      poke 87,1
+      if FJ_IN_BUFF(7) = 48  '0
         ' white wins
         POS. 0,1 : ?#6,  "PLAYER ONE WINS"
       elif FJ_IN_BUFF(7) = 49  '1
         ' black wins
         POS. 0,1 : ?#6,  "PLAYER TWO WINS"
-      elif FJ_IN_BUFF(7) = 49  '2
+      elif FJ_IN_BUFF(7) = 50  '2
         ' draw
         POS. 0,1 : ?#6,  "DRAW           "
       endif
+      poke 87,0
       @uci_move FJ_IN_BUFF(23)-FILE_X, FJ_IN_BUFF(24)-RANK_Y, FJ_IN_BUFF(25)-FILE_X, FJ_IN_BUFF(26) - RANK_Y, 0
     ENDIF 
 
