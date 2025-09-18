@@ -10,7 +10,7 @@
 #define BOARD_SIZE 8
 
 
-// Enum to represent piece types
+// Enum to represent piece types (using offsets for lookup into image)
 typedef enum {
     EMPTY = 0,
     KING = 3, 
@@ -170,7 +170,7 @@ void clear_space( s8 startCol, s8 startRow ) {
 
 }
 
-void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow ){
+void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow, s8 promotype ){
     //if( do_move( startCol, startRow, endCol, endRow ) ) {
     PLAYER p = board[startCol][startRow].player;
     board[endCol][endRow] = board[startCol][startRow];
@@ -352,15 +352,16 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
 void start_1_player_game() {
     // get input for level.
     VDP_clearTextArea( 0, 0,  40, 13  );
-    s8 level = 1
+    s8 level = 1;
 
     char message[40];
     sprintf( message, "level: %d", level );
 
 
-    memset( message, 0, sizeof(message );
- 
-    sprintf( message, "N:S:W:%d", level );
+
+
+    memset( message, 0, sizeof(message ));
+    sprintf( message, "N:S:W:%d\n", level );
     start_game(message);
     singlePlayer = true;
 }
@@ -376,6 +377,16 @@ void start_2_player_game() {
 
 void start_game(char* msg) {
 
+/*
+
+HELO
+N:S:W:1
+ACK 0F673352:2CACA131
+
+
+*/
+
+
     // reach out to server 
     VDP_drawText("   Connect to server    ", 0, 5);
     text_cursor_y = 5;
@@ -384,25 +395,31 @@ void start_game(char* msg) {
     memset(fullserver,0, sizeof(fullserver));
     sprintf( fullserver, "%s:55558", server);
     NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+
     VDP_drawText("READ LINE", 0, 0 );
     s16 count = read_line( response, sizeof(response) );
     response[4] = 0;
+
     VDP_drawText(response, 0, 1 );
     if( strcmp( response, "HELO" ) != 0 ) {
         // TODO: we need to handle this error somehow. think about it
         VDP_drawText("NOT HELO?", 0, 2 );
         return;
     }
+    VDP_drawText("GOT HELO!", 0, 2 );
     // request a new game.
     //memset(request, 0, sizeof(request) );
     //sprintf( request, "%03d", part );
     VDP_drawText("REQUEST NEW", 0, 3 );
     //NET_sendMessage( "N:S:W:1\n" );
-    NET_sendMessage( *msg );
-    VDP_drawText("READ LINE", 0, 4 );
+    NET_sendMessage( msg );
+    VDP_drawText("READ LINE again", 0, 4 );
+    memset(response, 0, sizeof(response ));
     count = read_line( response, sizeof(response) );
-    VDP_drawText(response, 0, 4 );
+    VDP_drawText(" did read?", 0, 5 );
+    VDP_drawText(response, 0, 5 );
     memset( game_id, 0, sizeof( game_id ) );
+    memset( player_id, 0, sizeof( player_id ) );
     if ( count >= 3 ) {
         // if starts with ACK, save the rest into game_id
         //              11111111111
@@ -492,13 +509,14 @@ void setWhoAmI() {
 }
 
 
-bool cursor_send_data( CURSOR* cursor, u8 type  ) {
+bool send_move( CURSOR* cursor, u8 type  ) {
     // 
     char move[4];
     move[0] = 97 + cursor->sel_col;
     move[1] = 49 + 7 - cursor->sel_row;
     move[2] = 97 + cursor->col;
     move[3] = 49 + 7 - cursor->row;
+
     strclr( request ); 
     sprintf(request,"M:%s:%s:%s\n", game_id, player_id, move );
     NET_sendMessage(request);
@@ -519,14 +537,10 @@ bool cursor_send_data( CURSOR* cursor, u8 type  ) {
     */
 
 
-    if( response[0] == 'A' && response[1] == 'C' && response[2] == 'K' ) {
-        if( response[4] >= 97 && response[4] <= 104 &&
-                response[5] >= 49 && response[5] <=  57 &&
-                response[6] >= 97 && response[6] <= 104 &&
-                response[7] >= 49 && response[7] <=  57 ) {
-            // valid move
+    if( strcmp( response, "legal" ) == 0 ) {
+            move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row, 0 );
+            cursor_clear_selected(&cursor); 
             return true;
-        }
     }
 
     return false;
@@ -540,38 +554,35 @@ bool cursor_send_data( CURSOR* cursor, u8 type  ) {
      */
 }
 
-bool list_games( ){
+void list_games( ){
     /*
       L:
       ACK 90CE42ED:329829E7
     */
     
     NET_sendMessage("L:\n");
-    s16 count = read_line( response, sizeof(response) );
+    s16 bytes = read_line( response, sizeof(response) );
 
 }
 
 
-bool read_status( ){
-
+void read_status( ){
     /*
-    
     S:e78c2852
     ACK TURN -:LAST -----:MVNO 0
-    
-    
     */
 
+    // wait until we can read bytes.
     while( ! NET_RXReady() ) {
     }
 
     strclr( request ); 
     sprintf(request,"M:%s\n", game_id );
     NET_sendMessage(request);
-    s16 count = read_line( response, sizeof(response) );
+    s16 bytes = read_line( response, sizeof(response) );
 }
 
-bool read_board( ){
+void read_board( ){
     /*
     
     B:e78c2852
@@ -584,7 +595,7 @@ bool read_board( ){
     strclr( request ); 
     sprintf(request,"B:%s\n", game_id );
     NET_sendMessage(request);
-    s16 count = read_line( response, sizeof(response) );
+    s16 bytes = read_line( response, sizeof(response) );
 }
 
 
@@ -762,13 +773,9 @@ int main(bool hard) {
                     inputWait = INPUT_WAIT_COUNT;
                     if( trySend ) {
                         // send possible move
-
-                        if( cursor_send_data( &cursor, 1 ) ) {
-                            move_piece( cursor.sel_col, cursor.sel_row, cursor.col, cursor.row );
-                            move_piece( response[4] - 97, 56 - response[5], response[6] -97, 56 - response[7] );
-                        } 
-
-                        cursor_clear_selected(&cursor); 
+                        if( send_move( &cursor, 1 ) ) {
+                           currentPlayer = currentPlayer == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE; 
+                        }
                     }
                 } else if( joypad & BUTTON_C ) {
                     cursor_clear_selected( &cursor );
@@ -793,6 +800,24 @@ int main(bool hard) {
                   '    TURN w:LAST e7e6-:MVNO 2
 
                 */
+                if (response[5] == 'w') {
+                   currentPlayer = PLAYER_ONE; 
+                }else if (response[5] == 'b') {
+                   currentPlayer = PLAYER_TWO; 
+                }else{
+                   currentPlayer = NO_PLAYER; 
+                }
+
+                // parse move
+                XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
+                move_piece( (s8)response[12], (s8)response[13], (s8)response[14], (s8)response[15], (s8)response[16] );
+                if( currentPlayer == PLAYER_ONE ) {
+                    currentPlayer = PLAYER_TWO;
+                    VDP_drawText("TWO", 20, 1);
+                } else {
+                    currentPlayer = PLAYER_ONE;
+                    VDP_drawText("ONE", 20, 1);
+                }
 
             } else if ( response[0] == 'O'  ) {
                /*
@@ -806,7 +831,14 @@ int main(bool hard) {
                      '    position 9 - 1 = checkmate, 2 = stalemate, 3 - insufficient material, 4- seventyfive moves, 5 - repetition, 6 fifty moves, 6 reps, 8 variant wih, 9 variant loss 10 variant draw
                */
 
-
+                // Game over man.
+                if(  response[7] == '0' ) {
+                    VDP_drawText("PLAYER ONE WINS", 12, 1);
+                }else if(  response[7] == '1' ) {
+                    VDP_drawText("PLAYER TWO WINS", 12, 1);
+                }else if(  response[7] == '2' ) {
+                    VDP_drawText("DRAW           ", 12, 1);
+                }
             
             }
 
