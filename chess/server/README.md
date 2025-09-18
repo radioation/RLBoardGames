@@ -92,6 +92,37 @@ ACK e7e6
 B:e78c2852
 ACK rnbqkbnrppp..ppp....p......p........P......P....PPP..PPPRNBQKBNR
 
+
+
+
+HELO
+N:S:W:1
+ACK 0F673352:2CACA131
+
+S:0F673352
+ACK TURN w:LAST -----:MVNO 0
+
+M:0F673352:2CACA131:AAAA
+ERR illegal move
+
+M:0F673352:2CACA131:e2e4
+ACK legal move
+
+S:0F673352
+ACK TURN w:LAST e7e5:MVNO 2
+
+M:0F673352:2CACA131:d2d3
+ACK legal move
+
+S:0F673352
+ACK TURN w:LAST d7d6:MVNO 4
+
+B:0F673352
+ACK rnbqkbnrppp..ppp...p........p.......P......P....PPP..PPPRNBQKBNR
+
+
+
+
 ```
 
 # TODO
