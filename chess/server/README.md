@@ -76,7 +76,7 @@ ACK e78c2852:b6dc3dda
 
 S:e78c2852
 ACK mode:S p1side:W level:1 curr_player:1
-TURN w MVNO 0 LAST -
+TURN w:LAST -----:MVNO 0 
 M:e78c2852:b6dc3dda
 ERR:bad format
 M:e78c2852:b6dc3dda:d2d3
@@ -84,7 +84,7 @@ ACK d7d5
 S:e78c2852
 ACK mode:S p1side:W level:1 curr_player:1
 
-TURN w MVNO 0 LAST -
+TURN w:LAST -----:MVNO 0 
 M:e78c2852:b6dc3dda:d1d3
 ACK illegal move
 M:e78c2852:b6dc3dda:e2e4
