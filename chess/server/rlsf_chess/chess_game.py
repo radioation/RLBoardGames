@@ -126,3 +126,10 @@ def get_game(gid: str) -> ChessGame | None:
     return GAMES.get(gid)
 
 
+def get_two_player_games():
+    two_player_games = [ key for key, value in GAMES.items() if value.mode == "D"]
+    return two_player_games
+
+
+
+

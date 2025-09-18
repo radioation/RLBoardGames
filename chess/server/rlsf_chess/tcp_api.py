@@ -1,6 +1,6 @@
 # tcp_protocol.py
 import socketserver, threading
-from rlsf_chess.chess_game import new_game, get_game
+from rlsf_chess.chess_game import new_game, get_game, get_two_player_games
 import re
 
 
@@ -98,6 +98,13 @@ class TcpChessHandler(socketserver.StreamRequestHandler):
                 game = get_game(gid)
                 ret = "ACK " +  game.state_line()
                 return ret
+            elif line.startswith("L:"):
+                game_ids = get_two_player_games()
+                print( game_ids )
+                ret = "ACK "
+                for gid in game_ids:
+                    ret += gid +":"
+                return ret[:-1]
             else:
                 return "ERR unknown"
         except Exception as e:

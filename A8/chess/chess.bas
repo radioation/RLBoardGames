@@ -519,7 +519,7 @@ DO
       ' hide cursors if it's not our turn.
       MSET old_y, 6, 0  ' CLEAR old 
       MSET old_sel_y, 6, 0  
-      pause 300 ' wait a bit before we check again.
+      pause 120 ' wait a bit before we check again.
     else
       ' Hello Me, it's me again.  show the cursor
       @MOVEC
