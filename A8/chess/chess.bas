@@ -252,10 +252,10 @@ SIDE$ = "W"
 LEVEL$= "5"
 GAMEID$ = ""
 POS. 0,21: INPUT "Start or Join Game?:";ANS$
-POS. 0,21: PRINT "                    "
+POS. 0,21: PRINT "                        "
 if ANS$ = "S"
   POS. 0,21: INPUT "1 or 2 Players?:";ANS$
-  POS. 0,21: PRINT "                    "
+  POS. 0,21: PRINT "                        "
   IF ANS$ = "2"
     MODE$ = "D"
   ELSE
@@ -273,11 +273,11 @@ FJ_BASE_URL$="N:HTTP://"
 if LEN(GAMEHOST$) > 8
   FJ_BASE_URL$=+ GAMEHOST$
   FJ_BASE_URL$=+ ":55557/"
-  ? "USING: ";GAMEHOST$
+  '? "USING: ";GAMEHOST$
 else
   POS.0,21
   FJ_BASE_URL$="N:HTTP://10.25.50.61:55557/"
-  ? "USING default"
+  '? "USING default"
 endif
 ' FJ_URL2$="N:HTTP://10.25.50.61:55557/newgame"$9B
 ' FJ_URL2$="N:HTTP://10.25.50.61:55557/move"$9B
@@ -316,12 +316,14 @@ if LEN(GAMEID$) < 8
     poke 87,0
 
   ELSE
-    POS. 0,22 : PRINT "Unable to connect"
+    POS. 0,21 : PRINT "Unable to connect"
   ENDIF
   who_am_i = 1
   
 ELSE
   ' JOIN a game
+  MODE$ = "D"
+  SIDE$ = "W"
   MOVE Adr(GAMEID$)+1, Adr(FJ_OUT_BUFF), 8
   FJ_OUT_BUFF(8) = 10
   @doPost &"joingame", Adr(FJ_OUT_BUFF), 9
@@ -334,7 +336,7 @@ ELSE
     PLAYER_ID(0) = 8
     MOVE Adr(FJ_IN_BUFF), Adr(PLAYER_ID)+1, 8
   ELSE
-    POS. 0,22 : PRINT "Unable to connect"
+    POS. 0,21 : PRINT "Unable to connect"
   ENDIF
   who_am_i = 2
    
@@ -474,7 +476,7 @@ DO
 
       ' parse move 
       ' compute returns the move.
-      if FJ_IN_BUFF(12) <> 45
+      if current_player = who_am_i and  FJ_IN_BUFF(12) <> 45
         @uci_move FJ_IN_BUFF(12)-FILE_X, FJ_IN_BUFF(13)-RANK_Y, FJ_IN_BUFF(14)-FILE_X, FJ_IN_BUFF(15) - RANK_Y, FJ_IN_BUFF(16)
       endif
       poke 87,1
@@ -850,7 +852,7 @@ PROC doPost endpoint buffer buffer_len
   url$ =+ $(endpoint)
   url$ =+ ""$9B
 
-  POS. 0,21 : PRINT "Try: ";url$
+  'POS. 0,21 : PRINT "Try: ";url$
   NOPEN FJ_CONN, FJ_POST_MODE, FJ_TRANSL, url$
   IF SERR() <> 1
     ' doesn't actually seem ot detect a problem connecting.
