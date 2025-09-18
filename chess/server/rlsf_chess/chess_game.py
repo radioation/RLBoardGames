@@ -63,28 +63,29 @@ class ChessGame:
         self.board.push(mv)
     
         if self.board.is_checkmate():
-            return ( { "valid": True, "message":"Check Mate" } )
+            return ( { "valid": True, "message":"legal move Check Mate" } )
         if self.board.is_stalemate():
-            return ( { "valid": True, "message":"Stale Mate" } )
+            return ( { "valid": True, "message":"legal move Stale Mate" } )
         if self.board.is_insufficient_material():
-            return ( { "valid": True, "message":"Draw" } )
+            return ( { "valid": True, "message":"legal move Draw" } )
 
             
         # get reply from stockfish.
         with chess.engine.SimpleEngine.popen_uci(os.environ['ENGINE_PATH']) as eng:
             if self.mode == 'S':
                 # potentially make dumb moves for single player.
+                print( self.engine_config )
                 eng.configure( self.engine_config )
 
             res = eng.play(self.board, chess.engine.Limit(time=movetime_ms/1000.0))
             if res.move is None:
                 # No legal engine reply (mate/stalemate)
                 if self.board.is_checkmate():
-                    return ( { "valid": True, "message":"Check Mate" } )
+                    return ( { "valid": True, "message":"legal move Check Mate" } )
                 if self.board.is_stalemate():
-                    return ( { "valid": True, "message":"Stale Mate" } )
+                    return ( { "valid": True, "message":"legal move Stale Mate" } )
                 if self.board.is_insufficient_material():
-                    return ( { "valid": True, "message":"Draw" } )
+                    return ( { "valid": True, "message":"legal move Draw" } )
                 return ( { "valid": False, "message":"None" } )
 
             # compute best move

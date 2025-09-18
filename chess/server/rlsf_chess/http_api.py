@@ -118,7 +118,7 @@ def http_status():
     gid = request.args.get('gid')
     game = get_game(gid)
     if not game: return Response("ERR no game\n", mimetype="text/plain", status = 404 )
-
+    print( game.state_line() )
     return Response(str(game.state_line()) + "\n", mimetype="text/plain")
 
 

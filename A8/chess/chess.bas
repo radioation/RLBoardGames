@@ -252,15 +252,18 @@ SIDE$ = "W"
 LEVEL$= "5"
 GAMEID$ = ""
 POS. 0,21
-INPUT "(S)tart or (J)oin Game?:";ANS$
+INPUT "Start or Join Game?:";ANS$
 if ANS$ = "S"
-  POS. 0,21: INPUT "(O)ne or (T)wo Players?:";ANS$
-  IF ANS$ = "T"
+  POS. 0,21: PRINT "                "
+  POS. 0,21: INPUT "1 or 2 Players?:";ANS$
+  IF ANS$ = "2"
     MODE$ = "D"
   ELSE
-    POS. 0,21: INPUT "Skill Level (1-10)?:";LEVEL$
+    POS. 0,21: INPUT "                ";ANS$
+    POS. 0,21: INPUT "Skill Level 1-10:";LEVEL$
   ENDIF
 ELSE
+  POS. 0,21: PRINT "                "
   POS. 0,21: INPUT "Enter GameID:";GAMEID$
 ENDIF
 
@@ -355,7 +358,7 @@ DO
 
         ' no pieces are selected at the moment. Make sure we're on our piece
         current_piece = BOARD_DATA( cursor_array_col + cursor_array_row * 8 )
-        if ( who_am_i = 1  and current_piece > 6  and current_piece < 13 ) or ( who_am_i = 2 and current_piece > 0  and current_piece < 7 )
+        if ( who_am_i = 1  and current_piece >= 66  and current_piece <=82  ) or ( who_am_i = 2 and current_piece >= 98  and current_piece <= 114)
           ' our piece, select it
           select_array_col = cursor_array_col
           select_array_row = cursor_array_row
@@ -384,11 +387,10 @@ DO
           ' is the value a legal  move?
           if FJ_IN_BUFF(0) = 108 and FJ_IN_BUFF(1) = 101 and FJ_IN_BUFF(2) = 103 and FJ_IN_BUFF(3) = 97 and FJ_IN_BUFF(4) = 108
             ' 'legal' move returned. Do the local move.
-            @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row
+            @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row, 0
  
             if MODE$ = "S"  
               current_player = 2
-              POS. 0,1 : ?#6,  "WAITING    "
             elif MODE$ = "D"  ' two player returns lichess move, but I should stop doing this.
               poke 87,1
               if current_player = 1
@@ -400,6 +402,7 @@ DO
               endif
               poke 87,0
             endif
+          elif FJ_IN_BUFF(0) = 108 and FJ_IN_BUFF(1) = 101 and FJ_IN_BUFF(2) = 103 and FJ_IN_BUFF(3) = 97 and FJ_IN_BUFF(4) = 108
           else
             POS. 0,21 : PRINT "Invalid move            "
           endif
@@ -462,7 +465,7 @@ DO
       ' 'T'
       '              111111111122225
       '    0123456789012345678901234
-      '    TURN w:LAST e7e6:MVNO 2
+      '    TURN w:LAST e7e6-:MVNO 2
       if FJ_IN_BUFF(5) = 119 ' w
         current_player = 1
       elif FJ_IN_BUFF(5) = 98 ' b
@@ -473,8 +476,9 @@ DO
 
       ' parse move 
       ' compute returns the move.
-      @uci_move FJ_IN_BUFF(12)-FILE_X, FJ_IN_BUFF(13)-RANK_Y, FJ_IN_BUFF(14)-FILE_X, FJ_IN_BUFF(15) - RANK_Y
-
+      if FJ_IN_BUFF(12) <> 45
+        @uci_move FJ_IN_BUFF(12)-FILE_X, FJ_IN_BUFF(13)-RANK_Y, FJ_IN_BUFF(14)-FILE_X, FJ_IN_BUFF(15) - RANK_Y, FJ_IN_BUFF(16)
+      endif
       poke 87,1
       if current_player = 1
         POS. 0,1 : ?#6,  "PLAYER: ONE"
@@ -487,7 +491,8 @@ DO
   
     elif FJ_IN_BUFF(0) = 79
       ' 'O'
-      '    0123456789
+      '              11111111112222222
+      '    012345678901234567890123456
       '    OVER 0-1 1:TURN w:LAST d8h4:MVNO 4
       '
       '    1-0, 0-1,  1/2-1/2   (so we can check position 7 for 0,1,2 (who won)
@@ -495,11 +500,15 @@ DO
       '    position 9 - 1 = checkmate, 2 = stalemate, 3 - insufficient material, 4- seventyfive moves, 5 - repetition, 6 fifty moves, 6 reps, 8 variant wih, 9 variant loss 10 variant draw
       if FJ_IN_BUFF(7) = 49  '0
         ' white wins
+        POS. 0,1 : ?#6,  "PLAYER ONE WINS"
       elif FJ_IN_BUFF(7) = 49  '1
         ' black wins
+        POS. 0,1 : ?#6,  "PLAYER TWO WINS"
       elif FJ_IN_BUFF(7) = 49  '2
         ' draw
+        POS. 0,1 : ?#6,  "DRAW           "
       endif
+      @uci_move FJ_IN_BUFF(23)-FILE_X, FJ_IN_BUFF(24)-RANK_Y, FJ_IN_BUFF(25)-FILE_X, FJ_IN_BUFF(26) - RANK_Y, 0
     ENDIF 
 
 
@@ -542,6 +551,7 @@ PROC DRAW_BOARD
   FOR row = 0 to 7 
     FOR col = 0 to 7
       if BOARD_DATA(index) = 0 
+        ' square
         if  row & 1 EXOR col & 1
           pos. TILE_X(col),   TILE_Y(row) : ? #6, chr$($21)
           pos. TILE_X(col)+1, TILE_Y(row) : ? #6, chr$($21)
@@ -558,6 +568,7 @@ PROC DRAW_BOARD
           pos. TILE_X(col)+2, TILE_Y(row)+1 : ? #6, chr$($22)
         endif
       else 
+        ' non-zero, it's a piece.
         @DRAW_PIECE col, row, BOARD_DATA(index)
       endif
   
@@ -573,60 +584,61 @@ ENDPROC
 PROC SETUP_BOARD 
   MSET Adr(BOARD_DATA), 64, 0 
   ' 
-  ' 1 - black pawn 
-  ' 2 - black knight 
-  ' 3 - black bishop 
-  ' 4 - black rook 
-  ' 5 - black queen
-  ' 6 - black king
+  ' 112 - black pawn  (p)
+  ' 110 - black knight(n)
+  ' 98  - black bishop(b)
+  ' 114 - black rook  (r)
+  ' 113 - black queen (q)
+  ' 107 - black king  (k)
   '
-  ' 7 - white pawn 
-  ' 8 - white knight 
-  ' 9 - white bishop 
-  ' 10- white rook 
-  ' 11- white queen
-  ' 12- white king
+  ' 80 - white pawn   (P)
+  ' 78 - white knight (N)
+  ' 66 - white bishop (B)
+  ' 82 - white rook   (R)
+  ' 81 - white queen  (Q)
+  ' 75 - white king   (K)
   '
 
-  BOARD_DATA(0) = 10
-  BOARD_DATA(1) = 8   
-  BOARD_DATA(2) = 9
-  BOARD_DATA(3) = 11
-  BOARD_DATA(4) = 12
-  BOARD_DATA(5) = 9
-  BOARD_DATA(6) = 8
-  BOARD_DATA(7) = 10
+  BOARD_DATA(0) = 82
+  BOARD_DATA(1) = 78  
+  BOARD_DATA(2) = 66
+  BOARD_DATA(3) = 81
+  BOARD_DATA(4) = 75
+  BOARD_DATA(5) = 66
+  BOARD_DATA(6) = 78
+  BOARD_DATA(7) = 82
 
-  BOARD_DATA(8) =   7 
-  BOARD_DATA(9) =   7  
-  BOARD_DATA(10) =  7 
-  BOARD_DATA(11) =  7 
-  BOARD_DATA(12) =  7 
-  BOARD_DATA(13) =  7 
-  BOARD_DATA(14) =  7 
-  BOARD_DATA(15) =  7 
+  BOARD_DATA(8) =  80 
+  BOARD_DATA(9) =  80  
+  BOARD_DATA(10) = 80 
+  BOARD_DATA(11) = 80 
+  BOARD_DATA(12) = 80 
+  BOARD_DATA(13) = 80 
+  BOARD_DATA(14) = 80 
+  BOARD_DATA(15) = 80 
 
-  BOARD_DATA(48) = 1
-  BOARD_DATA(49) = 1
-  BOARD_DATA(50) = 1
-  BOARD_DATA(51) = 1
-  BOARD_DATA(52) = 1
-  BOARD_DATA(53) = 1
-  BOARD_DATA(54) = 1
-  BOARD_DATA(55) = 1
+  BOARD_DATA(48) = 112
+  BOARD_DATA(49) = 112
+  BOARD_DATA(50) = 112
+  BOARD_DATA(51) = 112
+  BOARD_DATA(52) = 112
+  BOARD_DATA(53) = 112
+  BOARD_DATA(54) = 112
+  BOARD_DATA(55) = 112
 
-  BOARD_DATA(56) = 4 
-  BOARD_DATA(57) = 2 
-  BOARD_DATA(58) = 3 
-  BOARD_DATA(59) = 5 
-  BOARD_DATA(60) = 6 
-  BOARD_DATA(61) = 3 
-  BOARD_DATA(62) = 2 
-  BOARD_DATA(63) = 4 
+  BOARD_DATA(56) = 114
+  BOARD_DATA(57) = 110
+  BOARD_DATA(58) = 98
+  BOARD_DATA(59) = 113
+  BOARD_DATA(60) = 107
+  BOARD_DATA(61) = 98
+  BOARD_DATA(62) = 110
+  BOARD_DATA(63) = 114
 
 ENDPROC
 
-PROC uci_move bx1 by1 bx2 by2
+PROC uci_move bx1 by1 bx2 by2 promot
+
   ' get type at start
   x = TILE_X( bx1 )
   y = TILE_Y( by1 )
@@ -643,40 +655,40 @@ PROC uci_move bx1 by1 bx2 by2
   ' black
   ' e8g8 -  4,7,6,7
   ' e8c8 -  4,7,2,7 
-  if bx1 = 4 and by1 = 0 and bx2 = 6 and by2 = 0
+  if current_piece = 75 and  bx1 = 4 and by1 = 0 and bx2 = 6 and by2 = 0 
     ' move rook from right
     BOARD_DATA( 7 ) = 0
-    BOARD_DATA( 5 ) = 10
+    BOARD_DATA( 5 ) = 82 
     x = TILE_X( 7 )
     y = TILE_Y( 0 )
     @DRAW_TILE 7, 0
-    @DRAW_PIECE 5, 0, 10
+    @DRAW_PIECE 5, 0, 82 
 
-  elif bx1 = 4 and by1 = 0 and bx2 = 2 and by2 = 0
+  elif current_piece = 75 and bx1 = 4 and by1 = 0 and bx2 = 2 and by2 = 0
     ' move rook from left
     BOARD_DATA( 0 ) = 0
-    BOARD_DATA( 3 ) = 10
+    BOARD_DATA( 3 ) = 82 
     x = TILE_X( 0 )
     y = TILE_Y( 0 )
     @DRAW_TILE 0, 0
-    @DRAW_PIECE 3, 0, 10
-  elif bx1 = 4 and by1 = 7 and bx2 = 6 and by2 = 7
+    @DRAW_PIECE 3, 0, 82
+  elif current_piece = 107 and bx1 = 4 and by1 = 7 and bx2 = 6 and by2 = 7
     ' move rook from right
     BOARD_DATA( 63 ) = 0
-    BOARD_DATA( 61 ) = 4
+    BOARD_DATA( 61 ) = 114
     x = TILE_X( 7 )
     y = TILE_Y( 7 )
     @DRAW_TILE 7, 7
-    @DRAW_PIECE 5, 7, 4
+    @DRAW_PIECE 5, 7, 114
 
-  elif bx1 = 4 and by1 = 7 and bx2 = 2 and by2 = 7
+  elif current_piece = 107 and bx1 = 4 and by1 = 7 and bx2 = 2 and by2 = 7
     ' move rook from left
     BOARD_DATA( 56 ) = 0
-    BOARD_DATA( 59 ) = 4
+    BOARD_DATA( 59 ) = 114
     x = TILE_X( 0 )
     y = TILE_Y( 7 )
     @DRAW_TILE 0, 7
-    @DRAW_PIECE 3, 7, 4
+    @DRAW_PIECE 3, 7, 114
 
   endif
 
@@ -689,20 +701,20 @@ PROC DRAW_TILE tx ty
     pos. x,   y : ? #6, chr$($21)
     pos. x+1, y : ? #6, chr$($21)
     pos. x+2, y : ? #6, chr$($21)
-    pos. x+2, y : ? #6, chr$($21) ' double up because of weird invers behavior
+    pos. x+2, y : ? #6, chr$($21) ' double up because of inverse behavior
     pos. x,   y+1 : ? #6, chr$($21)
     pos. x+1, y+1 : ? #6, chr$($21)
     pos. x+2, y+1 : ? #6, chr$($21)
-    pos. x+2, y+1 : ? #6, chr$($21) ' double up because of weird invers behavior
+    pos. x+2, y+1 : ? #6, chr$($21) ' double up because of inverse behavior
   else
     pos. x,   y : ? #6, chr$($22)
     pos. x+1, y : ? #6, chr$($22)
     pos. x+2, y : ? #6, chr$($22)
-    pos. x+2, y : ? #6, chr$($22) ' double up because of weird invers behavior
+    pos. x+2, y : ? #6, chr$($22) ' double up because of inverse behavior
     pos. x,   y+1 : ? #6, chr$($22)
     pos. x+1, y+1 : ? #6, chr$($22)
     pos. x+2, y+1 : ? #6, chr$($22)
-    pos. x+2, y+1 : ? #6, chr$($22) ' double up because of weird invers behavior
+    pos. x+2, y+1 : ? #6, chr$($22) ' double up because of inverse behavior
   endif
 
 ENDPROC
@@ -717,11 +729,11 @@ PROC DRAW_PIECE board_x board_y type
   '  light_square = 1
   'endif
   color_adjust = 0
-  if type > 6 then color_adjust = $80
+  if type < 97 then color_adjust = $80
 
   draw_light = board_x & 1 EXOR board_y & 1
 
-  if type = 1 OR type = 7 ' black pawn
+  if type = 80 OR type = 112 ' pawn
     if draw_light 
        t1 = ($21+color_adjust)
        t2 = ($24+color_adjust) ' pawn top light square
@@ -737,7 +749,7 @@ PROC DRAW_PIECE board_x board_y type
        t5 = ($25+color_adjust) ' pawn bottom dark square
        t6 = ($22+color_adjust)
     endif
-  elif type = 2 OR type = 8   ' knight
+  elif type = 78 OR type = 110   ' knight
     if draw_light 
       t1 = ($16+color_adjust)
       t2 = ($17+color_adjust) 
@@ -753,7 +765,7 @@ PROC DRAW_PIECE board_x board_y type
       t5 = ($0F+color_adjust) 
       t6 = ($1A+color_adjust)
     endif
-  elif type = 3 OR type = 9   ' bish
+  elif type = 66 OR type = 98   ' bish
     if draw_light 
       t1 = ($0B+color_adjust)
       t2 = ($0C+color_adjust) ' bishop top light square
@@ -769,7 +781,7 @@ PROC DRAW_PIECE board_x board_y type
       t5 = ($0F+color_adjust) ' bishop (bishop|knight) bottom dark square
       t6 = ($10+color_adjust)
     endif
-  elif type = 4 OR type = 10   ' rook
+  elif type = 82 OR type = 114   ' rook
     if draw_light 
       t1 = ($21+color_adjust)
       t2 = ($04+color_adjust) ' rook top light square
@@ -785,7 +797,7 @@ PROC DRAW_PIECE board_x board_y type
       t5 = ($2E+color_adjust) ' rook (queen|rook) bottom dark square
       t6 = ($2F+color_adjust)
     endif
-  elif type = 5 OR type = 11   ' queen
+  elif type = 81 OR type = 113   ' queen
     if draw_light 
       t1 = ($2A+color_adjust)
       t2 = ($2B+color_adjust) ' queen top light square
@@ -801,7 +813,7 @@ PROC DRAW_PIECE board_x board_y type
       t5 = ($2E+color_adjust) ' queen bottom dark square
       t6 = ($2F+color_adjust)
     endif
-  elif type = 6 OR type = 12   ' king
+  elif type = 75 OR type = 107   ' king
     if draw_light 
       t1 = ($5E+color_adjust)
       t2 = ($5F+color_adjust) ' king top light square
@@ -823,13 +835,13 @@ ENDPROC
 
 PROC place_tiles 
      pos.  x  ,y   : ? #6, chr$( t1 )
-     pos.  x+1,y   : ? #6, chr$( t2 ) ' pawn top light square
+     pos.  x+1,y   : ? #6, chr$( t2 ) 
      pos.  x+2,y   : ? #6, chr$( t3 )
-     pos.  x+2,y   : ? #6, chr$( t3 ) ' double up because of weird invers behavior
+     pos.  x+2,y   : ? #6, chr$( t3 ) ' double up because of inverse behavior
      pos.  x  ,y+1 : ? #6, chr$( t4 )
-     pos.  x+1,y+1 : ? #6, chr$( t5 ) ' pawn bottom light square
+     pos.  x+1,y+1 : ? #6, chr$( t5 ) 
      pos.  x+2,y+1 : ? #6, chr$( t6 )
-     pos.  x+2,y+1 : ? #6, chr$( t6 ) ' double up because of weird invers behavior
+     pos.  x+2,y+1 : ? #6, chr$( t6 ) ' double up because of inverse behavior
 ENDPROC
 
 
