@@ -473,10 +473,11 @@ bool join_game() {
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
-    sprintf( fullserver, "%s:5364", server);
+    sprintf( fullserver, "%s:55558", server);
     NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
 
-    s16 bytes = read_line( response, 64 );
+    s16 count = read_line( response, sizeof(response) );
+    response[4] = 0;
     if( strcmp( response, "HELO" ) != 0 ) {
         // we need to handle this error somehow. think about it
         return;
@@ -547,9 +548,11 @@ bool join_game() {
         }
 
         memset(request,0, sizeof(request));
-        sprintf( request, "J:%s", gameIds[ selectedRow * 9]);
+        memset( game_id, 0, sizeof( game_id ) );
+        strncpy(  game_id, gameIds[ selectedRow * 9], 8 );
+        sprintf( request, "J:%s\n", game_id );
         NET_sendMessage( request );
-        memset( player_id, 0, sizeof( player_id ) );
+     
         while( ! NET_RXReady() ) { }
         byteCount = read_line( response, sizeof(response) );
         if( byteCount > 5 ) {
