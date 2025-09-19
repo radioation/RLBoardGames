@@ -500,6 +500,13 @@ bool join_game() {
     //
     //     48 bytes, response[48] = 0
     s16 byteCount = read_line( response, sizeof(response) );
+    VDP_drawText(response, 0, 0 );
+    char message[40];
+    strclr(message);
+    sprintf( message, "Byte Count: %d", byteCount );
+    VDP_drawText(message, 10, 1 );
+    
+    
     if( byteCount > 5 ) {
         // parse up response
         // skip the ACK in  'ACK 90CE42ED:329829E7'
@@ -511,27 +518,37 @@ bool join_game() {
         //
         //     (44 bytes + 1) / 9 = 5
         char gameIds[128];
+        memset( gameIds, 0, sizeof( gameIds ) );
+
         memcpy( gameIds, start, byteCount - 4 );
         gameIds[byteCount -3] = 0;
+        VDP_drawText(gameIds, 0, 2 );
       
-        s8 gameIdCount = (byteCount -4 ) / 9;
+        s8 rowOffset = 6;
+        s8 gameIdCount = (byteCount -3 ) / 9;
+        sprintf( message, "Game ID  Count: %d   ", gameIdCount );
+        VDP_drawText(message, 10, 3 );
         for( s16 i = 0; i < gameIdCount; ++ i ) {
-            VDP_drawText(gameIds[i*9], 16, 5+i );
+            gameIds[i*9 +8] = 0;
         }
 
-        s8 selectedRow = 5;
+        for( s16 i = 0; i < gameIdCount; ++ i ) {
+            VDP_drawText(gameIds + i*9, 16, rowOffset+i );
+        }
+
+        s8 selectedRow = 0;
         while(1) {
             // 
             u16 joypad  = JOY_readJoypad( JOY_1 );
             if( joypad & BUTTON_UP  ) {
-                VDP_drawText(" ", 11, selectedRow);
+                VDP_drawText(" ", 11, rowOffset + selectedRow);
                 selectedRow -= 1;
                 if( selectedRow < 0 ) {
                     selectedRow = gameIdCount -1;
                 }
             }
             if( joypad & BUTTON_DOWN ) {
-                VDP_drawText(" ", 11, selectedRow);
+                VDP_drawText(" ", 11, rowOffset + selectedRow);
                 selectedRow += 1;
                 if( selectedRow >= gameIdCount ) {
                     selectedRow = 0;
@@ -542,14 +559,14 @@ bool join_game() {
                 break;
             }
             
-            VDP_drawText("*", 11, selectedRow);
+            VDP_drawText("*", 11, rowOffset + selectedRow);
             SYS_doVBlankProcess();
             waitMs(200);
         }
 
         memset(request,0, sizeof(request));
         memset( game_id, 0, sizeof( game_id ) );
-        strncpy(  game_id, gameIds[ selectedRow * 9], 8 );
+        strncpy(  game_id, gameIds + selectedRow * 9, 8 );
         sprintf( request, "J:%s\n", game_id );
         NET_sendMessage( request );
      
@@ -624,7 +641,6 @@ bool send_move( CURSOR* cursor, u8 type  ) {
     NET_sendMessage(request);
     s16 count = read_line( response, sizeof(response) );
 
-    //VDP_drawText(response, 0, 4 );
 
     /*
     M:e78c2852:b6dc3dda
@@ -884,7 +900,9 @@ int main(bool hard) {
                 // parse move
                 XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                 // need to convert uci to local 2d array coords
-                move_piece( (s8)response[16]-FILE_X, RANK_Y +7 - (s8)response[17], (s8)response[18]-FILE_X, RANK_Y + 7 - (s8)response[19], (s8)response[20] );
+                if( currentPlayer == whoAmI && response[16] != '-' ) {
+                    move_piece( (s8)response[16]-FILE_X, RANK_Y +7 - (s8)response[17], (s8)response[18]-FILE_X, RANK_Y + 7 - (s8)response[19], (s8)response[20] );
+                }
 
                 cursor_clear_selected( &cursor );
 
@@ -910,7 +928,8 @@ int main(bool hard) {
                 }
                 move_piece( (s8)response[27]-FILE_X, RANK_Y +7 - (s8)response[28], (s8)response[29]-FILE_X, RANK_Y + 7 - (s8)response[30], (s8)response[31] );
             
-            } else {
+            }
+            if( currentPlayer != whoAmI ) {
                 waitMs(2000); // wait a bit if response is not as expected.
             }
 
