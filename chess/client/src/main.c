@@ -334,10 +334,10 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
             SPR_setVisibility( cursor->selected_spr, VISIBLE );
         }
     } else {
-        char message[40];
-        strclr(message);
-        sprintf( message, "X: %d y: %d sx: %d sy %d    ", cursor->col, cursor->row, cursor->sel_col, cursor->sel_row);
-        VDP_drawText( message, 0, 1 );
+        //char message[40];
+        //strclr(message);
+        //sprintf( message, "X: %d y: %d sx: %d sy %d    ", cursor->col, cursor->row, cursor->sel_col, cursor->sel_row);
+        //VDP_drawText( message, 0, 1 );
         // return true if destination is clear or a different player, BUT DON"T UPDATE BOARD 
         return ( brd[(u8)cursor->col][(u8)cursor->row].player != player );
 
@@ -432,7 +432,7 @@ ACK 0F673352:2CACA131
  
     if( strcmp( response, "HELO" ) != 0 ) {
         // TODO: we need to handle this error somehow. think about it
-        VDP_drawText("NOT HELO?", 0, 2 );
+        //VDP_drawText("NOT HELO?", 0, 2 );
         return;
     }
     
@@ -468,7 +468,7 @@ ACK 0F673352:2CACA131
 
 
 bool join_game() {
-    VDP_drawText("   Connect to server    ", 0, 5);
+    //VDP_drawText("   Connect to server    ", 0, 5);
     text_cursor_y = 5;
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
@@ -500,11 +500,11 @@ bool join_game() {
     //
     //     48 bytes, response[48] = 0
     s16 byteCount = read_line( response, sizeof(response) );
-    VDP_drawText(response, 0, 0 );
-    char message[40];
-    strclr(message);
-    sprintf( message, "Byte Count: %d", byteCount );
-    VDP_drawText(message, 10, 1 );
+    //VDP_drawText(response, 0, 0 );
+    //char message[40];
+    //strclr(message);
+    //sprintf( message, "Byte Count: %d", byteCount );
+    //VDP_drawText(message, 10, 1 );
     
     
     if( byteCount > 5 ) {
@@ -522,12 +522,12 @@ bool join_game() {
 
         memcpy( gameIds, start, byteCount - 4 );
         gameIds[byteCount -3] = 0;
-        VDP_drawText(gameIds, 0, 2 );
+        //VDP_drawText(gameIds, 0, 2 );
       
         s8 rowOffset = 6;
         s8 gameIdCount = (byteCount -3 ) / 9;
-        sprintf( message, "Game ID  Count: %d   ", gameIdCount );
-        VDP_drawText(message, 10, 3 );
+        //sprintf( message, "Game ID  Count: %d   ", gameIdCount );
+        //VDP_drawText(message, 10, 3 );
         for( s16 i = 0; i < gameIdCount; ++ i ) {
             gameIds[i*9 +8] = 0;
         }
@@ -842,7 +842,7 @@ int main(bool hard) {
     u8 currentPlayer = PLAYER_ONE;
 
     VDP_setTextPlane( BG_A );
-    VDP_drawText("PLAYER ONE MOVE", 13, 1);
+    //VDP_drawText("PLAYER ONE MOVE", 13, 1);
     while(TRUE)
     {
         if( currentPlayer == whoAmI  ){
@@ -879,7 +879,7 @@ int main(bool hard) {
             // current player is not me, waiting for update from chess server
             // check if readable
             read_status();
-            VDP_drawText(response, 0, 5 );
+            //VDP_drawText(response, 0, 5 );
             if ( response[4] == 'T'  ) {
                /*
                   ' 'T'
