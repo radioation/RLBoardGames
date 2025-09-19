@@ -349,18 +349,61 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
 
 void start_1_player_game() {
     // get input for level.
-    VDP_clearTextArea( 0, 0,  40, 13  );
+    VDP_clearTextArea( 0, 0,  40, 20  );
     s8 level = 1;
-
+    s8 players = 1;
     char message[40];
-    sprintf( message, "level: %d", level );
+     s8 selectedRow = 5;
+    while(1) {
+        //
+
+        u16 joypad  = JOY_readJoypad( JOY_1 );
+        if( joypad & BUTTON_UP || joypad & BUTTON_DOWN ) {
+            selectedRow = selectedRow == 5 ? 6 : 5;
+        }
+        if (selectedRow == 5) {
+            if( joypad & BUTTON_LEFT  || joypad & BUTTON_RIGHT ) {
+                players = players == 1 ? 2 : 1;
+            }
+        }
+        if (selectedRow == 6) {
+            if( joypad & BUTTON_LEFT  ) {
+                level -=1;
+                if( level < 1) {
+                    level = 10;
+                }
+            }
+            if( joypad & BUTTON_RIGHT ) {
+                level +=1;
+                if( level > 10) {
+                    level = 1;
+                }
+            }
+        }
 
 
 
+        if( joypad & BUTTON_START ) {
+            break;
+        }
+        SYS_doVBlankProcess();
+
+        sprintf( message, "  players (1-2): %d  ", players );
+        VDP_drawText(message, 11, 5);
+        sprintf( message, "   level (1-10): %d  ", level );
+        VDP_drawText(message, 11, 6);
+        VDP_drawText("*", 11, selectedRow);
+        waitMs(200);
+
+    }
 
     memset( message, 0, sizeof(message ));
-    sprintf( message, "N:S:W:%d\n", level );
-    start_game(message);
+    if( players == 1 ) {
+        sprintf( message, "N:S:W:%d\n", level );
+    } else {
+        sprintf( message, "N:D:W:%d\n", level );
+    }
+    //start_game(message);
     singlePlayer = true;
 }
 
@@ -468,7 +511,9 @@ void get_board() {
 void setWhoAmI() {
     buttons = 0;
     buttons_prev = 0;
-    VDP_clearTextArea( 0, 0,  40, 13  );
+    VDP_clearTextArea( 0, 0,  40, 20  );
+    VDP_drawText( "Server Address", 13 ,2 );
+    VDP_drawText( server, 13 , 3 );
     VDP_drawText("         (A) - Start 1 Player", 0, 5);
     VDP_drawText("         (B) - Start 2 Player", 0, 6);
     VDP_drawText("         (C) - Join Game", 0, 7);
@@ -659,16 +704,6 @@ int main(bool hard) {
         waitMs(1000);
         JOY_update();
 
-        VDP_drawText( "Got Address", 13 ,12 );
-        VDP_drawText( server, 13 , 13 );
-
-        // getIPFromUser(server);
-
-
-        // clear out last input and wait a sec.
-        waitMs(1000);
-        JOY_update();
-
         VDP_drawText( "Server Address", 13 ,12 );
         VDP_drawText( server, 13 , 13 );
 
@@ -681,11 +716,8 @@ int main(bool hard) {
 
         whoAmI = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
 
-
-
         setWhoAmI(); // loops until true. TODO: let you break out and stay local
                      // or loop back to pick a different host.
-
 
 
         VDP_drawText( " Press Start  ", 13 ,12 );
@@ -833,6 +865,8 @@ int main(bool hard) {
                     VDP_drawText("DRAW           ", 12, 1);
                 }
             
+            } else {
+                waitMs(2000); // wait a bit if response is not as expected.
             }
 
         } // if( currentPlayer == whoAmI  ){
