@@ -176,7 +176,7 @@ void clear_space( s8 startCol, s8 startRow ) {
 void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow, s8 promotype ){
     //if( do_move( startCol, startRow, endCol, endRow ) ) {
     PLAYER p = board[startCol][startRow].player;
-    CHESS_PIECE cp = board[startCol][startRow].type;
+    PIECE_TYPE cp = board[startCol][startRow].type;
     board[endCol][endRow] = board[startCol][startRow];
     board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
 
@@ -191,23 +191,23 @@ void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow, s8 promotype ){
        ' e8c8 -  4,0,2,0
      */
     
-    if ( cp = KING && p = PLAYER_TWO &&  startCol == 4 && startRow ==0 && endCol == 6 && endRow == 0 ) {
+    if ( cp == KING && p == PLAYER_TWO &&  startCol == 4 && startRow ==0 && endCol == 6 && endRow == 0 ) {
         // move black rook from right
         board[7][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         clear_space( 7, 0 );
         board[5][0] = (CHESS_PIECE){ROOK, p}; 
 
-    } else if ( cp = KING && p = PLAYER_TWO && startCol == 4 && startRow ==0 && endCol == 2 && endRow == 0 ) {
+    } else if ( cp == KING && p == PLAYER_TWO && startCol == 4 && startRow ==0 && endCol == 2 && endRow == 0 ) {
         // move rook from left
         board[0][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         clear_space( 0, 0 );
         board[3][0] = (CHESS_PIECE){ROOK, p}; 
-    } else if ( cp = KING && p = PLAYER_ONE && startCol == 4 && startRow ==7 && endCol == 6 && endRow == 7 ) {
+    } else if ( cp == KING && p == PLAYER_ONE && startCol == 4 && startRow ==7 && endCol == 6 && endRow == 7 ) {
         // move rook from right
         board[7][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         clear_space( 7, 7 );
         board[5][7] = (CHESS_PIECE){ROOK, p}; 
-    } else if ( cp = KING && p = PLAYER_ONE && startCol == 4 && startRow ==7 && endCol == 2 && endRow == 7 ) {
+    } else if ( cp == KING && p == PLAYER_ONE && startCol == 4 && startRow ==7 && endCol == 2 && endRow == 7 ) {
         // move rook from left
         board[0][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         clear_space( 0, 7 );
