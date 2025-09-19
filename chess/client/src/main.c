@@ -213,7 +213,7 @@ void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow, s8 promotype ){
         clear_space( 0, 7 );
         board[3][7] = (CHESS_PIECE){ROOK, p}; 
     }
-    // if pawn, 
+    // if pawn,
 
     draw_pieces();
     clear_space( startCol, startRow );
@@ -347,7 +347,7 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
 
 
 
-void start_1_player_game() {
+void setup_game() {
     // get input for level.
     VDP_clearTextArea( 0, 0,  40, 20  );
     s8 level = 1;
@@ -403,33 +403,22 @@ void start_1_player_game() {
     } else {
         sprintf( message, "N:D:W:%d\n", level );
     }
-    //start_game(message);
+    start_game(message);
     singlePlayer = true;
 }
 
 
-void start_2_player_game() {
-    VDP_clearTextArea( 0, 0,  40, 13  );
-    char *msg ="N:D:W\n";
-    start_game(msg);
-    singlePlayer = false;
-}
 
 
 void start_game(char* msg) {
 
 /*
-
 HELO
 N:S:W:1
 ACK 0F673352:2CACA131
-
-
 */
 
-
     // reach out to server 
-    VDP_drawText("   Connect to server    ", 0, 5);
     text_cursor_y = 5;
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
@@ -437,30 +426,26 @@ ACK 0F673352:2CACA131
     sprintf( fullserver, "%s:55558", server);
     NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
 
-    VDP_drawText("READ LINE", 0, 0 );
+
     s16 count = read_line( response, sizeof(response) );
     response[4] = 0;
-
-    VDP_drawText(response, 0, 1 );
+ 
     if( strcmp( response, "HELO" ) != 0 ) {
         // TODO: we need to handle this error somehow. think about it
         VDP_drawText("NOT HELO?", 0, 2 );
         return;
     }
-    VDP_drawText("GOT HELO!", 0, 2 );
+    
     // request a new game.
-    //memset(request, 0, sizeof(request) );
-    //sprintf( request, "%03d", part );
-    VDP_drawText("REQUEST NEW", 0, 3 );
-    //NET_sendMessage( "N:S:W:1\n" );
     NET_sendMessage( msg );
-    VDP_drawText("READ LINE again", 0, 4 );
+    
     memset(response, 0, sizeof(response ));
     count = read_line( response, sizeof(response) );
-    VDP_drawText(" did read?", 0, 5 );
-    VDP_drawText(response, 0, 5 );
+   
+  
     memset( game_id, 0, sizeof( game_id ) );
     memset( player_id, 0, sizeof( player_id ) );
+
     if ( count >= 3 ) {
         // if starts with ACK, save the rest into game_id
         //              11111111111
@@ -514,8 +499,7 @@ void setWhoAmI() {
     VDP_clearTextArea( 0, 0,  40, 20  );
     VDP_drawText( "Server Address", 13 ,2 );
     VDP_drawText( server, 13 , 3 );
-    VDP_drawText("         (A) - Start 1 Player", 0, 5);
-    VDP_drawText("         (B) - Start 2 Player", 0, 6);
+    VDP_drawText("         (A) - Start Game", 0, 5);
     VDP_drawText("         (C) - Join Game", 0, 7);
     NET_resetAdapter();
     while(1) // loop forever
@@ -527,14 +511,7 @@ void setWhoAmI() {
             text_cursor_y = 5;
             whoAmI = PLAYER_ONE;
             // start listening
-            start_1_player_game();
-            break;
-        }else if(buttons & BUTTON_A && buttons_prev == 0x00) {
-            VDP_clearTextArea( 0, 5,  40, 3 );
-            text_cursor_y = 5;
-            whoAmI = PLAYER_ONE;
-            // start listening
-            start_2_player_game();
+            setup_game();
             break;
         }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
             VDP_clearTextArea( 0, 5,  40, 3 );
@@ -555,17 +532,19 @@ void setWhoAmI() {
 bool send_move( CURSOR* cursor, u8 type  ) {
 
     // TODO: promote pawns...
-    char move[4];
+    char move[5];
     move[0] = FILE_X + cursor->sel_col;
     move[1] = RANK_Y + 7 - cursor->sel_row;
     move[2] = FILE_X + cursor->col;
     move[3] = RANK_Y + 7 - cursor->row;
+    move[4] = 0;
 
-    strclr( request ); 
+    memset( request,0, sizeof(request) ); 
     sprintf(request,"M:%s:%s:%s\n", game_id, player_id, move );
     NET_sendMessage(request);
     s16 count = read_line( response, sizeof(response) );
-    VDP_drawText(response, 0, 4 );
+
+    //VDP_drawText(response, 0, 4 );
 
     /*
     M:e78c2852:b6dc3dda
@@ -578,12 +557,11 @@ bool send_move( CURSOR* cursor, u8 type  ) {
     M:e78c2852:b6dc3dda:e2e4
     ACK e7e6
     */
-    
+
 
     if( strcmp( response, "ACK legal move" ) == 0 ) {
-            move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row, 0 );
-            cursor_clear_selected(&cursor); 
-            return true;
+        move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row, 0 );
+        return true;
     }
 
     return false;
@@ -847,8 +825,8 @@ int main(bool hard) {
             } else if ( response[4] == 'O'  ) {
                /*
                      ' 'O'
-                     '              11111111112222222
-                     '    012345678901234567890123456
+                     '              1111111111222222222233
+                     '    01234567890123456789012345678901
                      '    ACK OVER 0-1 1:TURN w:LAST d8h4:MVNO 4
                      '
                      '    1-0, 0-1,  1/2-1/2   (so we can check position 7 for 0,1,2 (who won)
@@ -864,6 +842,7 @@ int main(bool hard) {
                 }else if(  response[11] == '2' ) {
                     VDP_drawText("DRAW           ", 12, 1);
                 }
+                move_piece( (s8)response[27]-FILE_X, RANK_Y +7 - (s8)response[28], (s8)response[29]-FILE_X, RANK_Y + 7 - (s8)response[30], (s8)response[31] );
             
             } else {
                 waitMs(2000); // wait a bit if response is not as expected.
