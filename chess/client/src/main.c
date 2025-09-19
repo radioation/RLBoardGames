@@ -898,9 +898,9 @@ int main(bool hard) {
                 }
 
                 // parse move
-                XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                 // need to convert uci to local 2d array coords
                 if( currentPlayer == whoAmI && response[16] != '-' ) {
+                    XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                     move_piece( (s8)response[16]-FILE_X, RANK_Y +7 - (s8)response[17], (s8)response[18]-FILE_X, RANK_Y + 7 - (s8)response[19], (s8)response[20] );
                 }
 
