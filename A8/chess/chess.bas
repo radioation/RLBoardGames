@@ -3,11 +3,36 @@
 NMEMTOP=PEEK(106)-4
 POKE 106,NMEMTOP
 
-
-GRAPHICS 12         ' ANTIC MODE 4
 CHROM=PEEK(756)*256 ' FIND LOCATION OF
-CHRAM=NMEMTOP*256 ' SET A LOCATION FOR
 
+'DLI SET d1 = 144 WSYNC INTO $D018,
+DLI SET d1 = 144 INTO $D018,
+DLI        = $8A INTO $D017
+GRAPHICS 12 + 16        ' ANTIC MODE 4
+
+dl = peek( 560) + peek( 561)* 256 + 4
+poke dl-1, $46
+poke dl+2, $06
+mset dl+3, 19, $04
+poke dl+22, $02 + 130
+poke dl+23, $02
+poke dl+24, $02
+poke dl+25, $41
+poke dl+26, peek(560)
+poke dl+27, peek(561)
+'POKE DPEEK(560) + 25, 130
+DLI d1
+
+
+'DATA DL() byte = 70,70,70,46, 00,00, 06,04,04,04,
+'DATA byte =  04,04,04,04,04,04,04,04,04,04,
+'DATA byte =  04,04,04,04,04,04,04,04,04,41,
+'DATA byte =  00,00
+'
+'dpoke Adr(DL) + 30, ADR(DL)
+' value = (hue * 16) + luminance.
+
+CHRAM=NMEMTOP*256 ' SET A LOCATION FOR
 
 'SET THE COLORS
 IF PEEK($D014) = 1
@@ -167,70 +192,340 @@ POKE 756,NMEMTOP
 
 
 
+
+
 ' BOARD SETUP `````````````````````````````````````````````
 DATA CURSOR_X() = 82,94,106,118,130,142,154,166
-DATA CURSOR_Y() = 21,29,37,45,53,61,69,77
+DATA CURSOR_Y() = 89,81,73,65,57,49,41,33
 DATA TILE_X() =  8,11,14,17,20,23,26,29
-DATA TILE_Y() = 1,3,5,7,9,11,13,15
+DATA TILE_Y() = 17,15,13,11,9,7,5,3
 
-cursor_col = 4
-cursor_row = 4
-select_col = -1
-select_row = -1
-
+'DATA FILE_X() =  97,98,99,100,101,102,103,104
+'DATA RANK_Y() =  49,50,51,52,53,54,55,56
+FILE_X = 97
+RANK_Y = 49
 
 DIM BOARD_DATA(64) BYTE ' 8x8 board
 MSET Adr( BOARD_DATA ), 64, 0 
 
 POKE 559, 0
+
+poke 87,1
+'POS. 3,0 : ?#6, COLOR(128) "fujifish chess"
+POS. 0,1 : ?#6,  "PLAYER: "
+poke 87,0
+
 @SETUP_BOARD
 
 @DRAW_BOARD
 
 POKE 559, 34
-' SETUP P/M Graphics
+
+
+' PM GRAPHICS SETUP ```````````````````````````````````````
 PMGRAPHICS 2   ' DOUBLE LINE MODE
 p0addr = PMADR(0)  ' get player addresses
 p1addr = PMADR(1)  
 MSET p0addr, 128, 0 ' SET all bytes to 0
 MSET p1addr, 128, 0 '
-SETCOLOR -4, 0, 14
 SETCOLOR -4, 3, 14
-DATA PMCURSORDATA() BYTE= $FF,$FF,$FF,$FF,$FF, $FF
-DATA PMSELECTDATA() BYTE= $FF,$81,$81,$81,$81, $FF
-old_y = p0addr + CURSOR_Y(cursor_row)
+SETCOLOR -3, 4, 12
+DATA PMCURSORDATA() BYTE= $FF,$81,$81,$81,$81, $FF
+DATA PMSELECTDATA() BYTE= $C3,$81,$00,$00,$81, $C3
+cursor_array_col = 4
+cursor_array_row = 3
+select_array_col = -1
+select_array_row = -1
+old_y = p0addr + CURSOR_Y(cursor_array_row)
+old_sel_y = p1addr
 
 @MOVEC
 
+
+' NETWORK SETUP ```````````````````````````````````````````
+'POS. 0,20 : ?#6,"enter host:"
+POS. 0,21
+INPUT "Enter Host:";GAMEHOST$
+
+MODE$ = "S"
+SIDE$ = "W"
+LEVEL$= "5"
+GAMEID$ = ""
+POS. 0,21: INPUT "Start or Join Game?:";ANS$
+POS. 0,21: PRINT "                        "
+if ANS$ = "S"
+  POS. 0,21: INPUT "1 or 2 Players?:";ANS$
+  POS. 0,21: PRINT "                        "
+  IF ANS$ = "2"
+    MODE$ = "D"
+  ELSE
+    POS. 0,21: INPUT "Skill Level 1-10:";LEVEL$
+  ENDIF
+ELSE
+  POS. 0,21: INPUT "Enter GameID:";GAMEID$
+ENDIF
+
+FJ_CONN = 2 ' unit 2
+FJ_POST_MODE = 13 ' HTTP POST
+FJ_GET_MODE = 12  ' HTTP GET https://fujinet.online/2025/02/23/developers-when-doing-http-get-use-mode-12/
+FJ_TRANSL = 2 '  
+FJ_BASE_URL$="N:HTTP://"
+if LEN(GAMEHOST$) > 8
+  FJ_BASE_URL$=+ GAMEHOST$
+  FJ_BASE_URL$=+ ":55557/"
+  '? "USING: ";GAMEHOST$
+else
+  POS.0,21
+  FJ_BASE_URL$="N:HTTP://10.25.50.61:55557/"
+  '? "USING default"
+endif
+' FJ_URL2$="N:HTTP://10.25.50.61:55557/newgame"$9B
+' FJ_URL2$="N:HTTP://10.25.50.61:55557/move"$9B
+' FJ_URL2$="N:HTTP://10.25.50.61:55557/board"$9B
+
+DIM FJ_IN_BUFF(128) BYTE  
+DIM FJ_OUT_BUFF(128) BYTE  
+DIM GAME_ID(9) BYTE
+DIM PLAYER_ID(9) BYTE
+
+'quietus
+POKE 65,0
+
+if LEN(GAMEID$) < 8
+  ' start a game
+  FJ_OUT_BUFF(0) = ASC(MODE$)
+  FJ_OUT_BUFF(1) = 10
+  FJ_OUT_BUFF(2) = ASC(SIDE$)
+  FJ_OUT_BUFF(3) = 10
+  FJ_OUT_BUFF(4) = ASC(LEVEL$)
+  FJ_OUT_BUFF(5) = 10
+
+  @doPost &"newgame", Adr(FJ_OUT_BUFF), 6
+
+  MOVE Adr(FJ_IN_BUFF), Adr(FJ_OUT_BUFF), 17 
+  IF FJ_IN_BUFF(0) > 0 
+    FJ_OUT_BUFF(8) = 10  ' \n
+    FJ_OUT_BUFF(17) = 10  ' \n
+    GAME_ID(0) = 8
+    MOVE Adr(FJ_IN_BUFF), Adr(GAME_ID)+1, 8
+    PLAYER_ID(0) = 8
+    MOVE Adr(FJ_IN_BUFF)+9, Adr(PLAYER_ID)+1, 8
+
+    poke 87,1
+    POS. 4,0 : ?#6, $( ADR( GAME_ID ) )
+    poke 87,0
+
+  ELSE
+    POS. 0,21 : PRINT "Unable to connect"
+  ENDIF
+  who_am_i = 1
+  
+ELSE
+  ' JOIN a game
+  MODE$ = "D"
+  SIDE$ = "W"
+  MOVE Adr(GAMEID$)+1, Adr(FJ_OUT_BUFF), 8
+  FJ_OUT_BUFF(8) = 10
+  @doPost &"joingame", Adr(FJ_OUT_BUFF), 9
+
+  IF FJ_IN_BUFF(0) > 0 
+    MOVE Adr(FJ_IN_BUFF), Adr(FJ_OUT_BUFF)+9, 8 
+    FJ_OUT_BUFF(17) = 10  ' \n
+    MOVE Adr(GAMEID$)+1, Adr(GAME_ID)+1, 8
+    GAME_ID(0) = 8
+    PLAYER_ID(0) = 8
+    MOVE Adr(FJ_IN_BUFF), Adr(PLAYER_ID)+1, 8
+  ELSE
+    POS. 0,21 : PRINT "Unable to connect"
+  ENDIF
+  who_am_i = 2
+   
+ENDIF
+
+current_player = 0
+
+
 ' MAIN LOOP ```````````````````````````````````````````````
 DO 
-  ' read user input
-  btn_pressed = STRIG(0)
-  if btn_pressed = 0
-    
-  endif
-  I = STICK(0)
-  if I = 15
-    sound 0,0,0,0
-  else
-    cursor_col = cursor_col + ((I=7) -(I=11))
-    if cursor_col > 7
-      cursor_col = 0
-    endif
-    if cursor_col < 0
-      cursor_col = 7
-    endif
+  ' can we move?
+  if current_player = who_am_i 
+    ' We're the current player, so read user input
 
-    cursor_row = cursor_row + ((I=13) -(I=14))
-    if cursor_row > 7
-      cursor_row = 0
+    ' check button press
+    btn_pressed = STRIG(0)
+    if btn_pressed = 0
+      if select_array_col < 0
+
+        ' no pieces are selected at the moment. Make sure we're on our piece
+        current_piece = BOARD_DATA( cursor_array_col + cursor_array_row * 8 )
+        if ( who_am_i = 1  and current_piece >= 66  and current_piece <=82  ) or ( who_am_i = 2 and current_piece >= 98  and current_piece <= 114)
+          ' our piece, select it
+          select_array_col = cursor_array_col
+          select_array_row = cursor_array_row
+          sound 0,104,10,4
+          pause 1
+          sound 0,0,0,0
+        else
+          sound 0,32,2,4
+          pause 1
+          sound 0,0,0,0
+        endif
+        pause 9
+
+      else  ' if select_array_col < 0
+
+        ' Had a piece selected,  submit possible move. Server will let us know if it's valid
+        FJ_OUT_BUFF(18) = FILE_X + select_array_col 
+        FJ_OUT_BUFF(19) = RANK_Y + select_array_row 
+        FJ_OUT_BUFF(20) = FILE_X + cursor_array_col
+        FJ_OUT_BUFF(21) = RANK_Y + cursor_array_row
+        FJ_OUT_BUFF(22) = 10
+        @doPost &"move", ADR( FJ_OUT_BUFF ), 23
+
+
+        IF FJ_IN_BUFF(0) > 0 
+          ' is the value a legal  move?
+          if FJ_IN_BUFF(0) = 108 and FJ_IN_BUFF(1) = 101 and FJ_IN_BUFF(2) = 103 and FJ_IN_BUFF(3) = 97 and FJ_IN_BUFF(4) = 108
+            ' 'legal' move returned. Do the local move.
+            @uci_move select_array_col, select_array_row, cursor_array_col, cursor_array_row, 0
+ 
+            if MODE$ = "S"  
+              current_player = 2
+            elif MODE$ = "D"  ' two player returns lichess move, but I should stop doing this.
+              poke 87,1
+              if current_player = 1
+                current_player = 2
+                POS. 0,1 : ?#6,  "PLAYER: TWO"
+              else
+                current_player = 1
+                POS. 0,1 : ?#6,  "PLAYER: ONE"
+              endif
+              poke 87,0
+            endif
+          elif FJ_IN_BUFF(0) = 108 and FJ_IN_BUFF(1) = 101 and FJ_IN_BUFF(2) = 103 and FJ_IN_BUFF(3) = 97 and FJ_IN_BUFF(4) = 108
+          else
+            POS. 0,21 : PRINT "Invalid move            "
+          endif
+        ELSE
+
+          POS. 0,21 : PRINT "Lost connection            "
+
+        ENDIF ' FU_IN_BUFF(0) > 0'
+
+        ' clear selected piece.
+        select_array_col = -1
+        select_array_row = -1
+        MSET old_sel_y, 6, 0  
+
+        pause 10
+
+      endif  ' if select_array_col < 0
+    endif ' if btn_pressed = 0
+
+    ' check for movement
+    I = STICK(0)
+    if I = 15
+      sound 0,0,0,0 ' no motion, cancel any sound from previous movement
+    else
+      ' compute the next position
+      cursor_array_col = cursor_array_col + ((I=7) -(I=11))
+      if cursor_array_col > 7
+        cursor_array_col = 0
+      endif
+      if cursor_array_col < 0
+        cursor_array_col = 7
+      endif
+ 
+      cursor_array_row = cursor_array_row + ((I=14) -(I=13))
+      if cursor_array_row > 7
+        cursor_array_row = 0
+      endif
+      if cursor_array_row < 0
+        cursor_array_row = 7
+      endif
+
+      ' POS. 0,21 : PRINT "X: ";cursor_array_col;" Y: ";cursor_array_row
+      sound 0,180,2,4
+      pause 1
+      sound 0,0,0,0
+      pause 9
+      @MOVEC
     endif
-    if cursor_row < 0
-      cursor_row = 7
+  else  ' if current_player = who_am_i 
+
+    ' we're not current player,  POLL status 
+    query$ = "gid="
+    query$ =+ $( ADR( GAME_ID ) )
+    FJ_IN_BUFF(0) = 0
+    @doGet &"status", &(query$)
+
+
+    ' check return value starts with (T)urn 84 or (O)ver 79.  If Over check for win condition 3
+    IF FJ_IN_BUFF(0) = 84 
+      ' 'T'
+      '              111111111122225
+      '    0123456789012345678901234
+      '    TURN w:LAST e7e6-:MVNO 2
+      if FJ_IN_BUFF(5) = 119 ' w
+        current_player = 1
+      elif FJ_IN_BUFF(5) = 98 ' b
+        current_player = 2
+      else   
+        current_player = 0   ' all other conditions 
+      endif 
+
+      ' parse move 
+      ' compute returns the move.
+      if current_player = who_am_i and  FJ_IN_BUFF(12) <> 45
+        @uci_move FJ_IN_BUFF(12)-FILE_X, FJ_IN_BUFF(13)-RANK_Y, FJ_IN_BUFF(14)-FILE_X, FJ_IN_BUFF(15) - RANK_Y, FJ_IN_BUFF(16)
+      endif
+      poke 87,1
+      if current_player = 1
+        POS. 0,1 : ?#6,  "PLAYER: ONE"
+      elif current_player = 2
+        POS. 0,1 : ?#6,  "PLAYER: TWO"
+      else
+        POS. 0,1 : ?#6,  "PLAYER:    "
+      endif
+      poke 87,0
+  
+    elif FJ_IN_BUFF(0) = 79
+      ' 'O'
+      '              11111111112222222
+      '    012345678901234567890123456
+      '    OVER 0-1 1:TURN w:LAST d8h4:MVNO 4
+      '
+      '    1-0, 0-1,  1/2-1/2   (so we can check position 7 for 0,1,2 (who won)
+      '
+      '    position 9 - 1 = checkmate, 2 = stalemate, 3 - insufficient material, 4- seventyfive moves, 5 - repetition, 6 fifty moves, 6 reps, 8 variant wih, 9 variant loss 10 variant draw
+      poke 87,1
+      if FJ_IN_BUFF(7) = 48  '0
+        ' white wins
+        POS. 0,1 : ?#6,  "PLAYER ONE WINS"
+      elif FJ_IN_BUFF(7) = 49  '1
+        ' black wins
+        POS. 0,1 : ?#6,  "PLAYER TWO WINS"
+      elif FJ_IN_BUFF(7) = 50  '2
+        ' draw
+        POS. 0,1 : ?#6,  "DRAW           "
+      endif
+      poke 87,0
+      @uci_move FJ_IN_BUFF(23)-FILE_X, FJ_IN_BUFF(24)-RANK_Y, FJ_IN_BUFF(25)-FILE_X, FJ_IN_BUFF(26) - RANK_Y, 0
+    ENDIF 
+
+
+ 
+    if current_player <> who_am_i
+      ' hide cursors if it's not our turn.
+      MSET old_y, 6, 0  ' CLEAR old 
+      MSET old_sel_y, 6, 0  
+      pause 120 ' wait a bit before we check again.
+    else
+      ' Hello Me, it's me again.  show the cursor
+      @MOVEC
     endif
-    pause 10
-    @MOVEC
-  endif
+  
+  endif ' if current_player = who_am_i 
 LOOP
 
 
@@ -238,20 +533,28 @@ LOOP
 ' PROCS ```````````````````````````````````````````````````
 PROC MOVEC
   PAUSE   'WAIT FOR BLANK
-  MSET old_y, 6, 0  ' CLEAR 5 BYTES OF SPRITE
-  PMHPOS 0, CURSOR_X(cursor_col)
-  old_y = p0addr + CURSOR_Y(cursor_row)
+  MSET old_y, 6, 0  ' CLEAR old 
+  PMHPOS 0, CURSOR_X(cursor_array_col)
+  old_y = p0addr + CURSOR_Y(cursor_array_row)
   MOVE ADR(PMCURSORDATA), old_y, 6
+  if select_array_col >= 0 
+     PMHPOS 1, CURSOR_X(select_array_col)
+     old_sel_y = p1addr + CURSOR_Y( select_array_row )
+     MOVE ADR(PMSELECTDATA), old_sel_y, 6
+  else  
+     MSET old_sel_y, 6, 0  
+  endif
 ENDPROC
 
 
 PROC DRAW_BOARD
-  draw_light = 1
+  poke 87,0
   index = 0
   FOR row = 0 to 7 
     FOR col = 0 to 7
       if BOARD_DATA(index) = 0 
-        if draw_light = 1
+        ' square
+        if  row & 1 EXOR col & 1
           pos. TILE_X(col),   TILE_Y(row) : ? #6, chr$($21)
           pos. TILE_X(col)+1, TILE_Y(row) : ? #6, chr$($21)
           pos. TILE_X(col)+2, TILE_Y(row) : ? #6, chr$($21)
@@ -267,23 +570,14 @@ PROC DRAW_BOARD
           pos. TILE_X(col)+2, TILE_Y(row)+1 : ? #6, chr$($22)
         endif
       else 
+        ' non-zero, it's a piece.
         @DRAW_PIECE col, row, BOARD_DATA(index)
       endif
   
-      if draw_light = 1
-        draw_light = 0
-      else 
-        draw_light = 1
-      endif
 
       index = index + 1
     NEXT col
 
-    if draw_light = 1
-      draw_light = 0
-    else
-      draw_light = 1
-    endif
 
   NEXT row
 ENDPROC
@@ -292,60 +586,143 @@ ENDPROC
 PROC SETUP_BOARD 
   MSET Adr(BOARD_DATA), 64, 0 
   ' 
-  ' 1 - black pawn 
-  ' 2 - black knight 
-  ' 3 - black bishop 
-  ' 4 - black rook 
-  ' 5 - black queen
-  ' 6 - black king
+  ' 112 - black pawn  (p)
+  ' 110 - black knight(n)
+  ' 98  - black bishop(b)
+  ' 114 - black rook  (r)
+  ' 113 - black queen (q)
+  ' 107 - black king  (k)
   '
-  ' 7 - white pawn 
-  ' 8 - white knight 
-  ' 9 - white bishop 
-  ' 10- white rook 
-  ' 11- white queen
-  ' 12- white king
+  ' 80 - white pawn   (P)
+  ' 78 - white knight (N)
+  ' 66 - white bishop (B)
+  ' 82 - white rook   (R)
+  ' 81 - white queen  (Q)
+  ' 75 - white king   (K)
   '
-  BOARD_DATA(0) = 4
-  BOARD_DATA(1) = 2 
-  BOARD_DATA(2) = 3
-  BOARD_DATA(3) = 5
-  BOARD_DATA(4) = 6
-  BOARD_DATA(5) = 3
-  BOARD_DATA(6) = 2
-  BOARD_DATA(7) = 4
 
-  BOARD_DATA(8) =   1
-  BOARD_DATA(9) =   1 
-  BOARD_DATA(10) =  1
-  BOARD_DATA(11) =  1
-  BOARD_DATA(12) =  1
-  BOARD_DATA(13) =  1
-  BOARD_DATA(14) =  1
-  BOARD_DATA(15) =  1
+  BOARD_DATA(0) = 82
+  BOARD_DATA(1) = 78  
+  BOARD_DATA(2) = 66
+  BOARD_DATA(3) = 81
+  BOARD_DATA(4) = 75
+  BOARD_DATA(5) = 66
+  BOARD_DATA(6) = 78
+  BOARD_DATA(7) = 82
 
-  BOARD_DATA(48) = 7
-  BOARD_DATA(49) = 7
-  BOARD_DATA(50) = 7
-  BOARD_DATA(51) = 7
-  BOARD_DATA(52) = 7
-  BOARD_DATA(53) = 7
-  BOARD_DATA(54) = 7
-  BOARD_DATA(55) = 7
+  BOARD_DATA(8) =  80 
+  BOARD_DATA(9) =  80  
+  BOARD_DATA(10) = 80 
+  BOARD_DATA(11) = 80 
+  BOARD_DATA(12) = 80 
+  BOARD_DATA(13) = 80 
+  BOARD_DATA(14) = 80 
+  BOARD_DATA(15) = 80 
 
-  BOARD_DATA(56) = 10
-  BOARD_DATA(57) = 8 
-  BOARD_DATA(58) = 9
-  BOARD_DATA(59) = 11
-  BOARD_DATA(60) = 12
-  BOARD_DATA(61) = 9
-  BOARD_DATA(62) = 8
-  BOARD_DATA(63) = 10
+  BOARD_DATA(48) = 112
+  BOARD_DATA(49) = 112
+  BOARD_DATA(50) = 112
+  BOARD_DATA(51) = 112
+  BOARD_DATA(52) = 112
+  BOARD_DATA(53) = 112
+  BOARD_DATA(54) = 112
+  BOARD_DATA(55) = 112
+
+  BOARD_DATA(56) = 114
+  BOARD_DATA(57) = 110
+  BOARD_DATA(58) = 98
+  BOARD_DATA(59) = 113
+  BOARD_DATA(60) = 107
+  BOARD_DATA(61) = 98
+  BOARD_DATA(62) = 110
+  BOARD_DATA(63) = 114
 
 ENDPROC
 
+PROC uci_move bx1 by1 bx2 by2 promot
+
+  ' get type at start
+  x = TILE_X( bx1 )
+  y = TILE_Y( by1 )
+  current_piece = BOARD_DATA( bx1 + by1 * 8 )
+  BOARD_DATA( bx1 + by1 * 8 ) = 0
+  BOARD_DATA( bx2 + by2 * 8 ) = current_piece 
+  @DRAW_TILE  bx1, by1
+  @DRAW_PIECE bx2, by2, current_piece
+ 
+  ' castles to check  
+  ' white
+  ' e1g1 -  4,0,6,0
+  ' e1c1 -  4,0,2,0 
+  ' black
+  ' e8g8 -  4,7,6,7
+  ' e8c8 -  4,7,2,7 
+  if current_piece = 75 and  bx1 = 4 and by1 = 0 and bx2 = 6 and by2 = 0 
+    ' move rook from right
+    BOARD_DATA( 7 ) = 0
+    BOARD_DATA( 5 ) = 82 
+    x = TILE_X( 7 )
+    y = TILE_Y( 0 )
+    @DRAW_TILE 7, 0
+    @DRAW_PIECE 5, 0, 82 
+
+  elif current_piece = 75 and bx1 = 4 and by1 = 0 and bx2 = 2 and by2 = 0
+    ' move rook from left
+    BOARD_DATA( 0 ) = 0
+    BOARD_DATA( 3 ) = 82 
+    x = TILE_X( 0 )
+    y = TILE_Y( 0 )
+    @DRAW_TILE 0, 0
+    @DRAW_PIECE 3, 0, 82
+  elif current_piece = 107 and bx1 = 4 and by1 = 7 and bx2 = 6 and by2 = 7
+    ' move rook from right
+    BOARD_DATA( 63 ) = 0
+    BOARD_DATA( 61 ) = 114
+    x = TILE_X( 7 )
+    y = TILE_Y( 7 )
+    @DRAW_TILE 7, 7
+    @DRAW_PIECE 5, 7, 114
+
+  elif current_piece = 107 and bx1 = 4 and by1 = 7 and bx2 = 2 and by2 = 7
+    ' move rook from left
+    BOARD_DATA( 56 ) = 0
+    BOARD_DATA( 59 ) = 114
+    x = TILE_X( 0 )
+    y = TILE_Y( 7 )
+    @DRAW_TILE 0, 7
+    @DRAW_PIECE 3, 7, 114
+
+  endif
+
+  'TODO PROMOTION MOVE
+
+ENDPROC
+
+PROC DRAW_TILE tx ty
+  if tx & 1 EXOR ty & 1
+    pos. x,   y : ? #6, chr$($21)
+    pos. x+1, y : ? #6, chr$($21)
+    pos. x+2, y : ? #6, chr$($21)
+    pos. x+2, y : ? #6, chr$($21) ' double up because of inverse behavior
+    pos. x,   y+1 : ? #6, chr$($21)
+    pos. x+1, y+1 : ? #6, chr$($21)
+    pos. x+2, y+1 : ? #6, chr$($21)
+    pos. x+2, y+1 : ? #6, chr$($21) ' double up because of inverse behavior
+  else
+    pos. x,   y : ? #6, chr$($22)
+    pos. x+1, y : ? #6, chr$($22)
+    pos. x+2, y : ? #6, chr$($22)
+    pos. x+2, y : ? #6, chr$($22) ' double up because of inverse behavior
+    pos. x,   y+1 : ? #6, chr$($22)
+    pos. x+1, y+1 : ? #6, chr$($22)
+    pos. x+2, y+1 : ? #6, chr$($22)
+    pos. x+2, y+1 : ? #6, chr$($22) ' double up because of inverse behavior
+  endif
+
+ENDPROC
 
 PROC DRAW_PIECE board_x board_y type
+  poke 87,0
   x = TILE_X( board_x )
   y = TILE_Y( board_y )
   
@@ -354,9 +731,11 @@ PROC DRAW_PIECE board_x board_y type
   '  light_square = 1
   'endif
   color_adjust = 0
-  if type > 6 then color_adjust = $80
+  if type < 97 then color_adjust = $80
 
-  if type = 1 OR type = 7 ' black pawn
+  draw_light = board_x & 1 EXOR board_y & 1
+
+  if type = 80 OR type = 112 ' pawn
     if draw_light 
        t1 = ($21+color_adjust)
        t2 = ($24+color_adjust) ' pawn top light square
@@ -372,7 +751,7 @@ PROC DRAW_PIECE board_x board_y type
        t5 = ($25+color_adjust) ' pawn bottom dark square
        t6 = ($22+color_adjust)
     endif
-  elif type = 2 OR type = 8   ' knight
+  elif type = 78 OR type = 110   ' knight
     if draw_light 
       t1 = ($16+color_adjust)
       t2 = ($17+color_adjust) 
@@ -388,7 +767,7 @@ PROC DRAW_PIECE board_x board_y type
       t5 = ($0F+color_adjust) 
       t6 = ($1A+color_adjust)
     endif
-  elif type = 3 OR type = 9   ' bish
+  elif type = 66 OR type = 98   ' bish
     if draw_light 
       t1 = ($0B+color_adjust)
       t2 = ($0C+color_adjust) ' bishop top light square
@@ -404,7 +783,7 @@ PROC DRAW_PIECE board_x board_y type
       t5 = ($0F+color_adjust) ' bishop (bishop|knight) bottom dark square
       t6 = ($10+color_adjust)
     endif
-  elif type = 4 OR type = 10   ' rook
+  elif type = 82 OR type = 114   ' rook
     if draw_light 
       t1 = ($21+color_adjust)
       t2 = ($04+color_adjust) ' rook top light square
@@ -420,7 +799,7 @@ PROC DRAW_PIECE board_x board_y type
       t5 = ($2E+color_adjust) ' rook (queen|rook) bottom dark square
       t6 = ($2F+color_adjust)
     endif
-  elif type = 5 OR type = 11   ' queen
+  elif type = 81 OR type = 113   ' queen
     if draw_light 
       t1 = ($2A+color_adjust)
       t2 = ($2B+color_adjust) ' queen top light square
@@ -436,7 +815,7 @@ PROC DRAW_PIECE board_x board_y type
       t5 = ($2E+color_adjust) ' queen bottom dark square
       t6 = ($2F+color_adjust)
     endif
-  elif type = 6 OR type = 12   ' king
+  elif type = 75 OR type = 107   ' king
     if draw_light 
       t1 = ($5E+color_adjust)
       t2 = ($5F+color_adjust) ' king top light square
@@ -458,12 +837,99 @@ ENDPROC
 
 PROC place_tiles 
      pos.  x  ,y   : ? #6, chr$( t1 )
-     pos.  x+1,y   : ? #6, chr$( t2 ) ' pawn top light square
+     pos.  x+1,y   : ? #6, chr$( t2 ) 
      pos.  x+2,y   : ? #6, chr$( t3 )
+     pos.  x+2,y   : ? #6, chr$( t3 ) ' double up because of inverse behavior
      pos.  x  ,y+1 : ? #6, chr$( t4 )
-     pos.  x+1,y+1 : ? #6, chr$( t5 ) ' pawn bottom light square
+     pos.  x+1,y+1 : ? #6, chr$( t5 ) 
      pos.  x+2,y+1 : ? #6, chr$( t6 )
+     pos.  x+2,y+1 : ? #6, chr$( t6 ) ' double up because of inverse behavior
 ENDPROC
 
+
+PROC doPost endpoint buffer buffer_len
+  url$ = FJ_BASE_URL$
+  url$ =+ $(endpoint)
+  url$ =+ ""$9B
+
+  'POS. 0,21 : PRINT "Try: ";url$
+  NOPEN FJ_CONN, FJ_POST_MODE, FJ_TRANSL, url$
+  IF SERR() <> 1
+    ' doesn't actually seem ot detect a problem connecting.
+    'POS. 0,21 : PRINT "Unable to open connection"
+    Exit
+  ENDIF
+  'POS. 0,21 : PRINT "Connected           "
+
+  ' create post data
+  SIO $71, FJ_CONN, $4D, $00, 0, $1F, 0, FJ_POST_MODE, 4
+  NPUT FJ_CONN, buffer, buffer_len
+  ' get response body
+  SIO $71, FJ_CONN, $4D, $00, 0, $1F, 0, FJ_POST_MODE, 0
+  TRIES = 0
+  DO
+    NSTATUS FJ_CONN  ' NSTATUS followd by DPEEK($02EA)
+    BW = DPEEK($02EA)
+    IF BW > 0 THEN EXIT
+    pause 1
+    TRIES = TRIES + 1
+    IF TRIES > 100 THEN EXIT
+  LOOP 
+  IF BW = 0
+    MSET ADR( FJ_IN_BUFF ), 64, 0
+    EXIT
+  ENDIF
+  ' loop the read
+  WHILE BW
+    IF BW > 8192 OR BW < 000
+      LN = 8192
+    ELSE
+      LN = BW
+    ENDIF
+    
+    NGET FJ_CONN,&FJ_IN_BUFF, LN
+    BW = BW - LN
+  WEND
+  NCLOSE FJ_CONN
+ENDPROC
+
+
+PROC doGet endpoint param
+  url$ = FJ_BASE_URL$
+  url$ =+ $(endpoint)
+  url$ =+ "?"
+  url$ =+ $(param)
+  url$ =+ ""$9B
+  
+  NOPEN FJ_CONN, FJ_GET_MODE, FJ_TRANSL, URL$
+  NSTATUS FJ_CONN
+  IF SERR() <> 1
+    PRINT "Unable to get connection"
+  ENDIF
+  ' get response body
+  SIO $71, FJ_CONN, $4D, $00, 0, $1F, 0, FJ_GET_MODE, 0
+  DO
+    NSTATUS FJ_CONN  ' NSTATUS followd by DPEEK($02EA)
+    BW = DPEEK($02EA)
+    IF BW > 0 THEN EXIT
+  LOOP 
+  ' loop the read
+  WHILE BW
+    IF BW > 8192 OR BW < 000
+      LN = 8192
+    ELSE
+      LN = BW
+    ENDIF
+    
+    NGET FJ_CONN,&FJ_IN_BUFF, LN
+    BW = BW - LN
+  WEND
+  NCLOSE FJ_CONN
+ENDPROC
+
+
+PROC INTCLR
+  POKE $D302, PEEK($D302) & 127  ' $D302 - PIA control
+ENDPROC
 
 

@@ -1,28 +1,113 @@
 #include <genesis.h>
 #include "resources.h"
 #include "network.h" 
-#include "logic.h"
 
 #define INPUT_WAIT_COUNT 10
 
 #define SND_MOVE 64
 #define SND_BUZZ 63
 
+#define BOARD_SIZE 8
+
+
+// Enum to represent piece types (using offsets for lookup into image)
+typedef enum {
+    EMPTY = 0,
+    KING = 3, 
+    QUEEN = 6, 
+    ROOK = 9, 
+    BISHOP = 12, 
+    KNIGHT = 15, 
+    PAWN = 18 
+} PIECE_TYPE;
+
+typedef enum {
+    NO_PLAYER = 0,
+    PLAYER_ONE = 1,
+    PLAYER_TWO = 2
+} PLAYER;
+
+#define FILE_X 97
+#define RANK_Y 49
+
+// Structure to represent a chess piece
+typedef struct {
+    PIECE_TYPE type;   // Type of the piece
+    PLAYER player;     // which player  
+} CHESS_PIECE;
+
+// structure for loggin two checkers
+typedef struct {
+    int count;
+    int x[2];
+    int y[2];
+    bool is_biroqu[2]; // is a bishop, rook, or queen
+} CHECKERS;
+
+
+
 int text_cursor_x, text_cursor_y;
 u8 buttons, buttons_prev;
 
 ////////////////////////////////////////////////////////////////////////////
 // network stuff
-char server[16] = "000.000.000.000";
-bool online = false;
+char server[16] = "010.025.050.061";
+char request[64];
+char response[128];
+char game_id[16];
+char player_id[16];
+bool singlePlayer = false;
 u8 whoAmI = NO_PLAYER;
 
+void read_bytes_n(u8* data, u8 length ) {
+    s16 bytePos = 0;
+    while( bytePos < length ) {
+        // read data
+        if( NET_RXReady() ) {
+            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
+            bytePos++;
+        } else {
+            waitMs(5);
+        }
+    }
+}
+
+s16 read_line(u8* data, u8 data_len ){
+    s16 bytePos = 0;
+    while( bytePos < data_len ) {
+        // read data
+        if( NET_RXReady() ) {
+            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
+            if( data[bytePos] == 0x0A ) {
+                data[bytePos] = 0;
+                return bytePos;
+            }
+            bytePos++;
+        } else {
+            waitMs(5);
+        }
+    } 
+    return bytePos;
+
+}
+
+
+
 // Chess Piece data
-extern CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
+CHESS_PIECE board[BOARD_SIZE][BOARD_SIZE]; // X, Y
 int piecesTileIndex = -1;
 const s8 boardStartCol = 8;
 const s8 boardStartRow = 2;
 const s8 boardStep = 3;
+
+void clear_board() {
+    for( u8 x=0; x < BOARD_SIZE; x++ ) {
+        for( u8 y=0; y < BOARD_SIZE; y++ ){
+            board[x][y].type = EMPTY;
+            board[x][y].player = NO_PLAYER;
+        }
+    }
+}
 
 void setup_pieces() {
     // clear the board
@@ -76,22 +161,64 @@ void draw_pieces(){
     }
 }
 
+void clear_space( s8 startCol, s8 startRow ) {
+    VDP_setTileMapEx( BG_A, pieces_img.tilemap, TILE_ATTR_FULL(PAL1, TRUE, FALSE, FALSE, piecesTileIndex),    
+            boardStartCol + startCol * boardStep,  // PLANE X Dest in tiles
+            boardStartRow + startRow * boardStep,  // PLANE Y Dest in tiles
+            EMPTY,  // REGION X start
+            0,  // REGION Y start
+            boardStep,  // Width
+            boardStep,  // Height
+            CPU);
 
-void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow ){
-    if( do_move( startCol, startRow, endCol, endRow ) ) {
-        //board[endCol][endRow] = board[startCol][startRow];
-        //board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
-        draw_pieces();
+}
 
-        VDP_setTileMapEx( BG_A, pieces_img.tilemap, TILE_ATTR_FULL(PAL1, TRUE, FALSE, FALSE, piecesTileIndex),    
-                boardStartCol + startCol * boardStep,  // PLANE X Dest in tiles
-                boardStartRow + startRow * boardStep,  // PLANE Y Dest in tiles
-                EMPTY,  // REGION X start
-                0,  // REGION Y start
-                boardStep,  // Width
-                boardStep,  // Height
-                CPU);
+void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow, s8 promotype ){
+    //if( do_move( startCol, startRow, endCol, endRow ) ) {
+    PLAYER p = board[startCol][startRow].player;
+    CHESS_PIECE cp = board[startCol][startRow].type;
+    board[endCol][endRow] = board[startCol][startRow];
+    board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+
+    // check for special cases
+    /*
+       ' castles to check
+       ' white
+       ' e1g1 -  4,7,6,7
+       ' e1c1 -  4,7,2,7
+       ' black
+       ' e8g8 -  4,0,6,0
+       ' e8c8 -  4,0,2,0
+     */
+    
+    if ( cp = KING && p = PLAYER_TWO &&  startCol == 4 && startRow ==0 && endCol == 6 && endRow == 0 ) {
+        // move black rook from right
+        board[7][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        clear_space( 7, 0 );
+        board[5][0] = (CHESS_PIECE){ROOK, p}; 
+
+    } else if ( cp = KING && p = PLAYER_TWO && startCol == 4 && startRow ==0 && endCol == 2 && endRow == 0 ) {
+        // move rook from left
+        board[0][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        clear_space( 0, 0 );
+        board[3][0] = (CHESS_PIECE){ROOK, p}; 
+    } else if ( cp = KING && p = PLAYER_ONE && startCol == 4 && startRow ==7 && endCol == 6 && endRow == 7 ) {
+        // move rook from right
+        board[7][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        clear_space( 7, 7 );
+        board[5][7] = (CHESS_PIECE){ROOK, p}; 
+    } else if ( cp = KING && p = PLAYER_ONE && startCol == 4 && startRow ==7 && endCol == 2 && endRow == 7 ) {
+        // move rook from left
+        board[0][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
+        clear_space( 0, 7 );
+        board[3][7] = (CHESS_PIECE){ROOK, p}; 
     }
+    // if pawn, 
+
+    draw_pieces();
+    clear_space( startCol, startRow );
+
+    //}
 }
 
 // Sprite data structures
@@ -194,11 +321,11 @@ void cursor_clear_selected( CURSOR* cursor ) {
     sprintf( message, "X: %d y: %d sx: %d sy %d    ", cursor->col, cursor->row, cursor->sel_col, cursor->sel_row);
 }
 
+
+
 bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
-    KLog_S1(" cursor sel x ", cursor->sel_col );
     if( cursor->sel_col < 0 ) {
         // no piece selected yet, check if player owns the current piece.
-        KLog_S4(" col ", cursor->col, " row ", cursor->row, " player ",  (s8) brd[(u8)cursor->col][(u8)cursor->row].player, " p ", (s8)player ); 
         if( brd[(u8)cursor->col][(u8)cursor->row].player == player ) { 
             cursor->sel_col = cursor->col;
             cursor->sel_row = cursor->row;
@@ -207,45 +334,107 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
             SPR_setVisibility( cursor->selected_spr, VISIBLE );
         }
     } else {
-        // A piece is currently selected, check if cursor position is valid )
-        //TODO -- (add valid move check, for now just look for empty squares)
-        // if( brd[(u8)cursor->col][(u8)cursor->row].type == EMPTY ) { 
-        if( is_valid_move( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row ) ){
-            move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row );
-            return true;
-        } else {
-            XGM_startPlayPCM(SND_BUZZ,1,SOUND_PCM_CH2);
-        }
+        char message[40];
+        strclr(message);
+        sprintf( message, "X: %d y: %d sx: %d sy %d    ", cursor->col, cursor->row, cursor->sel_col, cursor->sel_row);
+        VDP_drawText( message, 0, 1 );
+        // return true if destination is clear or a different player, BUT DON"T UPDATE BOARD 
+        return ( brd[(u8)cursor->col][(u8)cursor->row].player != player );
+
     }
     return false;
 }
 
 
-void host_game() {
-    // Allow client to join
-    NET_allowConnections();
-    VDP_drawText("           Waiting       ", 0, 5);
 
-    // loop while waiting for a peer.
-    u8 offset = 0;
-    while( 1 ) {
-        // Data available?
-        while( !NET_RXReady() ){
-            // writing some sort of text here?
-            VDP_drawText(" .     ", 21+offset, 5);
-            offset +=1;
-            if( offset > 3 ) offset = 0;
-            waitMs(20);
+void start_1_player_game() {
+    // get input for level.
+    VDP_clearTextArea( 0, 0,  40, 13  );
+    s8 level = 1;
 
-        }
-        // look for 'C'
-        u8 ret = NET_readByte();
-        if( ret == 'C' ) {
-            // clear text before losing out
-            VDP_drawText("          Connected!     ", 0, 5);
-            return;
-        }
+    char message[40];
+    sprintf( message, "level: %d", level );
+
+
+
+
+    memset( message, 0, sizeof(message ));
+    sprintf( message, "N:S:W:%d\n", level );
+    start_game(message);
+    singlePlayer = true;
+}
+
+
+void start_2_player_game() {
+    VDP_clearTextArea( 0, 0,  40, 13  );
+    char *msg ="N:D:W\n";
+    start_game(msg);
+    singlePlayer = false;
+}
+
+
+void start_game(char* msg) {
+
+/*
+
+HELO
+N:S:W:1
+ACK 0F673352:2CACA131
+
+
+*/
+
+
+    // reach out to server 
+    VDP_drawText("   Connect to server    ", 0, 5);
+    text_cursor_y = 5;
+    // blocks whilewaiting for network to be ready.
+    char fullserver[21];
+    memset(fullserver,0, sizeof(fullserver));
+    sprintf( fullserver, "%s:55558", server);
+    NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+
+    VDP_drawText("READ LINE", 0, 0 );
+    s16 count = read_line( response, sizeof(response) );
+    response[4] = 0;
+
+    VDP_drawText(response, 0, 1 );
+    if( strcmp( response, "HELO" ) != 0 ) {
+        // TODO: we need to handle this error somehow. think about it
+        VDP_drawText("NOT HELO?", 0, 2 );
+        return;
     }
+    VDP_drawText("GOT HELO!", 0, 2 );
+    // request a new game.
+    //memset(request, 0, sizeof(request) );
+    //sprintf( request, "%03d", part );
+    VDP_drawText("REQUEST NEW", 0, 3 );
+    //NET_sendMessage( "N:S:W:1\n" );
+    NET_sendMessage( msg );
+    VDP_drawText("READ LINE again", 0, 4 );
+    memset(response, 0, sizeof(response ));
+    count = read_line( response, sizeof(response) );
+    VDP_drawText(" did read?", 0, 5 );
+    VDP_drawText(response, 0, 5 );
+    memset( game_id, 0, sizeof( game_id ) );
+    memset( player_id, 0, sizeof( player_id ) );
+    if ( count >= 3 ) {
+        // if starts with ACK, save the rest into game_id
+        //              11111111111
+        //    012345678901234567890
+        //    ACK e78c2852:b6dc3dda
+
+
+        if( response[0] == 'A' && response[1] == 'C' && response[2] == 'K' ) {
+            // get game id
+            strncpy(  game_id, response + 4, 8 );
+            strncpy(  player_id, response + 13, 8 );
+            VDP_drawText(game_id, 16, 0 );
+
+        } else {
+            // TODO: handle error somehow.
+        }
+    } 
 
 }
 
@@ -257,7 +446,22 @@ bool join_game() {
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
     sprintf( fullserver, "%s:5364", server);
-    return NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    read_line( response, 64 );
+    if( strcmp( response, "HELO" ) != 0 ) {
+        // we need to handle this error somehow. think about it
+        return;
+    }
+    memset(request,0, sizeof(request));
+    sprintf( request, "J:%s", game_id);
+    NET_sendMessage( request );
+
+}
+
+void do_move() {
+}
+
+void get_board() {
 }
 
 
@@ -265,8 +469,9 @@ void setWhoAmI() {
     buttons = 0;
     buttons_prev = 0;
     VDP_clearTextArea( 0, 0,  40, 13  );
-    VDP_drawText("          (A) - Host Game", 0, 5);
-    VDP_drawText("          (C) - Join Game", 0, 7);
+    VDP_drawText("         (A) - Start 1 Player", 0, 5);
+    VDP_drawText("         (B) - Start 2 Player", 0, 6);
+    VDP_drawText("         (C) - Join Game", 0, 7);
     NET_resetAdapter();
     while(1) // loop forever
     {
@@ -277,7 +482,14 @@ void setWhoAmI() {
             text_cursor_y = 5;
             whoAmI = PLAYER_ONE;
             // start listening
-            host_game();
+            start_1_player_game();
+            break;
+        }else if(buttons & BUTTON_A && buttons_prev == 0x00) {
+            VDP_clearTextArea( 0, 5,  40, 3 );
+            text_cursor_y = 5;
+            whoAmI = PLAYER_ONE;
+            // start listening
+            start_2_player_game();
             break;
         }else if(buttons & BUTTON_C && buttons_prev == 0x00) {
             VDP_clearTextArea( 0, 5,  40, 3 );
@@ -295,30 +507,91 @@ void setWhoAmI() {
 }
 
 
-void cursor_send_data( CURSOR* cursor, u8 type  ) {
-    NET_sendByte( 128 + type ); // first bit is always on, and 4 bytesl
-    NET_sendByte( 4 ); // cursor always sends 4 bytes
-    NET_sendByte( cursor->col );
-    NET_sendByte( cursor->row );
-    NET_sendByte( cursor->sel_col );
-    NET_sendByte( cursor->sel_row );
-}
+bool send_move( CURSOR* cursor, u8 type  ) {
 
+    // TODO: promote pawns...
+    char move[4];
+    move[0] = FILE_X + cursor->sel_col;
+    move[1] = RANK_Y + 7 - cursor->sel_row;
+    move[2] = FILE_X + cursor->col;
+    move[3] = RANK_Y + 7 - cursor->row;
 
+    strclr( request ); 
+    sprintf(request,"M:%s:%s:%s\n", game_id, player_id, move );
+    NET_sendMessage(request);
+    s16 count = read_line( response, sizeof(response) );
+    VDP_drawText(response, 0, 4 );
 
-void read_bytes_n(u8* data, u8 length ) {
-    s16 bytePos = 0;
-    while( bytePos < length ) {
-        // read data
-        if( NET_RXReady() ) {
-            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
-            bytePos++;
-        } else {
-            waitMs(5);
-        }
+    /*
+    M:e78c2852:b6dc3dda
+    ERR:bad format
+    M:e78c2852:b6dc3dda:d2d3
+    ACK d7d5
+    
+    M:e78c2852:b6dc3dda:d1d3
+    ACK illegal move
+    M:e78c2852:b6dc3dda:e2e4
+    ACK e7e6
+    */
+    
+
+    if( strcmp( response, "ACK legal move" ) == 0 ) {
+            move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row, 0 );
+            cursor_clear_selected(&cursor); 
+            return true;
     }
+
+    return false;
+  
 }
 
+void list_games( ){
+    /*
+      L:
+      ACK 90CE42ED:329829E7
+    */
+    
+    // send out LIST command
+    NET_sendMessage("L:\n");
+    // wait until we can read bytes.
+    while( ! NET_RXReady() ) {
+    }
+    s16 bytes = read_line( response, sizeof(response) );
+
+}
+
+
+void read_status( ){
+    /*
+    S:e78c2852
+    ACK TURN -:LAST -----:MVNO 0
+    */
+
+    // send out STATUS command
+    strclr( request ); 
+    sprintf(request,"S:%s\n", game_id );
+    NET_sendMessage(request);
+
+    // wait until we can read bytes.
+    while( ! NET_RXReady() ) {
+    }
+    s16 bytes = read_line( response, sizeof(response) );
+}
+
+void read_board( ){
+    /*
+    B:e78c2852
+    ACK rnbqkbnrppp..ppp....p......p........P......P....PPP..PPPRNBQKBNR
+    */
+    
+    // send out BOARDS command
+    strclr( request ); 
+    sprintf(request,"B:%s\n", game_id );
+    NET_sendMessage(request);
+    while( ! NET_RXReady() ) {
+    }
+    s16 bytes = read_line( response, sizeof(response) );
+}
 
 
 
@@ -389,14 +662,14 @@ int main(bool hard) {
         VDP_drawText( "Got Address", 13 ,12 );
         VDP_drawText( server, 13 , 13 );
 
-         getIPFromUser(server);
+        // getIPFromUser(server);
 
 
-     // clear out last input and wait a sec.
+        // clear out last input and wait a sec.
         waitMs(1000);
         JOY_update();
 
-        VDP_drawText( "Got Address", 13 ,12 );
+        VDP_drawText( "Server Address", 13 ,12 );
         VDP_drawText( server, 13 , 13 );
 
         // TODO: add ping here and save if successful.
@@ -408,8 +681,14 @@ int main(bool hard) {
 
         whoAmI = 0; // 0 - not set, 1 - PLAYER_ONE, 2 - PLAYER_TWO
 
+
+
         setWhoAmI(); // loops until true. TODO: let you break out and stay local
                      // or loop back to pick a different host.
+
+
+
+        VDP_drawText( " Press Start  ", 13 ,12 );
         if( whoAmI == 1 ) {
             while(1) {
                 u16 joypad  = JOY_readJoypad( JOY_1 );
@@ -419,8 +698,8 @@ int main(bool hard) {
                 }
             }
         }
-        online = true;
-   
+        singlePlayer = true;
+
 
     }
     else
@@ -436,7 +715,6 @@ int main(bool hard) {
             }
             SYS_doVBlankProcess();
         }
-        online = false;
         whoAmI = 1; 
     }
     VDP_clearPlane( BG_A, TRUE);
@@ -475,122 +753,23 @@ int main(bool hard) {
     VDP_drawText("PLAYER ONE MOVE", 13, 1);
     while(TRUE)
     {
-        if( online ) {
-            if( currentPlayer == whoAmI  ){
-                // read joypad to mover cursor
-                u16 joypad  = JOY_readJoypad( JOY_1 );
-                if( inputWait == 0 ) {
-                    if( cursor_move( &cursor, joypad ) == TRUE ) {
-                        XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
-                        inputWait = INPUT_WAIT_COUNT;
-                        // send cursor data
-                        cursor_send_data( &cursor, 0 );
-                    }
-                    if( joypad & BUTTON_A ) {
-                        bool didMove =  cursor_action( &cursor, board, currentPlayer );
-                        inputWait = INPUT_WAIT_COUNT;
-                        if( didMove ) {
-                            // send move data.
-                            cursor_send_data( &cursor, 1 );  // move piece
-                            cursor_clear_selected(&cursor); 
-                            if( currentPlayer == PLAYER_ONE ) {
-                                currentPlayer = PLAYER_TWO;
-                                VDP_drawText("TWO", 20, 1);
-                            } else {
-                                currentPlayer = PLAYER_ONE;
-                                VDP_drawText("ONE", 20, 1);
-                            }
-                        } else {
-                            cursor_send_data( &cursor, 0 ); // just update cursor
-                        }
-                    } else if( joypad & BUTTON_C ) {
-                        cursor_clear_selected( &cursor );
-                        inputWait = INPUT_WAIT_COUNT;
-                        // send cursor data
-                        if(online) cursor_send_data( &cursor,0 );
-                    }
-                } else {
-                    if( inputWait > 0 ) {
-                        --inputWait;
-                    }
-                }
-            } else {
-                // current player is not me, listen for data
-
-                // check if readable
-                VDP_drawText("L 0 ", 0, 0 );
-                if( NET_RXReady() ) {
-                    VDP_drawText("L 1 ", 0, 1 );
-                    // read the header
-                    u8 header[2];
-
-                    read_bytes_n( header, 2 );
-                    VDP_drawText("L 2 ", 0, 2 );
-                    u8 data_type = header[0];
-                    char message[40];
-                    strclr(message);
-                    sprintf( message, "T: %d   ", data_type);
-                    VDP_drawText(message, 0, 3);
-                    u8 data_length = header[1];
-                    sprintf( message, "L: %d   ", data_length);
-                    VDP_drawText(message, 0, 4);
-                    // read the data
-                    u8 buffer[16]; 
-                    read_bytes_n( buffer, data_length );
-                    VDP_drawText("L 5 ", 0, 5 );
-                    if( data_type == 128 ) {
-                        XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
-                        VDP_drawText("L 6 ", 0, 6 );
-                        // cursor update
-                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
-                    }else if( data_type == 129 ) {
-                        VDP_drawText("L 7 ", 0, 7 );
-                        // board update
-                        cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
-                        move_piece( (s8)buffer[2], (s8)buffer[3], (s8)buffer[0], (s8)buffer[1] );
-                        cursor_clear_selected(&cursor); 
-                        if( currentPlayer == PLAYER_ONE ) {
-                            currentPlayer = PLAYER_TWO;
-                            VDP_drawText("TWO", 20, 1);
-                        } else {
-                            currentPlayer = PLAYER_ONE;
-                            VDP_drawText("ONE", 20, 1);
-                        }
-                    } 
-                    VDP_drawText("L 8 ", 0, 8 );
-                } 
-            }
-        }
-        else {
-            // offline
+        if( currentPlayer == whoAmI  ){
             // read joypad to mover cursor
-            u16 joypad  = JOY_readJoypad( JOY_1 );
             if( inputWait == 0 ) {
+                u16 joypad  = JOY_readJoypad( JOY_1 );
+                // update local position
                 if( cursor_move( &cursor, joypad ) == TRUE ) {
                     XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
                     inputWait = INPUT_WAIT_COUNT;
                 }
+                // if A, 
                 if( joypad & BUTTON_A ) {
-                    bool didMove =  cursor_action( &cursor, board, currentPlayer );
+                    bool trySend =  cursor_action( &cursor, board, currentPlayer );
                     inputWait = INPUT_WAIT_COUNT;
-                    if( didMove ) {
-                        cursor_clear_selected(&cursor); 
-                        if( is_checkmate(currentPlayer ) ) {
-                            if( currentPlayer == PLAYER_ONE ) {
-                                VDP_drawText("PLAYER TWO WINS", 13, 1);
-                            } else {
-                                VDP_drawText("PLAYER ONE WINS", 13, 1);
-                            }
-                        }else if( is_stalemate(currentPlayer ) ) {
-                                VDP_drawText("STALE MATE", 15, 1);
-                        } else {
-                            if( currentPlayer == PLAYER_ONE ) {
-                                currentPlayer = PLAYER_TWO;
-                                VDP_drawText("TWO", 20, 1);
-                            } else {
-                                currentPlayer = PLAYER_ONE;
-                                VDP_drawText("ONE", 20, 1);
-                            }
+                    if( trySend ) {
+                        // send possible move
+                        if( send_move( &cursor, 1 ) ) {
+                           currentPlayer = currentPlayer == PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE; 
                         }
                     }
                 } else if( joypad & BUTTON_C ) {
@@ -602,9 +781,65 @@ int main(bool hard) {
                     --inputWait;
                 }
             }
+        } else { // if( currentPlayer == whoAmI  ){
 
-        }
+            // not the player, POLL status
+            // current player is not me, waiting for update from chess server
+            // check if readable
+            read_status();
+            VDP_drawText(response, 0, 5 );
+            if ( response[4] == 'T'  ) {
+               /*
+                  ' 'T'
+                  '              111111111122225
+                  '    0123456789012345678901234
+                  '    ACK TURN w:LAST d7d5:MVNO 2 
+                */
+                if (response[9] == 'w') {
+                   currentPlayer = PLAYER_ONE; 
+                    VDP_drawText("ONE", 20, 1);
+                }else if (response[9] == 'b') {
+                   currentPlayer = PLAYER_TWO; 
+                    VDP_drawText("TWO", 20, 1);
+                }else{
+                   currentPlayer = NO_PLAYER; 
+                }
 
+                // parse move
+                XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
+                // need to convert uci to local 2d array coords
+                move_piece( (s8)response[16]-FILE_X, RANK_Y +7 - (s8)response[17], (s8)response[18]-FILE_X, RANK_Y + 7 - (s8)response[19], (s8)response[20] );
+
+                cursor_clear_selected( &cursor );
+
+            } else if ( response[4] == 'O'  ) {
+               /*
+                     ' 'O'
+                     '              11111111112222222
+                     '    012345678901234567890123456
+                     '    ACK OVER 0-1 1:TURN w:LAST d8h4:MVNO 4
+                     '
+                     '    1-0, 0-1,  1/2-1/2   (so we can check position 7 for 0,1,2 (who won)
+                     '
+                     '    position 9 - 1 = checkmate, 2 = stalemate, 3 - insufficient material, 4- seventyfive moves, 5 - repetition, 6 fifty moves, 6 reps, 8 variant wih, 9 variant loss 10 variant draw
+               */
+
+                // Game over man.
+                if(  response[11] == '0' ) {
+                    VDP_drawText("PLAYER ONE WINS", 12, 1);
+                }else if(  response[11] == '1' ) {
+                    VDP_drawText("PLAYER TWO WINS", 12, 1);
+                }else if(  response[11] == '2' ) {
+                    VDP_drawText("DRAW           ", 12, 1);
+                }
+            
+            }
+
+        } // if( currentPlayer == whoAmI  ){
+
+
+
+        // TODO add options to enter a different server or start a new game.
 
         //////////////////////////////////////////////////////////////
         // update sprites
@@ -615,7 +850,6 @@ int main(bool hard) {
         //////////////////////////////////////////////////////////////
         // SGDK Do your thing.
         SYS_doVBlankProcess();
-
     }
     return 0;
 
