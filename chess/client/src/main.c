@@ -537,7 +537,7 @@ bool send_move( CURSOR* cursor, u8 type  ) {
     */
 
 
-    if( strcmp( response, "legal" ) == 0 ) {
+    if( strcmp( response, "ACK legal move" ) == 0 ) {
             move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row, 0 );
             cursor_clear_selected(&cursor); 
             return true;
@@ -560,7 +560,11 @@ void list_games( ){
       ACK 90CE42ED:329829E7
     */
     
+    // send out LIST command
     NET_sendMessage("L:\n");
+    // wait until we can read bytes.
+    while( ! NET_RXReady() ) {
+    }
     s16 bytes = read_line( response, sizeof(response) );
 
 }
@@ -572,13 +576,14 @@ void read_status( ){
     ACK TURN -:LAST -----:MVNO 0
     */
 
+    // send out STATUS command
+    strclr( request ); 
+    sprintf(request,"S:%s\n", game_id );
+    NET_sendMessage(request);
+
     // wait until we can read bytes.
     while( ! NET_RXReady() ) {
     }
-
-    strclr( request ); 
-    sprintf(request,"M:%s\n", game_id );
-    NET_sendMessage(request);
     s16 bytes = read_line( response, sizeof(response) );
 }
 
@@ -589,12 +594,13 @@ void read_board( ){
     ACK rnbqkbnrppp..ppp....p......p........P......P....PPP..PPPRNBQKBNR
     
     */
-    while( ! NET_RXReady() ) {
-    }
     
+    // send out BOARDS command
     strclr( request ); 
     sprintf(request,"B:%s\n", game_id );
     NET_sendMessage(request);
+    while( ! NET_RXReady() ) {
+    }
     s16 bytes = read_line( response, sizeof(response) );
 }
 
@@ -792,39 +798,34 @@ int main(bool hard) {
             // current player is not me, waiting for update from chess server
             // check if readable
             read_status();
-            if ( response[0] == 'T'  ) {
+            VDP_drawText(response, 0, 5 );
+            if ( response[4] == 'T'  ) {
                /*
                   ' 'T'
                   '              111111111122225
                   '    0123456789012345678901234
-                  '    TURN w:LAST e7e6-:MVNO 2
-
+                  '    ACK TURN w:LAST d7d5:MVNO 2 
                 */
-                if (response[5] == 'w') {
+                if (response[9] == 'w') {
                    currentPlayer = PLAYER_ONE; 
-                }else if (response[5] == 'b') {
+                    VDP_drawText("ONE", 20, 1);
+                }else if (response[9] == 'b') {
                    currentPlayer = PLAYER_TWO; 
+                    VDP_drawText("TWO", 20, 1);
                 }else{
                    currentPlayer = NO_PLAYER; 
                 }
 
                 // parse move
                 XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
-                move_piece( (s8)response[12], (s8)response[13], (s8)response[14], (s8)response[15], (s8)response[16] );
-                if( currentPlayer == PLAYER_ONE ) {
-                    currentPlayer = PLAYER_TWO;
-                    VDP_drawText("TWO", 20, 1);
-                } else {
-                    currentPlayer = PLAYER_ONE;
-                    VDP_drawText("ONE", 20, 1);
-                }
+                move_piece( (s8)response[16], (s8)response[17], (s8)response[18], (s8)response[19], (s8)response[20] );
 
-            } else if ( response[0] == 'O'  ) {
+            } else if ( response[4] == 'O'  ) {
                /*
                      ' 'O'
                      '              11111111112222222
                      '    012345678901234567890123456
-                     '    OVER 0-1 1:TURN w:LAST d8h4:MVNO 4
+                     '    ACK OVER 0-1 1:TURN w:LAST d8h4:MVNO 4
                      '
                      '    1-0, 0-1,  1/2-1/2   (so we can check position 7 for 0,1,2 (who won)
                      '
@@ -832,11 +833,11 @@ int main(bool hard) {
                */
 
                 // Game over man.
-                if(  response[7] == '0' ) {
+                if(  response[11] == '0' ) {
                     VDP_drawText("PLAYER ONE WINS", 12, 1);
-                }else if(  response[7] == '1' ) {
+                }else if(  response[11] == '1' ) {
                     VDP_drawText("PLAYER TWO WINS", 12, 1);
-                }else if(  response[7] == '2' ) {
+                }else if(  response[11] == '2' ) {
                     VDP_drawText("DRAW           ", 12, 1);
                 }
             
