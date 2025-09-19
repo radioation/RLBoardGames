@@ -386,13 +386,13 @@ void setup_game() {
         if( joypad & BUTTON_START ) {
             break;
         }
-        SYS_doVBlankProcess();
 
         sprintf( message, "  players (1-2): %d  ", players );
         VDP_drawText(message, 11, 5);
         sprintf( message, "   level (1-10): %d  ", level );
         VDP_drawText(message, 11, 6);
         VDP_drawText("*", 11, selectedRow);
+        SYS_doVBlankProcess();
         waitMs(200);
 
     }
@@ -475,15 +475,92 @@ bool join_game() {
     memset(fullserver,0, sizeof(fullserver));
     sprintf( fullserver, "%s:5364", server);
     NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
-    read_line( response, 64 );
+
+    s16 bytes = read_line( response, 64 );
     if( strcmp( response, "HELO" ) != 0 ) {
         // we need to handle this error somehow. think about it
         return;
     }
-    memset(request,0, sizeof(request));
-    sprintf( request, "J:%s", game_id);
-    NET_sendMessage( request );
 
+    // get a list of games
+    /*
+      L:
+ 
+      ACK F64C68C7:5AAAEC90:BC14B103:4EEA1451:4F538D91
+    */
+    // send out LIST command
+    NET_sendMessage("L:\n");
+    // wait until we can read bytes.
+    while( ! NET_RXReady() ) { }
+
+    //            11111111112222222222333333333344444444
+    //  012345678901234567890123456789012345678901234567
+    //  ACK F64C68C7:5AAAEC90:BC14B103:4EEA1451:4F538D91
+    //
+    //     48 bytes, response[48] = 0
+    s16 byteCount = read_line( response, sizeof(response) );
+    if( byteCount > 5 ) {
+        // parse up response
+        // skip the ACK in  'ACK 90CE42ED:329829E7'
+        char *start = response + 4; 
+        //    skip 4
+        //            1111111111222222222233333333334444
+        //  01234567890123456789012345678901234567890123
+        //  F64C68C7:5AAAEC90:BC14B103:4EEA1451:4F538D91
+        //
+        //     (44 bytes + 1) / 9 = 5
+        char gameIds[128];
+        memcpy( gameIds, start, byteCount - 4 );
+        gameIds[byteCount -3] = 0;
+      
+        s8 gameIdCount = (byteCount -4 ) / 9;
+        for( s16 i = 0; i < gameIdCount; ++ i ) {
+            VDP_drawText(gameIds[i*9], 16, 5+i );
+        }
+
+        s8 selectedRow = 5;
+        while(1) {
+            // 
+            u16 joypad  = JOY_readJoypad( JOY_1 );
+            if( joypad & BUTTON_UP  ) {
+                VDP_drawText(" ", 11, selectedRow);
+                selectedRow -= 1;
+                if( selectedRow < 0 ) {
+                    selectedRow = gameIdCount -1;
+                }
+            }
+            if( joypad & BUTTON_DOWN ) {
+                VDP_drawText(" ", 11, selectedRow);
+                selectedRow += 1;
+                if( selectedRow >= gameIdCount ) {
+                    selectedRow = 0;
+                }
+            }
+
+            if( joypad & BUTTON_START ) {
+                break;
+            }
+            
+            VDP_drawText("*", 11, selectedRow);
+            SYS_doVBlankProcess();
+            waitMs(200);
+        }
+
+        memset(request,0, sizeof(request));
+        sprintf( request, "J:%s", gameIds[ selectedRow * 9]);
+        NET_sendMessage( request );
+        memset( player_id, 0, sizeof( player_id ) );
+        while( ! NET_RXReady() ) { }
+        byteCount = read_line( response, sizeof(response) );
+        if( byteCount > 5 ) {
+            //  J:4F538D91
+
+            //  012345678901234567890
+            //  ACK A673E220
+            memset( player_id, 0, sizeof( player_id ) );
+            strncpy(  player_id, response + 4, 8 );
+        }
+    }
 }
 
 void do_move() {
@@ -568,20 +645,6 @@ bool send_move( CURSOR* cursor, u8 type  ) {
   
 }
 
-void list_games( ){
-    /*
-      L:
-      ACK 90CE42ED:329829E7
-    */
-    
-    // send out LIST command
-    NET_sendMessage("L:\n");
-    // wait until we can read bytes.
-    while( ! NET_RXReady() ) {
-    }
-    s16 bytes = read_line( response, sizeof(response) );
-
-}
 
 
 void read_status( ){
