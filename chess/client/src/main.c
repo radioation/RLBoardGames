@@ -27,6 +27,9 @@ typedef enum {
     PLAYER_TWO = 2
 } PLAYER;
 
+#define FILE_X 97
+#define RANK_Y 49
+
 // Structure to represent a chess piece
 typedef struct {
     PIECE_TYPE type;   // Type of the piece
@@ -173,6 +176,7 @@ void clear_space( s8 startCol, s8 startRow ) {
 void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow, s8 promotype ){
     //if( do_move( startCol, startRow, endCol, endRow ) ) {
     PLAYER p = board[startCol][startRow].player;
+    CHESS_PIECE cp = board[startCol][startRow].type;
     board[endCol][endRow] = board[startCol][startRow];
     board[startCol][startRow] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
 
@@ -187,23 +191,23 @@ void move_piece( s8 startCol, s8 startRow, s8 endCol, s8 endRow, s8 promotype ){
        ' e8c8 -  4,0,2,0
      */
     
-    if ( startCol == 4 && startRow ==0 && endCol == 6 && endRow == 0 ) {
+    if ( cp = KING && p = PLAYER_TWO &&  startCol == 4 && startRow ==0 && endCol == 6 && endRow == 0 ) {
         // move black rook from right
         board[7][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         clear_space( 7, 0 );
         board[5][0] = (CHESS_PIECE){ROOK, p}; 
 
-    } else if ( startCol == 4 && startRow ==0 && endCol == 2 && endRow == 0 ) {
+    } else if ( cp = KING && p = PLAYER_TWO && startCol == 4 && startRow ==0 && endCol == 2 && endRow == 0 ) {
         // move rook from left
         board[0][0] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         clear_space( 0, 0 );
         board[3][0] = (CHESS_PIECE){ROOK, p}; 
-    } else if ( startCol == 4 && startRow ==7 && endCol == 6 && endRow == 7 ) {
+    } else if ( cp = KING && p = PLAYER_ONE && startCol == 4 && startRow ==7 && endCol == 6 && endRow == 7 ) {
         // move rook from right
         board[7][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         clear_space( 7, 7 );
         board[5][7] = (CHESS_PIECE){ROOK, p}; 
-    } else if ( startCol == 4 && startRow ==7 && endCol == 2 && endRow == 7 ) {
+    } else if ( cp = KING && p = PLAYER_ONE && startCol == 4 && startRow ==7 && endCol == 2 && endRow == 7 ) {
         // move rook from left
         board[0][7] = (CHESS_PIECE){EMPTY, NO_PLAYER}; 
         clear_space( 0, 7 );
@@ -317,6 +321,8 @@ void cursor_clear_selected( CURSOR* cursor ) {
     sprintf( message, "X: %d y: %d sx: %d sy %d    ", cursor->col, cursor->row, cursor->sel_col, cursor->sel_row);
 }
 
+
+
 bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
     if( cursor->sel_col < 0 ) {
         // no piece selected yet, check if player owns the current piece.
@@ -335,14 +341,6 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
         // return true if destination is clear or a different player, BUT DON"T UPDATE BOARD 
         return ( brd[(u8)cursor->col][(u8)cursor->row].player != player );
 
-
-
-        //if( true ) {
-        //    move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row );
-        //    return true;
-        //} else {
-        //    XGM_startPlayPCM(SND_BUZZ,1,SOUND_PCM_CH2);
-        //}
     }
     return false;
 }
@@ -472,7 +470,7 @@ void setWhoAmI() {
     buttons_prev = 0;
     VDP_clearTextArea( 0, 0,  40, 13  );
     VDP_drawText("         (A) - Start 1 Player", 0, 5);
-    VDP_drawText("         (B) - Start 2 Player", 0, 5);
+    VDP_drawText("         (B) - Start 2 Player", 0, 6);
     VDP_drawText("         (C) - Join Game", 0, 7);
     NET_resetAdapter();
     while(1) // loop forever
@@ -510,12 +508,13 @@ void setWhoAmI() {
 
 
 bool send_move( CURSOR* cursor, u8 type  ) {
-    // 
+
+    // TODO: promote pawns...
     char move[4];
-    move[0] = 97 + cursor->sel_col;
-    move[1] = 49 + 7 - cursor->sel_row;
-    move[2] = 97 + cursor->col;
-    move[3] = 49 + 7 - cursor->row;
+    move[0] = FILE_X + cursor->sel_col;
+    move[1] = RANK_Y + 7 - cursor->sel_row;
+    move[2] = FILE_X + cursor->col;
+    move[3] = RANK_Y + 7 - cursor->row;
 
     strclr( request ); 
     sprintf(request,"M:%s:%s:%s\n", game_id, player_id, move );
@@ -533,9 +532,8 @@ bool send_move( CURSOR* cursor, u8 type  ) {
     ACK illegal move
     M:e78c2852:b6dc3dda:e2e4
     ACK e7e6
-    
     */
-
+    
 
     if( strcmp( response, "ACK legal move" ) == 0 ) {
             move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row, 0 );
@@ -544,14 +542,7 @@ bool send_move( CURSOR* cursor, u8 type  ) {
     }
 
     return false;
-    /*
-       NET_sendByte( 128 + type ); // first bit is always on, and 4 bytesl
-       NET_sendByte( 4 ); // cursor always sends 4 bytes
-       NET_sendByte( cursor->col );
-       NET_sendByte( cursor->row );
-       NET_sendByte( cursor->sel_col );
-       NET_sendByte( cursor->sel_row );
-     */
+  
 }
 
 void list_games( ){
@@ -589,10 +580,8 @@ void read_status( ){
 
 void read_board( ){
     /*
-    
     B:e78c2852
     ACK rnbqkbnrppp..ppp....p......p........P......P....PPP..PPPRNBQKBNR
-    
     */
     
     // send out BOARDS command
@@ -818,7 +807,10 @@ int main(bool hard) {
 
                 // parse move
                 XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
-                move_piece( (s8)response[16], (s8)response[17], (s8)response[18], (s8)response[19], (s8)response[20] );
+                // need to convert uci to local 2d array coords
+                move_piece( (s8)response[16]-FILE_X, RANK_Y +7 - (s8)response[17], (s8)response[18]-FILE_X, RANK_Y + 7 - (s8)response[19], (s8)response[20] );
+
+                cursor_clear_selected( &cursor );
 
             } else if ( response[4] == 'O'  ) {
                /*
@@ -843,33 +835,6 @@ int main(bool hard) {
             
             }
 
-            /*
-            // read the data
-            u8 buffer[16]; 
-            read_bytes_n( buffer, data_length );
-            VDP_drawText("L 5 ", 0, 5 );
-            if( data_type == 128 ) {
-            XGM_startPlayPCM(SND_MOVE,1,SOUND_PCM_CH2);
-            VDP_drawText("L 6 ", 0, 6 );
-            // cursor update
-            cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
-            }else if( data_type == 129 ) {
-            VDP_drawText("L 7 ", 0, 7 );
-            // board update
-            cursor_update_from_pos( &cursor, (s8)buffer[0], (s8)buffer[1], (s8)buffer[2], (s8)buffer[3] );
-            move_piece( (s8)buffer[2], (s8)buffer[3], (s8)buffer[0], (s8)buffer[1] );
-            cursor_clear_selected(&cursor); 
-            if( currentPlayer == PLAYER_ONE ) {
-            currentPlayer = PLAYER_TWO;
-            VDP_drawText("TWO", 20, 1);
-            } else {
-            currentPlayer = PLAYER_ONE;
-            VDP_drawText("ONE", 20, 1);
-            }
-            } 
-            VDP_drawText("L 8 ", 0, 8 );
-            } 
-             */
         } // if( currentPlayer == whoAmI  ){
 
 
