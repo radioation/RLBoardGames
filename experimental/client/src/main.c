@@ -12,28 +12,31 @@ int main()
     cursor_y = 0;
     VDP_setBackgroundColor( 49 );
     VDP_drawText("started", cursor_x, cursor_y); cursor_y++;
-     SYS_doVBlankProcess(); 
-     waitMs(100);
+    SYS_doVBlankProcess(); 
+    waitMs(1000);
 
     ////////////////////////////////////////////////////////////////y
     // Initialize
 
     // disable interrupts during setup
-    VDP_setEnable(FALSE);
+    //VDP_setEnable(FALSE);
     SYS_disableInts();
 
     // init rx/tx count
     RXBytes = 0;
     TXBytes = 0;
 
-    VDP_setEnable(TRUE);
+    //VDP_setEnable(TRUE);
+
+    JOY_setSupport(PORT_2, JOY_SUPPORT_OFF); // PORT 2 is the serial device 
 
     SYS_setExtIntCallback(NET_RxIRQ);   // Set external IRQ callback`
 
     // setup network
-
+    VDP_setReg(0xB, 0x8);   
     SYS_enableInts();
     SYS_setInterruptMaskLevel(0);       // Enable all interrupts
+    waitMs(1000);
 
     // -- UART setup -----------------------------------
     DRV_UART.Id.sName = "UART";
@@ -41,13 +44,13 @@ int main()
     DRV_UART.Id.Bitshift = 0;
     DRV_UART.Id.Mode = DEVMODE_SERIAL | DEVMODE_PARALLEL;
 
-    //DevList[DevSeq++] = &DRV_UART;
+   
     SetDevicePort(&DRV_UART, sv_ListenPort);
     *((vu8*) DRV_UART.SCtrl) = 0x38;
-
-    //  Stdout_Push(" \e[97mChecking for network adapters...\e[0m\n");
+    waitMs(1000);
 
     u8 xpn_r = 0;
+//    RLN_Initialize();
     if (xpn_r = XPN_Initialize()) // Check if xPort device is present
     {
         VDP_drawText("xPort init", cursor_x, cursor_y); cursor_y++;
