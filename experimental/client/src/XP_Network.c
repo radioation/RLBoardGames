@@ -5,7 +5,7 @@
 
 
 #define CTIME 500000
-#define RTIME 300000
+#define RTIME 900000
 #define DTIME 500
 
 u32 sv_ConnTimeout = CTIME;    // Connection timeout (waiting for connection to remote server)
@@ -270,6 +270,12 @@ u8 XPN_PingIP(char *ip)
                 //Stdout_PushByte(byte);
                 str[0] = byte;
                 VDP_drawText(str, cursor_x, cursor_y); cursor_x++;
+                if( cursor_x > 39 ) 
+                { 
+                    cursor_x = 0;
+                    cursor_y++;
+                    if( cursor_y > 27 ) cursor_y = 0;
+                }
 
                 if (byte == '\n')
                 {
@@ -283,6 +289,15 @@ u8 XPN_PingIP(char *ip)
             // Look for "unreachable\n" with xport error code "2>" and bail here
 
             timeout = 0;
+        } else {
+            //    VDP_drawText(".", cursor_x, cursor_y); cursor_x++;
+            //    if( cursor_x > 39 ) 
+            //    { 
+            //        cursor_x = 0;
+            //        cursor_y++;
+            //        if( cursor_y > 27 ) cursor_y = 0;
+            //    }
+                
         }
 
         if (timeout++ >= sv_ReadTimeout)

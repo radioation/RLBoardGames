@@ -1,11 +1,8 @@
 #include "Network.h"
 #include "Buffer.h"
 #include "DevMgr.h"
-//#include "Terminal.h"           // v_LineMode
-//#include "Telnet.h"             // LMSM define
-//#include "Utils.h"              // EMU_BUILD define, TRM
 
-//#include "StateCtrl.h"
+
 
 // Statistics
 u32 RXBytes = 0;
@@ -24,8 +21,12 @@ NET_PingIP_CB *PingIPCB = NULL;
 // Rx IRQ
 void NET_RxIRQ()
 {
-    if ((*(vu8*)DRV_UART.SCtrl & 6) != 2) return;   // Check Ready/RxError flag in serial control register, Bail if no byte is ready or if there was an Rx error
+    if ((*(vu8*)DRV_UART.SCtrl & 6) != 2) {
+        PAL_setColor(0, RGB24_TO_VDPCOLOR(0xFF0000));
+        return;   // Check Ready/RxError flag in serial control register, Bail if no byte is ready or if there was an Rx error
+    }
 
+    PAL_setColor(0, RGB24_TO_VDPCOLOR(0x004400));
     SYS_setInterruptMaskLevel(7);
     Buffer_Push(&RxBuffer, *(vu8*)DRV_UART.RxData);
     SYS_setInterruptMaskLevel(0);
@@ -33,31 +34,21 @@ void NET_RxIRQ()
 
 void NET_SendChar(const u8 c)
 {
-    #ifdef EMU_BUILD
-    return;
-    #endif
-    
+
     // Flush any buffered data before sending new data
     // if (Buffer_IsEmpty(&TxBuffer) == FALSE) NET_TransmitBuffer();
 
-//    if (bRLNetwork)
-//    {
-//        RLN_SendByte(c);
-//    }
-//    else
-//    {
-        __asm__ __volatile__
+    __asm__ __volatile__
         (
-            "1:                         \n\t"
-            "btst #0, (%[serial])       \n\t"   // Test serial control register bit 0
-            "bne.s 1b                   \n\t"   // and wait until Tx is not full
-            "move.b %[c], -4(%[serial]) \n\t"   // Send byte 'c' to Tx register
-        : /* outputs */
-        : /* inputs */
-            [c] "d"(c), [serial] "a"((vu8*)DRV_UART.SCtrl)
-        : /* clobbered regs */
+         "1:                         \n\t"
+         "btst #0, (%[serial])       \n\t"   // Test serial control register bit 0
+         "bne.s 1b                   \n\t"   // and wait until Tx is not full
+         "move.b %[c], -4(%[serial]) \n\t"   // Send byte 'c' to Tx register
+         : /* outputs */
+         : /* inputs */
+         [c] "d"(c), [serial] "a"((vu8*)DRV_UART.SCtrl)
+         : /* clobbered regs */
         );
-//    }
 
     TxUpdate = 1;
     TXBytes++;
