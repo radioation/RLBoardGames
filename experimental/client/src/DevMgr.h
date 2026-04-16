@@ -69,16 +69,12 @@ typedef struct
 #define DEV_ClrData(d)    (*d.Data &= ~DEV_MASK_SHIFT(d))                                           // Clear data byte (set pin output low), d = SM_Device
 #define DEV_GetData(d, b) (*d.Data & DEV_MASK_AND_SHIFT(d, b) >> d.Id.Bitshift)                     // Get data byte (read pin input), d = SM_Device, b = mask for bits of interest
 
-extern SM_Device *DevList[DEV_MAX];
+//extern SM_Device *DevList[DEV_MAX];
 extern DevPort sv_ListenPort;   // Default UART port to listen on
-//extern bool bRLNetwork;
-extern bool bXPNetwork;
-//extern bool bMegaCD;
-//extern bool bVRAM_128KB;
-//extern bool bMouse;
-//extern bool bKeyboard;
+
+
 
 void SetDevicePort(SM_Device *d, DevPort p);
-//void DeviceManager_Init();
+
 
 #endif // DEVMGR_H_INCLUDED

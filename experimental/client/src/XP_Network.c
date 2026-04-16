@@ -1,8 +1,8 @@
 #include "XP_Network.h"
 #include "Buffer.h"
-#include "Utils.h"      // TRM
+
 #include "Network.h"    // RxBuffer/TxBuffer
-//#include "system/PseudoFile.h"
+
 
 #define CTIME 500000
 #define RTIME 300000
@@ -12,7 +12,7 @@ u32 sv_ConnTimeout = CTIME;    // Connection timeout (waiting for connection to 
 u32 sv_ReadTimeout = RTIME;    // Readback timeout (waiting for response from xport)
 u32 sv_DelayTime   = DTIME;    // Milliseconds of delay between sending a command and reading the response
 static u8 bIsInMonitorMode = FALSE;
-
+bool bHardReset = FALSE;
 
 extern int cursor_x, cursor_y;
 u8 XPN_Initialize()

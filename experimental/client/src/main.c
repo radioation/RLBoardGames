@@ -59,7 +59,7 @@ int main()
         DEV_SetCtrl(DRV_UART, 0x40);
         DEV_ClrData(DRV_UART);
 
-        bXPNetwork = TRUE;
+        //bXPNetwork = TRUE;
 
         NET_SetConnectFunc(XPN_Connect);
         NET_SetDisconnectFunc(XPN_Disconnect);

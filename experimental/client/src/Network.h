@@ -4,9 +4,7 @@
 #include <genesis.h>
 #include "Buffer.h"
 #include "DevMgr.h"
-#include "RL_Network.h" // RLN_SendByte
-#include "XP_Network.h" // RLN_SendByte
-//#include "system/File.h"
+#include "XP_Network.h" 
 
 // Tx flags
 #define TXF_NOBUFFER 1
