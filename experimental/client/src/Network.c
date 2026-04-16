@@ -40,12 +40,12 @@ void NET_SendChar(const u8 c)
     // Flush any buffered data before sending new data
     // if (Buffer_IsEmpty(&TxBuffer) == FALSE) NET_TransmitBuffer();
 
-    if (bRLNetwork)
-    {
-        RLN_SendByte(c);
-    }
-    else
-    {
+//    if (bRLNetwork)
+//    {
+//        RLN_SendByte(c);
+//    }
+//    else
+//    {
         __asm__ __volatile__
         (
             "1:                         \n\t"
@@ -57,7 +57,7 @@ void NET_SendChar(const u8 c)
             [c] "d"(c), [serial] "a"((vu8*)DRV_UART.SCtrl)
         : /* clobbered regs */
         );
-    }
+//    }
 
     TxUpdate = 1;
     TXBytes++;

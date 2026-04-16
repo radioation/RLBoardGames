@@ -1,0 +1,126 @@
+#include <genesis.h>
+#include "Network.h"
+
+int cursor_x, cursor_y;
+u8 buttons, buttons_prev;
+
+
+int main()
+{
+    char str[40];
+    cursor_x = 0;
+    cursor_y = 0;
+    VDP_setBackgroundColor( 49 );
+    VDP_drawText("started", cursor_x, cursor_y); cursor_y++;
+     SYS_doVBlankProcess(); 
+     waitMs(100);
+
+    ////////////////////////////////////////////////////////////////y
+    // Initialize
+
+    // disable interrupts during setup
+    VDP_setEnable(FALSE);
+    SYS_disableInts();
+
+    // init rx/tx count
+    RXBytes = 0;
+    TXBytes = 0;
+
+    VDP_setEnable(TRUE);
+
+    SYS_setExtIntCallback(NET_RxIRQ);   // Set external IRQ callback`
+
+    // setup network
+
+    SYS_enableInts();
+    SYS_setInterruptMaskLevel(0);       // Enable all interrupts
+
+    // -- UART setup -----------------------------------
+    DRV_UART.Id.sName = "UART";
+    DRV_UART.Id.Bitmask = 0x40; // 0x40 - Pin 7
+    DRV_UART.Id.Bitshift = 0;
+    DRV_UART.Id.Mode = DEVMODE_SERIAL | DEVMODE_PARALLEL;
+
+    //DevList[DevSeq++] = &DRV_UART;
+    SetDevicePort(&DRV_UART, sv_ListenPort);
+    *((vu8*) DRV_UART.SCtrl) = 0x38;
+
+    //  Stdout_Push(" \e[97mChecking for network adapters...\e[0m\n");
+
+    u8 xpn_r = 0;
+    if (xpn_r = XPN_Initialize()) // Check if xPort device is present
+    {
+        VDP_drawText("xPort init", cursor_x, cursor_y); cursor_y++;
+        DRV_UART.Id.sName = "xPort UART";
+
+        DEV_SetCtrl(DRV_UART, 0x40);
+        DEV_ClrData(DRV_UART);
+
+        bXPNetwork = TRUE;
+
+        NET_SetConnectFunc(XPN_Connect);
+        NET_SetDisconnectFunc(XPN_Disconnect);
+        NET_SetGetIPFunc(XPN_GetIP);
+        NET_SetPingFunc(XPN_PingIP); 
+
+        switch (xpn_r)
+        {
+            case 1:
+                //Stdout_Push(" \e[92mXPN: xPort module OK\e[0m\n");
+                VDP_drawText("xPort module OK", cursor_x, cursor_y); cursor_y++;
+                break;
+            case 2:
+                //Stdout_Push(" \e[91mXPN: Error\e[0m\n");
+                VDP_drawText("xPort module Error", cursor_x, cursor_y); cursor_y++;
+                break;
+
+            default:
+                break;
+        }
+
+
+        // try to ping
+        NET_PingIP( "8.8.8.8" );
+
+        while(1) // Loop forever and print out any data we receive in the hardware receive fifo
+        { 
+            buttons = JOY_readJoypad(JOY_1);
+            if(buttons & BUTTON_START && buttons_prev == 0x00) { NET_SendString("Test 1, 2, 3\n"); }
+            if(buttons & BUTTON_A && buttons_prev == 0x00) { NET_SendString("Button A Pressed\n"); }
+            if(buttons & BUTTON_B && buttons_prev == 0x00) { NET_SendString("Button B Pressed\n"); }
+            if(buttons & BUTTON_C && buttons_prev == 0x00) { NET_SendString("Button C Pressed\n"); }
+            //while(XPN_RXReady()) // while data in hardware receive FIFO
+            //{   
+            //    u8 byte = XPN_readByte(); // Retrieve byte from RX hardware Fifo directly
+            //    switch(byte)
+            //    {
+            //        case 0x0A: // a line feed?
+            //            cursor_y++;
+            //            cursor_x=1;
+            //            break;              
+            //        case 0x0D: // a carridge Return?
+            //            cursor_x=1;
+            //            break; 
+            //        default:   // print
+            //            if (cursor_x >= 40) { cursor_x=0; cursor_y++; }
+            //            if (cursor_y >= 28) { cursor_x=0; cursor_y=0; }
+            //            sprintf(str, "%c", byte); // Convert
+            //            VDP_drawText(str, cursor_x, cursor_y); cursor_x++;
+            //            break;
+            //    }
+            //}
+            buttons_prev = buttons;
+            SYS_doVBlankProcess(); 
+        }
+    } else  {
+        VDP_drawText("xPort no worky", cursor_x, cursor_y); cursor_y++;
+        // no worky 
+        while(TRUE) {
+            SYS_doVBlankProcess(); 
+        }
+    }
+
+
+    return 0;
+
+}

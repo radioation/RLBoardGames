@@ -14,11 +14,10 @@ u32 sv_DelayTime   = DTIME;    // Milliseconds of delay between sending a comman
 static u8 bIsInMonitorMode = FALSE;
 
 
+extern int cursor_x, cursor_y;
 u8 XPN_Initialize()
 {
-    #ifdef EMU_BUILD
-    return 0;
-    #endif
+
 
     // Force reset these variables in case they have become set to 0
     if (sv_ConnTimeout == 0) sv_ConnTimeout = CTIME;
@@ -244,6 +243,7 @@ u8 XPN_GetIP(char *ret)
 // Only accepts an IP address to ping
 u8 XPN_PingIP(char *ip)
 {
+    char str[40];
     u32 timeout = 0;
     u16 ping_counter = 0;
     u16 byte_count = 0;
@@ -267,7 +267,9 @@ u8 XPN_PingIP(char *ip)
             // Skip the first 2 bytes
             if (byte_count > 2)
             {
-                Stdout_PushByte(byte);
+                //Stdout_PushByte(byte);
+                str[0] = byte;
+                VDP_drawText(str, cursor_x, cursor_y); cursor_x++;
 
                 if (byte == '\n')
                 {
@@ -275,7 +277,7 @@ u8 XPN_PingIP(char *ip)
                 }
 
                 // Flush stdout after pushing byte
-                Stdout_Flush();
+                //Stdout_Flush();
             }
 
             // Look for "unreachable\n" with xport error code "2>" and bail here

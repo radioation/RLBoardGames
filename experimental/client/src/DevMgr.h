@@ -71,14 +71,14 @@ typedef struct
 
 extern SM_Device *DevList[DEV_MAX];
 extern DevPort sv_ListenPort;   // Default UART port to listen on
-extern bool bRLNetwork;
+//extern bool bRLNetwork;
 extern bool bXPNetwork;
-extern bool bMegaCD;
-extern bool bVRAM_128KB;
-extern bool bMouse;
-extern bool bKeyboard;
+//extern bool bMegaCD;
+//extern bool bVRAM_128KB;
+//extern bool bMouse;
+//extern bool bKeyboard;
 
 void SetDevicePort(SM_Device *d, DevPort p);
-void DeviceManager_Init();
+//void DeviceManager_Init();
 
 #endif // DEVMGR_H_INCLUDED
