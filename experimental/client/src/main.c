@@ -91,10 +91,6 @@ int main()
         sprintf(str, "IP: %s", ip); 
         VDP_drawText(str, cursor_x, cursor_y); cursor_y++;
 
-        // try to ping
-        //NET_PingIP( "8.8.8.8" );
-        // XPN_PingIP( "8.8.8.8" );
-
 
         if( NET_Connect( "10.25.50.61:6502" ) ) {
 
@@ -106,48 +102,52 @@ int main()
                 if(buttons & BUTTON_START && buttons_prev == 0x00) { 
                     VDP_drawText("send string", cursor_x, cursor_y); cursor_y++;
                     NET_SendString("Test 1, 2, 3\n"); 
+                    waitMs(500); // slower than cart
                 }
                 if(buttons & BUTTON_A && buttons_prev == 0x00) { 
                     NET_SendString("Button A Pressed\n"); 
+                    waitMs(500); 
                 }
                 if(buttons & BUTTON_B && buttons_prev == 0x00) { 
                     NET_SendString("Button B Pressed\n"); 
+                    waitMs(500);
                 }
                 if(buttons & BUTTON_C && buttons_prev == 0x00) { 
                     NET_SendString("Button C Pressed\n"); 
+                    waitMs(500);
                 }
 
-              
+
                 int bw = Buffer_GetNum( &RxBuffer); // bytes waiting
                 if ( bw > 0 ) {
                     memset( str, 0, sizeof( str ) );
-                    sprintf(str, "bw: %d", bw );
-                    VDP_drawText(str, cursor_x, cursor_y); cursor_y++;
-                    
-                    memset( str, 0, sizeof( str ) );
-                    if( Buffer_Pop( &RxBuffer, (unsigned char*)data ) ) {
-                        //     data[bw] = 0;
-                        //     VDP_drawText( data, cursor_x, cursor_y ); cursor_y++;
-                        for( int i=0; i < bw; ++i )  
-                        {   
-                            switch(data[i])
-                            {
-                                case 0x0A: // newline
-                                    cursor_y++;
-                                    cursor_x=0;
-                                    break;              
-                                case 0x0D: // carridge return
-                                    cursor_x=0;
-                                    break; 
-                                default:   // print
-                                    if (cursor_x >= 40) { cursor_x=0; cursor_y++; }
-                                    if (cursor_y >= 28) { cursor_x=0; cursor_y=0; }
-                                    sprintf(str, "%c", data[i]); // Convert
-                                    VDP_drawText(str, cursor_x, cursor_y); cursor_x++;
-                                    break;
-                            }
+                    //sprintf(str, "bw: %d", bw );
+                    //VDP_drawText(str, cursor_x, cursor_y); cursor_y++;
+
+                    memset( str, 0, sizeof( data ) );
+                    Buffer_PeekLast( &RxBuffer, bw, data );
+                    Buffer_Flush0( &RxBuffer );
+
+                    for( int i=0; i < bw; ++i )  
+                    {   
+                        switch(data[i])
+                        {
+                            case 0x0A: // newline
+                                cursor_y++;
+                                cursor_x=0;
+                                break;              
+                            case 0x0D: // carridge return
+                                cursor_x=0;
+                                break; 
+                            default:   // print
+                                if (cursor_x >= 40) { cursor_x=0; cursor_y++; }
+                                if (cursor_y >= 28) { cursor_x=0; cursor_y=0; }
+                                sprintf(str, "%c", data[i]); // Convert
+                                VDP_drawText(str, cursor_x, cursor_y); cursor_x++;
+                                break;
                         }
                     }
+                    
                 }
                 buttons_prev = buttons;
                 SYS_doVBlankProcess(); 
