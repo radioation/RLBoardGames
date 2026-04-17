@@ -3,11 +3,11 @@
 
 int cursor_x, cursor_y;
 u8 buttons, buttons_prev;
-
+extern Buffer RxBuffer;
 
 int main()
 {
-    char str[40];
+    char str[2048];
     cursor_x = 0;
     cursor_y = 0;
     VDP_setBackgroundColor( 0 );
@@ -106,9 +106,22 @@ int main()
                     VDP_drawText("send string", cursor_x, cursor_y); cursor_y++;
                     NET_SendString("Test 1, 2, 3\n"); 
                 }
-                //if(buttons & BUTTON_A && buttons_prev == 0x00) { NET_SendString("Button A Pressed\n"); }
-                //if(buttons & BUTTON_B && buttons_prev == 0x00) { NET_SendString("Button B Pressed\n"); }
-                //if(buttons & BUTTON_C && buttons_prev == 0x00) { NET_SendString("Button C Pressed\n"); }
+                if(buttons & BUTTON_A && buttons_prev == 0x00) { 
+                    NET_SendString("Button A Pressed\n"); 
+                }
+                if(buttons & BUTTON_B && buttons_prev == 0x00) { 
+                    NET_SendString("Button B Pressed\n"); 
+                }
+                if(buttons & BUTTON_C && buttons_prev == 0x00) { 
+                    NET_SendString("Button C Pressed\n"); 
+                }
+
+                int bw = Buffer_GetNum( &RxBuffer);
+                if ( bw > 0 ) {
+                    Buffer_Pop( &RxBuffer, (unsigned char*)str );
+                    str[bw] = 0;
+                    VDP_drawText( str, cursor_x, cursor_y ); cursor_y++;
+                }
                 //while(XPN_RXReady()) // while data in hardware receive FIFO
                 //{   
                 //    u8 byte = XPN_readByte(); // Retrieve byte from RX hardware Fifo directly
