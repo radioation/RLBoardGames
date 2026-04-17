@@ -7,7 +7,8 @@ extern Buffer RxBuffer;
 
 int main()
 {
-    char str[2048];
+    char str[40];
+    char data[2048];
     cursor_x = 0;
     cursor_y = 0;
     VDP_setBackgroundColor( 0 );
@@ -116,32 +117,38 @@ int main()
                     NET_SendString("Button C Pressed\n"); 
                 }
 
-                int bw = Buffer_GetNum( &RxBuffer);
+              
+                int bw = Buffer_GetNum( &RxBuffer); // bytes waiting
                 if ( bw > 0 ) {
-                    Buffer_Pop( &RxBuffer, (unsigned char*)str );
-                    str[bw] = 0;
-                    VDP_drawText( str, cursor_x, cursor_y ); cursor_y++;
+                    memset( str, 0, sizeof( str ) );
+                    sprintf(str, "bw: %d", bw );
+                    VDP_drawText(str, cursor_x, cursor_y); cursor_y++;
+                    
+                    memset( str, 0, sizeof( str ) );
+                    if( Buffer_Pop( &RxBuffer, (unsigned char*)data ) ) {
+                        //     data[bw] = 0;
+                        //     VDP_drawText( data, cursor_x, cursor_y ); cursor_y++;
+                        for( int i=0; i < bw; ++i )  
+                        {   
+                            switch(data[i])
+                            {
+                                case 0x0A: // newline
+                                    cursor_y++;
+                                    cursor_x=0;
+                                    break;              
+                                case 0x0D: // carridge return
+                                    cursor_x=0;
+                                    break; 
+                                default:   // print
+                                    if (cursor_x >= 40) { cursor_x=0; cursor_y++; }
+                                    if (cursor_y >= 28) { cursor_x=0; cursor_y=0; }
+                                    sprintf(str, "%c", data[i]); // Convert
+                                    VDP_drawText(str, cursor_x, cursor_y); cursor_x++;
+                                    break;
+                            }
+                        }
+                    }
                 }
-                //while(XPN_RXReady()) // while data in hardware receive FIFO
-                //{   
-                //    u8 byte = XPN_readByte(); // Retrieve byte from RX hardware Fifo directly
-                //    switch(byte)
-                //    {
-                //        case 0x0A: // a line feed?
-                //            cursor_y++;
-                //            cursor_x=1;
-                //            break;              
-                //        case 0x0D: // a carridge Return?
-                //            cursor_x=1;
-                //            break; 
-                //        default:   // print
-                //            if (cursor_x >= 40) { cursor_x=0; cursor_y++; }
-                //            if (cursor_y >= 28) { cursor_x=0; cursor_y=0; }
-                //            sprintf(str, "%c", byte); // Convert
-                //            VDP_drawText(str, cursor_x, cursor_y); cursor_x++;
-                //            break;
-                //    }
-                //}
                 buttons_prev = buttons;
                 SYS_doVBlankProcess(); 
             }
