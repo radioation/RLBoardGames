@@ -6,25 +6,37 @@ u8 buttons, buttons_prev;
 extern Buffer RxBuffer;
 
 // network stuff
-char server[16] = "010.025.050.061";
+char server[16] = "127.0.0.1";
 char request[64];
-char response[128];
+unsigned char response[128];
 
 
 s16 read_line(u8* data, u8 data_len ){
     s16 bytePos = 0;
     while( bytePos < data_len ) {
         // read data
-        if( NET_RXReady() ) {
-            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
-            if( data[bytePos] == 0x0A ) {
-                data[bytePos] = 0;
-                return bytePos;
+        int bw = Buffer_GetNum( &RxBuffer); // bytes waiting
+        if ( bw > 0 ) {
+            if ( bw > ( data_len - bytePos ) ) {
+                bw = data_len - bytePos;
             }
-            bytePos++;
+            Buffer_PeekLast( &RxBuffer, bw, data );   
+            bytePos += bw; 
         } else {
             waitMs(5);
         }
+
+
+        //if( NET_RXReady() ) {
+        //    data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
+        //    if( data[bytePos] == 0x0A ) {
+        //        data[bytePos] = 0;
+        //        return bytePos;
+        //    }
+        //    bytePos++;
+        //} else {
+        //    waitMs(5);
+        //}
     }
     return bytePos;
 
@@ -33,7 +45,7 @@ s16 read_line(u8* data, u8 data_len ){
 
 int main()
 {
-    char str[40];
+    char msg[40];
     char data[2048];
     cursor_x = 0;
     cursor_y = 0;
@@ -77,9 +89,9 @@ int main()
     *((vu8*) DRV_UART.SCtrl) = 0x38;
     waitMs(1000);
 
-    u8 xpn_r = 0;
-    //    RLN_Initialize();
-    if (xpn_r = XPN_Initialize()) // Check if xPort device is present
+    u8 xpn_r = XPN_Initialize(); // Check if xPort device is present
+                                 //    RLN_Initialize();
+    if (xpn_r )
     {
         VDP_drawText("xPort init", cursor_x, cursor_y); cursor_y++;
         DRV_UART.Id.sName = "xPort UART";
@@ -109,111 +121,70 @@ int main()
                 break;
         }
 
+        // get IP
         char ip[16];
-        memset( str, 0, sizeof(str) );
+        memset( msg, 0, sizeof(msg) );
         memset( ip, 0, sizeof(ip) );
         //XPN_GetIP( ip ); 
         NET_GetIP( ip ); 
-        sprintf(str, "IP: %s", ip); 
-        VDP_drawText(str, cursor_x, cursor_y); cursor_y++;
+        sprintf(msg, "IP: %s", ip); 
+        VDP_drawText(msg, cursor_x, cursor_y); cursor_y++;
 
-        // reach out to server
-        text_cursor_y = 5;
-        // blocks whilewaiting for network to be ready.
+
+
+        // Setup IP and port for server.
         char fullserver[21];
         memset(fullserver,0, sizeof(fullserver));
-        sprintf( fullserver, "%s:55558", server);
+        sprintf( fullserver, "%s:5364", server);
 
-        NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
 
-        if( strcmp( response, "HELO" ) != 0 ) {
-            // TODO: we need to handle this error somehow. think about it
-            //VDP_drawText("NOT HELO?", 0, 2 );
-            return;
+        //NET_connect(cursor_x, cursor_y, fullserver); cursor_x=0; cursor_y++;
+        if( NET_Connect( fullserver ) ) {
+            //s16 count = read_line( response, sizeof(response) );
+            s16 count = read_line( response, 4 );
+            response[4] = 0;
+            if( strcmp( (char*)response, "HELO" ) != 0 ) {
+                // TODO: we need to handle this error somehow. think about it
+                VDP_drawText("NOT HELO?", 0, 2 );
+
+            } else {
+
+                // request to join
+                memset( msg, 0, sizeof(msg ));
+                sprintf( msg, "J" );
+                NET_SendStringLen( msg, 1 );
+                waitMs(500); // slower than cart
+
+                memset(response, 0, sizeof(response ));
+                count = read_line( response, 1 );
+                u8 player_num = response[0];
+                sprintf(msg, "player number: %d", player_num); 
+                VDP_drawText(msg, cursor_x, cursor_y); cursor_y++;
+
+
+                // send fake position
+                sprintf( msg, "U" );
+                msg[1] = 24;
+                msg[2] = 34;
+                NET_SendStringLen( msg, 3 );
+
+                waitMs(500); // slower than cart
+                memset(response, 0, sizeof(response ));
+                count = read_line( response, sizeof(response) );
+                sprintf(msg, "[%d,%d] [%d,%d] [%d,%d] [%d,%d]", response[0], response[1], response[2], response[3], response[4], response[5], response[6], response[7] );
+                VDP_drawText(msg, cursor_x, cursor_y); cursor_y++;
+
+                while(TRUE){
+                    // do something
+                    SYS_doVBlankProcess(); 
+                }
+
+                // request status
+
+            }
+
+
         }
-
-        // request to join
-        msg = "J";
-        NET_sendMessage( msg );
-
-        memset(response, 0, sizeof(response ));
-        count = read_line( response, sizeof(response) );
-
-
-
-        // send fake position
-
-
-
-        // request status
-
-
-
-
-
-//        if( NET_Connect( "172.29.84.124:5000" ) ) {
-//
-//            VDP_drawText("CONNECTED!", cursor_x, cursor_y); cursor_y++;
-//
-//            while(1) // Loop forever and print out any data we receive in the hardware receive fifo
-//            { 
-//                buttons = JOY_readJoypad(JOY_1);
-//                if(buttons & BUTTON_START && buttons_prev == 0x00) { 
-//                    VDP_drawText("send string", cursor_x, cursor_y); cursor_y++;
-//                    NET_SendString("Test 1, 2, 3\n"); 
-//                    waitMs(500); // slower than cart
-//                }
-//                if(buttons & BUTTON_A && buttons_prev == 0x00) { 
-//                    NET_SendString("Button A Pressed\n"); 
-//                    waitMs(500); 
-//                }
-//                if(buttons & BUTTON_B && buttons_prev == 0x00) { 
-//                    NET_SendString("Button B Pressed\n"); 
-//                    waitMs(500);
-//                }
-//                if(buttons & BUTTON_C && buttons_prev == 0x00) { 
-//                    NET_SendString("Button C Pressed\n"); 
-//                    waitMs(500);
-//                }
-//
-//
-//                int bw = Buffer_GetNum( &RxBuffer); // bytes waiting
-//                if ( bw > 0 ) {
-//                    memset( str, 0, sizeof( str ) );
-//                    //sprintf(str, "bw: %d", bw );
-//                    //VDP_drawText(str, cursor_x, cursor_y); cursor_y++;
-//
-//                    memset( str, 0, sizeof( data ) );
-//                    Buffer_PeekLast( &RxBuffer, bw, data );
-//                    Buffer_Flush0( &RxBuffer );
-//
-//                    for( int i=0; i < bw; ++i )  
-//                    {   
-//                        switch(data[i])
-//                        {
-//                            case 0x0A: // newline
-//                                cursor_y++;
-//                                cursor_x=0;
-//                                break;              
-//                            case 0x0D: // carridge return
-//                                cursor_x=0;
-//                                break; 
-//                            default:   // print
-//                                if (cursor_x >= 40) { cursor_x=0; cursor_y++; }
-//                                if (cursor_y >= 28) { cursor_x=0; cursor_y=0; }
-//                                sprintf(str, "%c", data[i]); // Convert
-//                                VDP_drawText(str, cursor_x, cursor_y); cursor_x++;
-//                                break;
-//                        }
-//                    }
-//                    
-//                }
-//                buttons_prev = buttons;
-//                SYS_doVBlankProcess(); 
-//            }
-//        } else {
-//            VDP_drawText("NOT CONNECTED!", cursor_x, cursor_y); cursor_y++;
-//        }
     }
 
 
@@ -222,8 +193,6 @@ int main()
     while(TRUE) {
         SYS_doVBlankProcess(); 
     }
-
-
 
     return 0;
 
