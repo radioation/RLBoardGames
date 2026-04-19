@@ -11,7 +11,7 @@ char request[64];
 unsigned char response[128];
 
 
-s16 read_line(u8* data, u8 data_len ){
+s16 read_n_bytes(u8* data, u8 data_len ){
     s16 bytePos = 0;
     while( bytePos < data_len ) {
         // read data
@@ -21,6 +21,7 @@ s16 read_line(u8* data, u8 data_len ){
                 bw = data_len - bytePos;
             }
             Buffer_PeekLast( &RxBuffer, bw, data );   
+             Buffer_Flush0( &RxBuffer );
             bytePos += bw; 
         } else {
             waitMs(5);
@@ -140,8 +141,8 @@ int main()
 
         //NET_connect(cursor_x, cursor_y, fullserver); cursor_x=0; cursor_y++;
         if( NET_Connect( fullserver ) ) {
-            //s16 count = read_line( response, sizeof(response) );
-            s16 count = read_line( response, 4 );
+            //s16 count = read_n_bytes( response, sizeof(response) );
+            s16 count = read_n_bytes( response, 4 );
             response[4] = 0;
             if( strcmp( (char*)response, "HELO" ) != 0 ) {
                 // TODO: we need to handle this error somehow. think about it
@@ -156,7 +157,7 @@ int main()
                 waitMs(500); // slower than cart
 
                 memset(response, 0, sizeof(response ));
-                count = read_line( response, 1 );
+                count = read_n_bytes( response, 1 );
                 u8 player_num = response[0];
                 sprintf(msg, "player number: %d", player_num); 
                 VDP_drawText(msg, cursor_x, cursor_y); cursor_y++;
@@ -170,7 +171,7 @@ int main()
 
                 waitMs(500); // slower than cart
                 memset(response, 0, sizeof(response ));
-                count = read_line( response, sizeof(response) );
+                count = read_n_bytes( response, 8 );
                 sprintf(msg, "[%d,%d] [%d,%d] [%d,%d] [%d,%d]", response[0], response[1], response[2], response[3], response[4], response[5], response[6], response[7] );
                 VDP_drawText(msg, cursor_x, cursor_y); cursor_y++;
 
