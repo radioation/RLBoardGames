@@ -92,7 +92,7 @@ int main()
         VDP_drawText(str, cursor_x, cursor_y); cursor_y++;
 
 
-        if( NET_Connect( "10.25.50.61:6502" ) ) {
+        if( NET_Connect( "172.29.84.124:5000" ) ) {
 
             VDP_drawText("CONNECTED!", cursor_x, cursor_y); cursor_y++;
 

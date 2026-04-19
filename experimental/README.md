@@ -29,10 +29,19 @@ io {
     socket smdtsock.sock
 ```
 
+*NOTE* You can also make blastem read a config file from its directory
+1. run `blastem`
+2. Go to `Settings > System`
+3. Select the "Save config with EXE" option.
+
+This will let you save the config in the blastem folder.
+
 ## Usage
 0. build one of the experimental projects
 1. Run blastem
 2. Open the out.bin 
 3. Run `SMDT-PC` with `./smdtpc -xportsock ~/blastem/smdtsock.sock`
+
+
 
 
