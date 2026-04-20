@@ -1,6 +1,6 @@
 #include <genesis.h>
 #include "resources.h"
-#include "network.h" 
+#include "Network.h" 
 
 #define INPUT_WAIT_COUNT 10
 
@@ -9,6 +9,7 @@
 
 #define BOARD_SIZE 8
 
+    char message[40];
 
 // Enum to represent piece types (using offsets for lookup into image)
 typedef enum {
@@ -59,36 +60,29 @@ char player_id[16];
 bool singlePlayer = false;
 u8 whoAmI = NO_PLAYER;
 
-void read_bytes_n(u8* data, u8 length ) {
-    s16 bytePos = 0;
-    while( bytePos < length ) {
-        // read data
-        if( NET_RXReady() ) {
-            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
-            bytePos++;
-        } else {
-            waitMs(5);
-        }
-    }
-}
-
 s16 read_line(u8* data, u8 data_len ){
     s16 bytePos = 0;
     while( bytePos < data_len ) {
         // read data
-        if( NET_RXReady() ) {
-            data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
-            if( data[bytePos] == 0x0A ) {
-                data[bytePos] = 0;
-                return bytePos;
+        int bw = Buffer_GetNum( &RxBuffer); // bytes waiting
+        if ( bw > 0 ) {
+            if ( bw > ( data_len - bytePos ) ) {
+                bw = data_len - bytePos;
             }
-            bytePos++;
+            Buffer_PeekLast( &RxBuffer, bw, data );
+            Buffer_Flush0( &RxBuffer ); // TODO: Don't flush everything automatically. \n might not be at the end of the bytes waiting in a real world server.
+            for( s16 i=0; i < bw; ++i ) {
+                if( data[bytePos] == 0x0A ) {
+                    data[bytePos] = 0;
+                    return bytePos;
+                }
+                bytePos++;
+            }
         } else {
             waitMs(5);
         }
-    } 
+    }
     return bytePos;
-
 }
 
 
@@ -316,7 +310,7 @@ void cursor_clear_selected( CURSOR* cursor ) {
     cursor->sel_pos_x = -32;
     cursor->sel_pos_y = -32;
     SPR_setVisibility( cursor->selected_spr, HIDDEN );
-    char message[40];
+    //char message[40];
     strclr(message);
     sprintf( message, "X: %d y: %d sx: %d sy %d    ", cursor->col, cursor->row, cursor->sel_col, cursor->sel_row);
 }
@@ -352,7 +346,6 @@ void setup_game() {
     VDP_clearTextArea( 0, 0,  40, 20  );
     s8 level = 1;
     s8 players = 1;
-    char message[40];
      s8 selectedRow = 5;
     while(1) {
         //
@@ -424,7 +417,8 @@ ACK 0F673352:2CACA131
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
     sprintf( fullserver, "%s:55558", server);
-    NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    //NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    NET_Connect(fullserver);
 
 
     s16 count = read_line( response, sizeof(response) );
@@ -437,7 +431,8 @@ ACK 0F673352:2CACA131
     }
     
     // request a new game.
-    NET_sendMessage( msg );
+    //NET_sendMessage( msg );
+    NET_SendString( msg );
     
     memset(response, 0, sizeof(response ));
     count = read_line( response, sizeof(response) );
@@ -474,7 +469,8 @@ bool join_game() {
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
     sprintf( fullserver, "%s:55558", server);
-    NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    //NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    NET_Connect(fullserver);
 
     s16 count = read_line( response, sizeof(response) );
     response[4] = 0;
@@ -490,9 +486,10 @@ bool join_game() {
       ACK F64C68C7:5AAAEC90:BC14B103:4EEA1451:4F538D91
     */
     // send out LIST command
-    NET_sendMessage("L:\n");
+    //NET_sendMessage("L:\n");
+    NET_SendString( "L:\n" );
     // wait until we can read bytes.
-    while( ! NET_RXReady() ) { }
+    //while( ! NET_RXReady() ) { }
 
     //            11111111112222222222333333333344444444
     //  012345678901234567890123456789012345678901234567
@@ -568,9 +565,10 @@ bool join_game() {
         memset( game_id, 0, sizeof( game_id ) );
         strncpy(  game_id, gameIds + selectedRow * 9, 8 );
         sprintf( request, "J:%s\n", game_id );
-        NET_sendMessage( request );
+        //NET_sendMessage( request );
+        NET_SendString( request );
      
-        while( ! NET_RXReady() ) { }
+        //while( ! NET_RXReady() ) { }
         byteCount = read_line( response, sizeof(response) );
         if( byteCount > 5 ) {
             //  J:4F538D91
@@ -598,7 +596,7 @@ void setWhoAmI() {
     VDP_drawText( server, 13 , 3 );
     VDP_drawText("         (A) - Start Game", 0, 5);
     VDP_drawText("         (C) - Join Game", 0, 7);
-    NET_resetAdapter();
+    //NET_resetAdapter();
     while(1) // loop forever
     {
         buttons = JOY_readJoypad(JOY_1);
@@ -621,7 +619,7 @@ void setWhoAmI() {
         buttons_prev = buttons;
         SYS_doVBlankProcess();
     }
-    NET_flushBuffers();
+    //NET_flushBuffers();
 
 }
 
@@ -638,7 +636,8 @@ bool send_move( CURSOR* cursor, u8 type  ) {
 
     memset( request,0, sizeof(request) ); 
     sprintf(request,"M:%s:%s:%s\n", game_id, player_id, move );
-    NET_sendMessage(request);
+    //NET_sendMessage(request);
+    NET_SendString(request);
     s16 count = read_line( response, sizeof(response) );
 
 
@@ -675,11 +674,12 @@ void read_status( ){
     // send out STATUS command
     strclr( request ); 
     sprintf(request,"S:%s\n", game_id );
-    NET_sendMessage(request);
+    //NET_sendMessage(request);
+    NET_SendString(request);
 
     // wait until we can read bytes.
-    while( ! NET_RXReady() ) {
-    }
+    //while( ! NET_RXReady() ) {
+    //}
     s16 bytes = read_line( response, sizeof(response) );
 }
 
@@ -692,9 +692,10 @@ void read_board( ){
     // send out BOARDS command
     strclr( request ); 
     sprintf(request,"B:%s\n", game_id );
-    NET_sendMessage(request);
-    while( ! NET_RXReady() ) {
-    }
+    //NET_sendMessage(request);
+    NET_SendString(request);
+    //while( ! NET_RXReady() ) {
+    //}
     s16 bytes = read_line( response, sizeof(response) );
 }
 
@@ -714,34 +715,101 @@ int main(bool hard) {
     VDP_setScreenWidth320();
     VDP_setScreenHeight224();
     VDP_setBackgroundColor(16);
-    SYS_enableInts();                      // enable interrupts for networking print routines.
 
 
     //////////////////////////////////////////////////////////////
     // Networking setup
-    text_cursor_x = 0; // networking text cursor location
-    text_cursor_y = 0; // networking text cursor location
-    SPR_init();
 
-    VDP_drawText("Detecting adapter...[  ]", text_cursor_x, text_cursor_y); text_cursor_x+=21;   
-    NET_initialize(); // Detect cartridge and set 'cart_present'
+    // cursor pos.
+    text_cursor_x = 0; 
+    text_cursor_y = 0; 
+
+    // init rx/tx count
+    RXBytes = 0;
+    TXBytes = 0; 
+
+    
+    // PORT 2 is the serial device
+    JOY_setSupport(PORT_2, JOY_SUPPORT_OFF); 
+    // Set external IRQ callback`
+    SYS_setExtIntCallback(NET_RxIRQ);   
+
+    // setup network
+    VDP_setReg(0xB, 0x8);
+    SYS_enableInts();
+    SYS_setInterruptMaskLevel(0);       // Enable all interrupts
+    waitMs(1000);
+
+
+
+    //VDP_drawText("Detecting adapter...[  ]", text_cursor_x, text_cursor_y); text_cursor_x+=21;   
+    //NET_initialize(); // Detect cartridge and set 'cart_present'
+    // -- UART setup -----------------------------------
+    DRV_UART.Id.sName = "UART";
+    DRV_UART.Id.Bitmask = 0x40; // 0x40 - Pin 7
+    DRV_UART.Id.Bitshift = 0;
+    DRV_UART.Id.Mode = DEVMODE_SERIAL | DEVMODE_PARALLEL;
+
+
+    SetDevicePort(&DRV_UART, sv_ListenPort);
+    *((vu8*) DRV_UART.SCtrl) = 0x38;
+    waitMs(1000);
+
+    u8 xpn_r = XPN_Initialize(); // Check if xPort device is present
+
+
     whoAmI= 0; // 0 - not set, 1 - PLAYER_ONE/HOST/LIGHT, 2 - PLAYER_TWO/CLIENT/DARK
 
-    if(cart_present)
+    if(xpn_r)
     {
-        VDP_setTextPalette(2); // Green text
-        VDP_drawText("Ok", text_cursor_x, text_cursor_y); text_cursor_x=0; text_cursor_y+=2;
-        VDP_setTextPalette(0); // White text
+
+        VDP_drawText("xPort init", text_cursor_x, text_cursor_y); text_cursor_y++;
+        DRV_UART.Id.sName = "xPort UART";
+
+        DEV_SetCtrl(DRV_UART, 0x40);
+        DEV_ClrData(DRV_UART);
+
+        //bXPNetwork = TRUE; maybe later. just get stuff working for now
+
+        NET_SetConnectFunc(XPN_Connect);
+        NET_SetDisconnectFunc(XPN_Disconnect);
+        NET_SetGetIPFunc(XPN_GetIP);
+        //NET_SetPingFunc(XPN_PingIP);
+
+        switch (xpn_r)
+        {
+            case 1:
+                //Stdout_Push(" \e[92mXPN: xPort module OK\e[0m\n");
+                VDP_setTextPalette(2); // Green text
+                VDP_drawText("xPort module OK", text_cursor_x, text_cursor_y); text_cursor_y++;
+                VDP_setTextPalette(0); // White text
+                break;
+            case 2:
+                //Stdout_Push(" \e[91mXPN: Error\e[0m\n");
+                VDP_drawText("xPort module Error", text_cursor_x, text_cursor_y); text_cursor_y++;
+                break;
+
+            default:
+                break;
+        }
 
 
-        VDP_drawText("IP Address:", text_cursor_x, text_cursor_y);
-        NET_printIP(text_cursor_x+12, text_cursor_y); text_cursor_y++;
 
-        VDP_drawText("MAC:", text_cursor_x, text_cursor_y);
-        NET_printMAC(text_cursor_x+5, text_cursor_y); text_cursor_y+=2;
+        //VDP_drawText("IP Address:", text_cursor_x, text_cursor_y);
+        //NET_printIP(text_cursor_x+12, text_cursor_y); text_cursor_y++;
+        char ip[16];
+        memset( message, 0, sizeof(message) );
+        memset( ip, 0, sizeof(ip) );
+        NET_GetIP( ip );
+        sprintf(message, "My IP Address: %s", ip);
+        VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
+
+        //VDP_drawText("MAC:", text_cursor_x, text_cursor_y);
+        //NET_printMAC(text_cursor_x+5, text_cursor_y); text_cursor_y+=2;
 
         waitMs(2000);
 
+        SPR_init();
 
         // get server address from SRAM or user.
         SRAM_enable();
