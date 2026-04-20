@@ -19,7 +19,7 @@ def get_world_packet():
 
 def handle_client(conn, addr):
     print(f"[*] New connection from {addr}")
-    helo = "HELO"
+    helo = "HELO\n"
     conn.sendall( helo.encode('utf-8') )
     my_id = -1
     

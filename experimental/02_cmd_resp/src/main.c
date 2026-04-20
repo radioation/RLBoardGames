@@ -21,26 +21,38 @@ s16 read_n_bytes(u8* data, u8 data_len ){
                 bw = data_len - bytePos;
             }
             Buffer_PeekLast( &RxBuffer, bw, data );   
-             Buffer_Flush0( &RxBuffer );
+            Buffer_Flush0( &RxBuffer );
             bytePos += bw; 
         } else {
             waitMs(5);
         }
-
-
-        //if( NET_RXReady() ) {
-        //    data[bytePos] = NET_readByte(); // Retrieve byte from RX hardware Fifo directly
-        //    if( data[bytePos] == 0x0A ) {
-        //        data[bytePos] = 0;
-        //        return bytePos;
-        //    }
-        //    bytePos++;
-        //} else {
-        //    waitMs(5);
-        //}
     }
     return bytePos;
+}
 
+s16 read_line(u8* data, u8 data_len ){
+    s16 bytePos = 0;
+    while( bytePos < data_len ) {
+        // read data
+        int bw = Buffer_GetNum( &RxBuffer); // bytes waiting
+        if ( bw > 0 ) {
+            if ( bw > ( data_len - bytePos ) ) {
+                bw = data_len - bytePos;
+            }
+            Buffer_PeekLast( &RxBuffer, bw, data );   
+            Buffer_Flush0( &RxBuffer ); // TODO: Don't flush everything automatically. \n might not be at the end of the bytes waiting in a real world server.
+            for( s16 i=0; i < bw; ++i ) {
+                if( data[bytePos] == 0x0A ) {
+                    data[bytePos] = 0;
+                    return bytePos;
+                }
+                bytePos++;
+            }
+        } else {
+            waitMs(5);
+        }
+    }
+    return bytePos;
 }
 
 
@@ -141,9 +153,9 @@ int main()
 
         //NET_connect(cursor_x, cursor_y, fullserver); cursor_x=0; cursor_y++;
         if( NET_Connect( fullserver ) ) {
-            //s16 count = read_n_bytes( response, sizeof(response) );
-            s16 count = read_n_bytes( response, 4 );
-            response[4] = 0;
+            //s16 count = read_n_bytes( response, 4 );
+            //response[4] = 0;
+            s16 count = read_line( response, sizeof(response) );
             if( strcmp( (char*)response, "HELO" ) != 0 ) {
                 // TODO: we need to handle this error somehow. think about it
                 VDP_drawText("NOT HELO?", 0, 2 );
