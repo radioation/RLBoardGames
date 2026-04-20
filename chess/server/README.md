@@ -1,15 +1,24 @@
 #  Usage
+This server needs a UCI engine for single player.  I use [stockfish](https://github.com/official-stockfish/Stockfish/releases)
 
-needs a UCI engine for single player
+Download a tarball and unpack it on your sytem somewhere
+```bash
+wget https://github.com/official-stockfish/Stockfish/releases/download/stockfish-dev-20260419-4a6c7e77/stockfish-ubuntu-x86-64-avx2.tar
+
+tar xvf stockfish-ubuntu-x86-64-avx2.tar
+```
+
+Add flask and python-chess 
 
 ```bash
+python3 -m venv /path/to/new/virtual/environment
+. /path/to/new/virtual/environmentbin/activate
 pip3 install flask python-chess
-
-ENGINE_PATH = "/path/to/stockfish/stockfish-ubuntu-x86-64-avx2"
-
 ```
+
 Run with 
 ```bash
+ENGINE_PATH = "/path/to/stockfish/stockfish-ubuntu-x86-64-avx2"
 python3 run.py
 ```
 
