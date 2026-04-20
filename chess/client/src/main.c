@@ -416,7 +416,11 @@ ACK 0F673352:2CACA131
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
-    sprintf( fullserver, "%s:55558", server);
+    sprintf( fullserver, "%d.%d.%d.%d:55558", 
+       atoi( server[0]), 
+       atoi( server[1]), 
+       atoi( server[2]), 
+       atoi( server[3]));
     //NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
     NET_Connect(fullserver);
 
@@ -468,7 +472,11 @@ bool join_game() {
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
-    sprintf( fullserver, "%s:55558", server);
+    sprintf( fullserver, "%d.%d.%d.%d:55558", 
+       atoi( server[0]), 
+       atoi( server[1]), 
+       atoi( server[2]), 
+       atoi( server[3]));
     //NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
     NET_Connect(fullserver);
 
