@@ -401,7 +401,49 @@ void setup_game() {
 }
 
 
+void strip_ip_leading_zeros(char *ip)
+{
+    char *src = ip;
+    char *dst = ip;
 
+    while (*src != '\0')
+    {
+        /* If this starts a digit sequence, strip leading zeros */
+        if (isdigit((unsigned char)*src))
+        {
+            char *start = src;
+
+            /* Move src to end of this digit run */
+            while (isdigit((unsigned char)*src))
+            {
+                src++;
+            }
+
+            {
+                char *p = start;
+
+                /* Skip leading zeros, but leave one digit if all zeros */
+                while ((p < src - 1) && (*p == '0'))
+                {
+                    p++;
+                }
+
+                /* Copy normalized number */
+                while (p < src)
+                {
+                    *dst++ = *p++;
+                }
+            }
+        }
+        else
+        {
+            /* Copy dots or any other characters unchanged */
+            *dst++ = *src++;
+        }
+    }
+
+    *dst = '\0';
+}
 
 void start_game(char* msg) {
 
@@ -416,8 +458,11 @@ ACK 0F673352:2CACA131
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
-    sprintf( fullserver, "%s:55558", server);
+    strip_ip_leading_zeros( server );
+    sprintf( fullserver, "%s:55558", server );
     //NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
+    sprintf( message, "connect to: %s", fullserver );
+    VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
     NET_Connect(fullserver);
 
 
@@ -426,9 +471,10 @@ ACK 0F673352:2CACA131
  
     if( strcmp( response, "HELO" ) != 0 ) {
         // TODO: we need to handle this error somehow. think about it
-        //VDP_drawText("NOT HELO?", 0, 2 );
+        VDP_drawText("NO HELO?", text_cursor_x, text_cursor_y); text_cursor_y++;
         return;
     }
+    VDP_drawText("connected", text_cursor_x, text_cursor_y); text_cursor_y++;
     
     // request a new game.
     //NET_sendMessage( msg );
@@ -436,6 +482,7 @@ ACK 0F673352:2CACA131
     
     memset(response, 0, sizeof(response ));
     count = read_line( response, sizeof(response) );
+    VDP_drawText(response, text_cursor_x, text_cursor_y); text_cursor_y++;
    
   
     memset( game_id, 0, sizeof( game_id ) );
@@ -468,7 +515,8 @@ bool join_game() {
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
-    sprintf( fullserver, "%s:55558", server);
+    strip_ip_leading_zeros( server );
+    sprintf( fullserver, "%s:55558", server );
     //NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
     NET_Connect(fullserver);
 
@@ -812,6 +860,7 @@ int main(bool hard) {
         SPR_init();
 
         // get server address from SRAM or user.
+        memset( server, 0, sizeof( server ));
         SRAM_enable();
         u8 part = SRAM_readByte(0);
         sprintf( server, "%03d.", part );
