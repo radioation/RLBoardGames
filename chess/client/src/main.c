@@ -60,9 +60,9 @@ bool singlePlayer = false;
 u8 whoAmI = NO_PLAYER;
 
 s16 read_line(u8* data, u8 data_len ){
-    //VDP_drawText("in read_line", text_cursor_x, text_cursor_y); text_cursor_y++;
-    //char message[40];
-    //memset( message, 0, sizeof(message) );
+    VDP_drawText("in read_line", text_cursor_x, text_cursor_y); text_cursor_y++;
+    char message[40];
+    memset( message, 0, sizeof(message) );
 
     s16 bytePos = 0;
     while( bytePos < data_len ) {
@@ -74,8 +74,8 @@ s16 read_line(u8* data, u8 data_len ){
                 bw = data_len - bytePos;
             }
             Buffer_PeekLast( &RxBuffer, bw, data );
-            //sprintf(message, "bw: %d %s", bw, data );
-            //VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
+            sprintf(message, "bw: %d %s", bw, data );
+            VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
             for( s16 i=0; i < bw; ++i ) {
                 if( data[bytePos] == 0x0A ) {
                     data[bytePos] = 0;
@@ -89,7 +89,7 @@ s16 read_line(u8* data, u8 data_len ){
         }
     }
     Buffer_Flush0( &RxBuffer ); 
-    //VDP_drawText("exit read_line", text_cursor_x, text_cursor_y); text_cursor_y++;
+    VDP_drawText("exit read_line", text_cursor_x, text_cursor_y); text_cursor_y++;
     return bytePos;
 }
 
@@ -492,10 +492,8 @@ ACK 0F673352:2CACA131
     sprintf( message, "send: %s", msg );
     VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
     NET_SendString( msg );
-   
-    while(  Buffer_IsEmpty(&RxBuffer) ) {
-        waitMs(100); 
-    }
+  
+    do { waitMs(100 ); } while(  Buffer_IsEmpty(&RxBuffer) );
      
     sprintf( message, "call read_line %d", sizeof(response) );
     VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
@@ -541,7 +539,7 @@ bool join_game() {
     //NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
     NET_Connect(fullserver);
 
-    while(  Buffer_IsEmpty(&RxBuffer) ) waitMs(100); 
+    do { waitMs(100 ); } while(  Buffer_IsEmpty(&RxBuffer) );
     s16 count = read_line( response, sizeof(response) );
     response[4] = 0;
     if( strcmp( response, "HELO" ) != 0 ) {
@@ -560,7 +558,7 @@ bool join_game() {
     NET_SendString( "L:\n" );
     // wait until we can read bytes.
     //while( ! NET_RXReady() ) { }
-    while(  Buffer_IsEmpty(&RxBuffer) ) waitMs(100); 
+    do { waitMs(100 ); } while(  Buffer_IsEmpty(&RxBuffer) );
 
     //            11111111112222222222333333333344444444
     //  012345678901234567890123456789012345678901234567
@@ -640,7 +638,7 @@ bool join_game() {
         NET_SendString( request );
      
         //while( ! NET_RXReady() ) { }
-        while(  Buffer_IsEmpty(&RxBuffer) ) waitMs(100); 
+        do { waitMs(100 ); } while(  Buffer_IsEmpty(&RxBuffer) );
         byteCount = read_line( response, sizeof(response) );
         if( byteCount > 5 ) {
             //  J:4F538D91
@@ -708,12 +706,22 @@ bool send_move( CURSOR* cursor, u8 type  ) {
 
     memset( request,0, sizeof(request) ); 
     sprintf(request,"M:%s:%s:%s\n", game_id, player_id, move );
+    VDP_drawText("SEND REQUEST", 0, 0 );
+
     //NET_sendMessage(request);
     NET_SendString(request);
-    while(  Buffer_IsEmpty(&RxBuffer) ) waitMs(100); 
+
+
+    VDP_drawText("WAITING ", 20, 0 );
+    SYS_doVBlankProcess();
+    do { waitMs(100 ); } while(  Buffer_IsEmpty(&RxBuffer) );
+
+    text_cursor_y = 2;
     s16 count = read_line( response, sizeof(response) );
-
-
+        
+    VDP_drawText(response, 0, 1 );
+    SYS_doVBlankProcess();
+    waitMs(100);
     /*
     M:e78c2852:b6dc3dda
     ERR:bad format
@@ -730,6 +738,15 @@ bool send_move( CURSOR* cursor, u8 type  ) {
     if( strcmp( response, "ACK legal move" ) == 0 ) {
         move_piece( cursor->sel_col, cursor->sel_row, cursor->col, cursor->row, 0 );
         return true;
+    } else {
+        char message[40];
+        sprintf(message, "FAIL-%s-", response ); 
+        VDP_drawText(message, 0, 2 );
+while(1) {
+    SYS_doVBlankProcess();
+    waitMs(100);
+}
+        
     }
 
     return false;
@@ -1032,10 +1049,10 @@ int main(bool hard) {
                 */
                 if (response[9] == 'w') {
                    currentPlayer = PLAYER_ONE; 
-                    VDP_drawText("ONE", 20, 1);
+                   VDP_drawText("ONE", 20, 1);
                 }else if (response[9] == 'b') {
                    currentPlayer = PLAYER_TWO; 
-                    VDP_drawText("TWO", 20, 1);
+                   VDP_drawText("TWO", 20, 1);
                 }else{
                    currentPlayer = NO_PLAYER; 
                 }
