@@ -31,27 +31,34 @@ s16 read_n_bytes(u8* data, u8 data_len ){
 }
 
 s16 read_line(u8* data, u8 data_len ){
+
+
     s16 bytePos = 0;
     while( bytePos < data_len ) {
         // read data
-        int bw = Buffer_GetNum( &RxBuffer); // bytes waiting
+        bytePos = 0;
+        s16 bw = Buffer_GetNum( &RxBuffer); // bytes waiting
         if ( bw > 0 ) {
             if ( bw > ( data_len - bytePos ) ) {
                 bw = data_len - bytePos;
             }
-            Buffer_PeekLast( &RxBuffer, bw, data );   
-            Buffer_Flush0( &RxBuffer ); // TODO: Don't flush everything automatically. \n might not be at the end of the bytes waiting in a real world server.
+            Buffer_PeekLast( &RxBuffer, bw, data );
+
+
             for( s16 i=0; i < bw; ++i ) {
                 if( data[bytePos] == 0x0A ) {
                     data[bytePos] = 0;
+                    Buffer_Flush0( &RxBuffer );
                     return bytePos;
                 }
                 bytePos++;
             }
         } else {
-            waitMs(5);
+            waitMs(10);
         }
     }
+    Buffer_Flush0( &RxBuffer );
+
     return bytePos;
 }
 

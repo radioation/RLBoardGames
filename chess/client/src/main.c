@@ -9,7 +9,6 @@
 
 #define BOARD_SIZE 8
 
-    char message[40];
 
 // Enum to represent piece types (using offsets for lookup into image)
 typedef enum {
@@ -61,27 +60,36 @@ bool singlePlayer = false;
 u8 whoAmI = NO_PLAYER;
 
 s16 read_line(u8* data, u8 data_len ){
+    //VDP_drawText("in read_line", text_cursor_x, text_cursor_y); text_cursor_y++;
+    //char message[40];
+    //memset( message, 0, sizeof(message) );
+
     s16 bytePos = 0;
     while( bytePos < data_len ) {
         // read data
-        int bw = Buffer_GetNum( &RxBuffer); // bytes waiting
+        bytePos = 0;
+        s16 bw = Buffer_GetNum( &RxBuffer); // bytes waiting
         if ( bw > 0 ) {
             if ( bw > ( data_len - bytePos ) ) {
                 bw = data_len - bytePos;
             }
             Buffer_PeekLast( &RxBuffer, bw, data );
-            Buffer_Flush0( &RxBuffer ); // TODO: Don't flush everything automatically. \n might not be at the end of the bytes waiting in a real world server.
+            //sprintf(message, "bw: %d %s", bw, data );
+            //VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
             for( s16 i=0; i < bw; ++i ) {
                 if( data[bytePos] == 0x0A ) {
                     data[bytePos] = 0;
+                    Buffer_Flush0( &RxBuffer ); 
                     return bytePos;
                 }
                 bytePos++;
             }
         } else {
-            waitMs(5);
+            waitMs(10);
         }
     }
+    Buffer_Flush0( &RxBuffer ); 
+    //VDP_drawText("exit read_line", text_cursor_x, text_cursor_y); text_cursor_y++;
     return bytePos;
 }
 
@@ -305,6 +313,7 @@ void cursor_update_from_pos( CURSOR *cursor, s8 col, s8 row, s8 sel_col, s8 sel_
 }
 
 void cursor_clear_selected( CURSOR* cursor ) {
+    char message[40];
     cursor->sel_col = -1;
     cursor->sel_row = -1;
     cursor->sel_pos_x = -32;
@@ -342,6 +351,7 @@ bool cursor_action( CURSOR* cursor, CHESS_PIECE brd[8][8], u8 player ) {
 
 
 void setup_game() {
+    char message[40];
     // get input for level.
     VDP_clearTextArea( 0, 0,  40, 20  );
     s8 level = 1;
@@ -446,6 +456,7 @@ void strip_ip_leading_zeros(char *ip)
 }
 
 void start_game(char* msg) {
+    char message[40];
 
 /*
 HELO
@@ -454,7 +465,7 @@ ACK 0F673352:2CACA131
 */
 
     // reach out to server 
-    text_cursor_y = 5;
+    text_cursor_y = 0;
     // blocks whilewaiting for network to be ready.
     char fullserver[21];
     memset(fullserver,0, sizeof(fullserver));
@@ -478,11 +489,21 @@ ACK 0F673352:2CACA131
     
     // request a new game.
     //NET_sendMessage( msg );
+    sprintf( message, "send: %s", msg );
+    VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
     NET_SendString( msg );
-    
+   
+    while(  Buffer_IsEmpty(&RxBuffer) ) {
+        waitMs(100); 
+    }
+     
+    sprintf( message, "call read_line %d", sizeof(response) );
+    VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
     memset(response, 0, sizeof(response ));
     count = read_line( response, sizeof(response) );
-    VDP_drawText(response, text_cursor_x, text_cursor_y); text_cursor_y++;
+
+    sprintf( message, "got: %d %s", count, response );
+    VDP_drawText(message, text_cursor_x, text_cursor_y); text_cursor_y++;
    
   
     memset( game_id, 0, sizeof( game_id ) );
@@ -520,6 +541,7 @@ bool join_game() {
     //NET_connect(text_cursor_x, text_cursor_y, fullserver); text_cursor_x=0; text_cursor_y++;
     NET_Connect(fullserver);
 
+    while(  Buffer_IsEmpty(&RxBuffer) ) waitMs(100); 
     s16 count = read_line( response, sizeof(response) );
     response[4] = 0;
     if( strcmp( response, "HELO" ) != 0 ) {
@@ -538,6 +560,7 @@ bool join_game() {
     NET_SendString( "L:\n" );
     // wait until we can read bytes.
     //while( ! NET_RXReady() ) { }
+    while(  Buffer_IsEmpty(&RxBuffer) ) waitMs(100); 
 
     //            11111111112222222222333333333344444444
     //  012345678901234567890123456789012345678901234567
@@ -617,6 +640,7 @@ bool join_game() {
         NET_SendString( request );
      
         //while( ! NET_RXReady() ) { }
+        while(  Buffer_IsEmpty(&RxBuffer) ) waitMs(100); 
         byteCount = read_line( response, sizeof(response) );
         if( byteCount > 5 ) {
             //  J:4F538D91
@@ -686,6 +710,7 @@ bool send_move( CURSOR* cursor, u8 type  ) {
     sprintf(request,"M:%s:%s:%s\n", game_id, player_id, move );
     //NET_sendMessage(request);
     NET_SendString(request);
+    while(  Buffer_IsEmpty(&RxBuffer) ) waitMs(100); 
     s16 count = read_line( response, sizeof(response) );
 
 
@@ -845,6 +870,7 @@ int main(bool hard) {
 
         //VDP_drawText("IP Address:", text_cursor_x, text_cursor_y);
         //NET_printIP(text_cursor_x+12, text_cursor_y); text_cursor_y++;
+        char message[40];
         char ip[16];
         memset( message, 0, sizeof(message) );
         memset( ip, 0, sizeof(ip) );

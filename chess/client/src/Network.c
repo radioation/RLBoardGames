@@ -22,11 +22,9 @@ NET_PingIP_CB *PingIPCB = NULL;
 void NET_RxIRQ()
 {
     if ((*(vu8*)DRV_UART.SCtrl & 6) != 2) {
-        PAL_setColor(0, RGB24_TO_VDPCOLOR(0xFF0000));
         return;   // Check Ready/RxError flag in serial control register, Bail if no byte is ready or if there was an Rx error
     }
 
-    PAL_setColor(0, RGB24_TO_VDPCOLOR(0x004400));
     SYS_setInterruptMaskLevel(7);
     Buffer_Push(&RxBuffer, *(vu8*)DRV_UART.RxData);
     SYS_setInterruptMaskLevel(0);
